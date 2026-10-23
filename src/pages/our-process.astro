@@ -1,0 +1,24 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import ProcessSteps from "@/components/sections/ProcessSteps.astro";
+import StepList from "@/components/sections/StepList.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PERMIT_STEPS } from "@/lib/site";
+---
+
+<BaseLayout
+  title="Our Deck Building Process"
+  description="From free on-site estimate to final inspection: how Turner's Decks plans, permits, and builds your deck in four simple steps."
+>
+  <PageHero eyebrow="Why us · Our process" title="How a deck gets built" intro="Four steps, from the first visit to the final walkthrough." />
+  <section class="section container-site"><ProcessSteps /></section>
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading title="Permits, handled for you" />
+      <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+    </div>
+  </section>
+  <CtaBand />
+</BaseLayout>

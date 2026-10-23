@@ -1,0 +1,135 @@
+@import "tailwindcss" source(none);
+@source "../";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Turner's Decks design system.
+ * Brand: navy #1D3058 (primary), steel blue #37578C (buttons/accents),
+ * slate #68708A, light gray, white, gold #D1A648 (review stars only).
+ */
+
+@theme inline {
+  --font-heading: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-blue: var(--accent-blue);
+  --color-slate: var(--slate);
+  --color-star: var(--star);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --shadow-cta: var(--shadow-cta);
+  --shadow-card: var(--shadow-card);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.29 0.07 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.29 0.07 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.29 0.07 264);
+  --primary: oklch(0.31 0.075 264);          /* navy #1D3058 */
+  --primary-foreground: oklch(1 0 0);
+  --accent-blue: oklch(0.46 0.09 259);        /* steel blue #37578C */
+  --slate: oklch(0.54 0.035 270);             /* #68708A */
+  --star: oklch(0.75 0.12 83);                /* gold #D1A648 */
+  --secondary: oklch(0.965 0.006 260);        /* light gray */
+  --secondary-foreground: oklch(0.31 0.075 264);
+  --muted: oklch(0.965 0.006 260);
+  --muted-foreground: oklch(0.54 0.035 270);
+  --accent: oklch(0.93 0.02 260);
+  --accent-foreground: oklch(0.31 0.075 264);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.91 0.01 260);
+  --input: oklch(0.88 0.012 260);
+  --ring: oklch(0.46 0.09 259);
+  --shadow-cta: 0 8px 20px -8px color-mix(in oklab, var(--accent-blue) 60%, transparent);
+  --shadow-card: 0 1px 2px color-mix(in oklab, var(--primary) 6%, transparent),
+    0 8px 24px -12px color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--color-primary);
+    letter-spacing: -0.015em;
+  }
+}
+
+@utility container-site {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (width >= 768px) {
+    padding-inline: 2rem;
+  }
+}
+
+@utility section {
+  padding-block: 4rem;
+  @media (width >= 768px) {
+    padding-block: 6rem;
+  }
+}
+
+@utility eyebrow {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent-blue);
+}
+
+@utility hero-overlay {
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--primary) 88%, transparent) 0%,
+    color-mix(in oklab, var(--primary) 55%, transparent) 55%,
+    color-mix(in oklab, var(--primary) 15%, transparent) 100%
+  );
+}
+
+/* Native <details> accordion (replaces the Radix accordion). */
+details.faq > summary { list-style: none; }
+details.faq > summary::-webkit-details-marker { display: none; }
+details.faq[open] > summary .faq-chevron { transform: rotate(180deg); }

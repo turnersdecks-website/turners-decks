@@ -1,0 +1,30 @@
+---
+import { Clock, Mail, MapPin, Phone } from "@lucide/astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import QuoteForm from "@/components/islands/QuoteForm";
+import { SITE } from "@/lib/site";
+import { localBusinessSchema } from "@/lib/seo";
+---
+
+<BaseLayout
+  title="Get a Free Deck Estimate"
+  description="Request a free on-site deck estimate from Turner's Decks in Douglassville, PA. Serving Berks, Montgomery, and Chester Counties."
+  schema={localBusinessSchema()}
+>
+  <section class="bg-secondary">
+    <div class="container-site grid gap-10 py-12 md:py-20 lg:grid-cols-[1fr_1.4fr]">
+      <div>
+        <p class="eyebrow">Contact</p>
+        <h1 class="mt-2 text-4xl font-bold md:text-5xl">Get a free estimate</h1>
+        <p class="mt-4 text-lg text-muted-foreground">Tell us about your project and we'll set up a free on-site visit.</p>
+        <ul class="mt-8 space-y-4">
+          <li class="flex gap-3"><Phone class="size-5 text-accent-blue" /> <a href={SITE.phoneHref} class="hover:text-accent-blue">{SITE.phone}</a></li>
+          <li class="flex gap-3"><Mail class="size-5 text-accent-blue" /> <a href={`mailto:${SITE.email}`} class="hover:text-accent-blue">{SITE.email}</a></li>
+          <li class="flex gap-3"><MapPin class="size-5 text-accent-blue" /> {SITE.city}, {SITE.state} — serving Berks, Montgomery & Chester Counties</li>
+          <li class="flex gap-3"><Clock class="size-5 text-accent-blue" /> {SITE.hours}</li>
+        </ul>
+      </div>
+      <QuoteForm client:load />
+    </div>
+  </section>
+</BaseLayout>

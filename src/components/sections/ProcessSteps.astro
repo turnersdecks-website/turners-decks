@@ -1,0 +1,15 @@
+---
+import { PROCESS_STEPS } from "@/lib/site";
+---
+
+<ol class="grid gap-6 md:grid-cols-4">
+  {
+    PROCESS_STEPS.map((s, i) => (
+      <li class="relative rounded-xl bg-card p-6 shadow-card">
+        <span class="font-heading text-4xl font-bold text-accent-blue/25">0{i + 1}</span>
+        <h3 class="mt-2 text-lg font-semibold">{s.title}</h3>
+        <p class="mt-2 text-sm text-muted-foreground">{s.body}</p>
+      </li>
+    ))
+  }
+</ol>

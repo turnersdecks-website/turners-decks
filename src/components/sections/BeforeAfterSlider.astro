@@ -1,0 +1,38 @@
+---
+// Drag slider comparing before/after photos. A plain range input drives a
+// CSS custom property, so it works with keyboard and touch and needs no framework.
+import Photo from "./Photo.astro";
+import type { Photo as P } from "@/lib/photos";
+interface Props { before: P; after: P; alt: string }
+const { before, after, alt } = Astro.props;
+const sizes = "(min-width: 768px) 50vw, 100vw";
+---
+
+<div class="ba-slider relative aspect-[4/3] select-none overflow-hidden rounded-xl" style="--pos: 50%">
+  <Photo photo={after} alt={`${alt}, after`} sizes={sizes} class="absolute inset-0 h-full w-full object-cover" />
+  <div class="absolute inset-0 overflow-hidden" style="clip-path: inset(0 calc(100% - var(--pos)) 0 0)">
+    <Photo photo={before} alt={`${alt}, before`} sizes={sizes} class="absolute inset-0 h-full w-full object-cover" />
+  </div>
+  <div class="pointer-events-none absolute inset-y-0 w-0.5 bg-primary-foreground" style="left: var(--pos)">
+    <span class="absolute top-1/2 left-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary-foreground font-bold text-primary shadow-card">
+      ↔
+    </span>
+  </div>
+  <span class="absolute bottom-3 left-3 rounded bg-primary/85 px-2 py-1 text-xs font-semibold text-primary-foreground">Before</span>
+  <span class="absolute bottom-3 right-3 rounded bg-primary/85 px-2 py-1 text-xs font-semibold text-primary-foreground">After</span>
+  <input
+    type="range"
+    min="0"
+    max="100"
+    value="50"
+    aria-label="Drag to compare before and after"
+    class="absolute inset-0 h-full w-full cursor-ew-resize opacity-0"
+  />
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".ba-slider").forEach((el) => {
+    const input = el.querySelector("input");
+    input?.addEventListener("input", () => el.style.setProperty("--pos", `${input.value}%`));
+  });
+</script>

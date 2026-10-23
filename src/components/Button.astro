@@ -1,0 +1,18 @@
+---
+import { buttonVariants, cn, type ButtonSize, type ButtonVariant } from "@/lib/utils";
+
+interface Props {
+  href: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  class?: string;
+  external?: boolean;
+}
+const { href, variant, size, class: className, external = false } = Astro.props;
+---
+
+<a
+  href={href}
+  class={cn(buttonVariants({ variant, size }), className)}
+  {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+><slot /></a>

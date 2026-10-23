@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import GoogleReviews from "@/components/sections/GoogleReviews.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+---
+
+<BaseLayout title="Customer Reviews" description="Read Google reviews from Turner's Decks customers in Berks, Montgomery, and Chester Counties, PA.">
+  <PageHero eyebrow="Why us · Reviews" title="What our customers say" intro="Real reviews from Google." />
+  <section class="section container-site"><GoogleReviews /></section>
+  <CtaBand />
+</BaseLayout>

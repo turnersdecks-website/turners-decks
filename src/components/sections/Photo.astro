@@ -1,0 +1,18 @@
+---
+// Responsive project photo: WebP at several widths, lazy by default.
+import { Picture } from "astro:assets";
+import type { Photo } from "@/lib/photos";
+interface Props { photo: Photo; class?: string; sizes?: string; eager?: boolean; alt?: string }
+const { photo, class: className, sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw", eager = false, alt } = Astro.props;
+---
+
+<Picture
+  src={photo.src}
+  alt={alt ?? photo.alt}
+  widths={[480, 800, 1200, 1600]}
+  sizes={sizes}
+  formats={["webp"]}
+  loading={eager ? "eager" : "lazy"}
+  fetchpriority={eager ? "high" : undefined}
+  class={className}
+/>

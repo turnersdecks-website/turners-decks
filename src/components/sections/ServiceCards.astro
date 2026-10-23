@@ -1,0 +1,33 @@
+---
+import { ArrowRight } from "@lucide/astro";
+import Photo from "./Photo.astro";
+import { SERVICES } from "@/lib/site";
+import { SERVICE_IMAGES } from "@/lib/photos";
+---
+
+<div class="grid gap-6 md:grid-cols-3">
+  {
+    SERVICES.map((s) => (
+      <a
+        href={`/services/${s.slug}`}
+        class="group overflow-hidden rounded-xl border bg-card shadow-card transition hover:-translate-y-1"
+      >
+        <div class="relative aspect-[4/3] overflow-hidden">
+          <Photo
+            photo={SERVICE_IMAGES[s.slug]}
+            alt={s.title}
+            sizes="(min-width: 768px) 33vw, 100vw"
+            class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        </div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold">{s.title}</h3>
+          <p class="mt-2 text-muted-foreground">{s.short}</p>
+          <span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent-blue">
+            Learn more <ArrowRight class="size-4" />
+          </span>
+        </div>
+      </a>
+    ))
+  }
+</div>

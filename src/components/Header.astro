@@ -1,0 +1,127 @@
+---
+import { ChevronDown, Menu, Phone, X } from "@lucide/astro";
+import Logo from "./Logo.astro";
+import Button from "./Button.astro";
+import { SITE } from "@/lib/site";
+
+const NAV = [
+  {
+    label: "Services",
+    to: "/services",
+    children: [
+      { label: "New Decks", to: "/services/new-decks" },
+      { label: "Deck Replacement", to: "/services/deck-replacement" },
+      { label: "Pool Decks", to: "/services/pool-decks" },
+    ],
+  },
+  { label: "Our Projects", to: "/gallery" },
+  { label: "Price Estimator", to: "/estimator" },
+  { label: "Service Areas", to: "/service-areas" },
+  {
+    label: "Why Us",
+    to: "/about",
+    children: [
+      { label: "About", to: "/about" },
+      { label: "Our Process", to: "/our-process" },
+      { label: "Warranty", to: "/warranty" },
+      { label: "Reviews", to: "/reviews" },
+    ],
+  },
+  { label: "Contact", to: "/contact" },
+];
+
+const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/, "$1") || "/";
+---
+
+<header class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+  <div class="container-site flex h-16 items-center justify-between gap-6 md:h-22">
+    <a href="/" aria-label="Turner's Decks home"><Logo eager /></a>
+
+    <nav class="hidden items-center gap-0 xl:gap-1 lg:flex" aria-label="Main">
+      {
+        NAV.map((item) =>
+          item.children ? (
+            <div class="group relative">
+              <a
+                href={item.to}
+                class="flex items-center gap-1 rounded-md px-2 py-2 text-sm font-medium text-foreground hover:text-accent-blue xl:px-3"
+              >
+                {item.label} <ChevronDown class="size-3.5" />
+              </a>
+              <div class="invisible absolute left-0 top-full min-w-48 rounded-lg border bg-popover p-2 opacity-0 shadow-card transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                {item.children.map((c) => (
+                  <a href={c.to} class="block rounded-md px-3 py-2 text-sm hover:bg-secondary hover:text-accent-blue">
+                    {c.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <a
+              href={item.to}
+              class:list={[
+                "rounded-md px-2 py-2 text-sm font-medium hover:text-accent-blue xl:px-3",
+                path === item.to ? "text-accent-blue" : "text-foreground",
+              ]}
+              aria-current={path === item.to ? "page" : undefined}
+            >
+              {item.label}
+            </a>
+          ),
+        )
+      }
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href={SITE.phoneHref} class="hidden items-center gap-1.5 text-sm font-semibold text-primary 2xl:flex">
+        <Phone class="size-4" />
+        {SITE.phone}
+      </a>
+      <Button href="/contact" variant="cta" class="hidden sm:inline-flex">Get a Free Estimate</Button>
+      <button
+        type="button"
+        id="menu-toggle"
+        class="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-primary hover:bg-accent lg:hidden"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-nav"
+      >
+        <Menu class="size-6" data-icon="open" />
+        <X class="hidden size-6" data-icon="close" />
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-nav" class="hidden border-t bg-background lg:hidden">
+    <nav class="container-site flex flex-col py-4" aria-label="Mobile">
+      {
+        NAV.map((item) => (
+          <div>
+            <a href={item.to} class="block py-3 font-heading font-semibold text-primary">
+              {item.label}
+            </a>
+            {item.children?.map((c) => (
+              <a href={c.to} class="block py-2 pl-4 text-sm text-muted-foreground">
+                {c.label}
+              </a>
+            ))}
+          </div>
+        ))
+      }
+      <Button href="/contact" variant="cta" size="lg" class="mt-4">Get a Free Estimate</Button>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById("menu-toggle");
+  const panel = document.getElementById("mobile-nav");
+  toggle?.addEventListener("click", () => {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    panel?.classList.toggle("hidden", !open);
+    toggle.querySelector("[data-icon=open]")?.classList.toggle("hidden", open);
+    toggle.querySelector("[data-icon=close]")?.classList.toggle("hidden", !open);
+  });
+</script>

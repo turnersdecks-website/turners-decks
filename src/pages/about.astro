@@ -1,0 +1,21 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import WhyUsGrid from "@/components/sections/WhyUsGrid.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { SITE } from "@/lib/site";
+---
+
+<BaseLayout
+  title="About Turner's Decks"
+  description="Turner's Decks was founded in 2018 by professional carpenter Pat Turner in Douglassville, PA. New decks, replacements, and pool decks, permits handled."
+>
+  <PageHero eyebrow="Why us · About" title="A local deck company, started by a carpenter" intro={`${SITE.owner} founded Turner's Decks in Douglassville in ${SITE.since}. We build decks, and that's all we do.`} />
+  <section class="section container-site">
+    <SectionHeading title="What sets us apart" />
+    <div class="mt-10"><WhyUsGrid /></div>
+    <p class="mt-10 max-w-2xl text-sm text-muted-foreground">[PLACEHOLDER: a short story about Pat and the team, plus a team photo]</p>
+  </section>
+  <CtaBand />
+</BaseLayout>

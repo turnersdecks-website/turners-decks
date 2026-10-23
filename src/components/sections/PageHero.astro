@@ -1,0 +1,16 @@
+---
+import Button from "@/components/Button.astro";
+interface Props { eyebrow?: string; title: string; intro?: string }
+const { eyebrow, title, intro } = Astro.props;
+---
+
+<section class="bg-secondary">
+  <div class="container-site py-14 md:py-20">
+    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+    <h1 class="mt-2 max-w-3xl text-4xl font-bold md:text-5xl">{title}</h1>
+    {intro && <p class="mt-5 max-w-2xl text-lg text-muted-foreground">{intro}</p>}
+    <div class="mt-8 flex flex-wrap gap-3">
+      <slot><Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button></slot>
+    </div>
+  </div>
+</section>

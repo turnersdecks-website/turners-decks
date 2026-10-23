@@ -1,0 +1,83 @@
+---
+// One page per town in the TOWNS list; adding a town is a data change in lib/site.ts.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import StepList from "@/components/sections/StepList.astro";
+import ServiceCards from "@/components/sections/ServiceCards.astro";
+import Faq from "@/components/sections/Faq.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PHOTO } from "@/lib/photos";
+import { PERMIT_STEPS, SITE, TOWNS } from "@/lib/site";
+import { townFaqs } from "@/lib/services";
+import { faqSchema, localBusinessSchema } from "@/lib/seo";
+
+export function getStaticPaths() {
+  return TOWNS.map((town) => ({ params: { town: town.slug }, props: { town } }));
+}
+
+const { town } = Astro.props;
+const faqs = townFaqs(town.name);
+---
+
+<BaseLayout
+  title={`Deck Builder in ${town.name}, PA`}
+  description={`Locally owned deck builder serving ${town.name}, ${town.county} County. New decks, deck replacement, and pool decks with permits handled. Free on-site estimates.`}
+  schema={[localBusinessSchema([`${town.name}, PA`]), faqSchema(faqs)]}
+>
+  <section class="bg-secondary">
+    <div class="container-site py-14 md:py-20">
+      <p class="eyebrow">{town.county} County</p>
+      <h1 class="mt-2 max-w-3xl text-4xl font-bold md:text-5xl">Deck Builder in {town.name}, PA</h1>
+      <p class="mt-5 max-w-2xl text-lg text-muted-foreground">
+        Turner's Decks builds new decks, replaces old ones, and builds pool decks for homeowners in {town.name}. Founded by professional carpenter {SITE.owner}, we handle the permit from start to finish.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button>
+        <Button href="/estimator" variant="outline" size="lg">See What It'll Cost</Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading eyebrow="Permits" title={`Deck Permits in ${town.name}`} intro="Here's how we handle the permit for your deck, in four steps." />
+    <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+    <p class="mt-4 text-sm text-muted-foreground">[PLACEHOLDER: {town.name}-specific permit notes, e.g. township office and typical timeline]</p>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading title="Decks We Build" />
+      <div class="mt-10"><ServiceCards /></div>
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading title="Local Experience" />
+    <p class="mt-4 max-w-2xl text-muted-foreground">
+      We've been building decks around Douglassville since {SITE.since}, and {town.name} is well within our regular service area.
+    </p>
+    <p class="mt-2 text-sm text-muted-foreground">[PLACEHOLDER: local details, neighborhoods, or notes about building in {town.name}]</p>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading title="Recent Projects" />
+      <div class="mt-8 grid gap-5 sm:grid-cols-3">
+        {[PHOTO.replacementSkirt, PHOTO.groundComposite, PHOTO.poolDeck].map((p) => (
+          <figure class="overflow-hidden rounded-xl">
+            <Photo photo={p} class="aspect-[4/3] w-full object-cover" />
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section container-site max-w-3xl">
+    <SectionHeading title={`${town.name} FAQs`} />
+    <Faq faqs={faqs} />
+  </section>
+
+  <CtaBand title={`Planning a deck in ${town.name}?`} />
+</BaseLayout>

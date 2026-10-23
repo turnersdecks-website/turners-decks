@@ -1,0 +1,52 @@
+---
+import Logo from "./Logo.astro";
+import { SITE, SERVICES } from "@/lib/site";
+
+const company = [
+  ["About", "/about"],
+  ["Our Process", "/our-process"],
+  ["Warranty", "/warranty"],
+  ["Reviews", "/reviews"],
+  ["Our Projects", "/gallery"],
+  ["Service Areas", "/service-areas"],
+];
+---
+
+<footer class="bg-primary text-primary-foreground">
+  <div class="container-site grid gap-10 py-14 md:grid-cols-4">
+    <div class="md:col-span-1">
+      <Logo light />
+      <p class="mt-4 text-sm text-primary-foreground/75">
+        Locally owned deck building in Berks, Montgomery, and Chester Counties since {SITE.since}.
+      </p>
+    </div>
+    <div>
+      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Services</h3>
+      <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
+        {SERVICES.map((s) => <li><a href={`/services/${s.slug}`} class="hover:text-primary-foreground">{s.title}</a></li>)}
+        <li><a href="/estimator" class="hover:text-primary-foreground">Price Estimator</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Company</h3>
+      <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
+        {company.map(([label, href]) => <li><a href={href} class="hover:text-primary-foreground">{label}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Contact</h3>
+      <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
+        <li><a href={SITE.phoneHref} class="hover:text-primary-foreground">{SITE.phone}</a></li>
+        <li><a href={`mailto:${SITE.email}`} class="hover:text-primary-foreground">{SITE.email}</a></li>
+        <li>{SITE.city}, {SITE.state}</li>
+        <li>Hours: {SITE.hours}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-primary-foreground/15">
+    <div class="container-site flex flex-col gap-2 py-5 text-xs text-primary-foreground/60 sm:flex-row sm:justify-between">
+      <p>© {new Date().getFullYear()} {SITE.name}. All rights reserved. · PA HIC #{SITE.hic}</p>
+      <a href="/privacy-policy" class="hover:text-primary-foreground">Privacy Policy</a>
+    </div>
+  </div>
+</footer>

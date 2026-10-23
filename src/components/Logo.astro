@@ -1,0 +1,17 @@
+---
+import { Image } from "astro:assets";
+import blueLogo from "@/assets/images/turners-decks-blue-logo.png";
+import whiteLogo from "@/assets/images/turners-decks-white-logo.png";
+
+interface Props { light?: boolean; eager?: boolean }
+const { light = false, eager = false } = Astro.props;
+---
+
+<Image
+  src={light ? whiteLogo : blueLogo}
+  alt="Turner's Decks"
+  width={352}
+  densities={[1, 2]}
+  loading={eager ? "eager" : "lazy"}
+  class="block h-auto w-40 max-w-full shrink-0 sm:w-44"
+/>

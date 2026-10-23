@@ -1,0 +1,25 @@
+---
+import { Star } from "@lucide/astro";
+import { GOOGLE_REVIEWS } from "@/lib/reviews";
+---
+
+<div class="grid items-start gap-6 lg:grid-cols-3">
+  {
+    GOOGLE_REVIEWS.map((review) => (
+      <figure class="rounded-lg border bg-card p-6 shadow-card">
+        <div class="flex gap-1 text-star" role="img" aria-label={`${review.rating} out of 5 stars`}>
+          {Array.from({ length: review.rating }).map(() => (
+            <Star class="size-5 fill-current" aria-hidden="true" />
+          ))}
+        </div>
+        <blockquote class="mt-5 text-base leading-relaxed text-foreground">
+          <p>“{review.text}”</p>
+        </blockquote>
+        <figcaption class="mt-6 border-t pt-4">
+          <p class="font-heading font-semibold text-primary">{review.name}</p>
+          <p class="mt-1 text-sm text-muted-foreground">Google review</p>
+        </figcaption>
+      </figure>
+    ))
+  }
+</div>

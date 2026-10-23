@@ -1,0 +1,24 @@
+---
+import { ClipboardCheck, Hammer, ShieldCheck } from "@lucide/astro";
+import { SITE } from "@/lib/site";
+
+const items = [
+  { icon: Hammer, title: "Built by carpenters", body: `Founded by professional carpenter ${SITE.owner} in ${SITE.since}. No sales teams, just people who build decks.` },
+  { icon: ClipboardCheck, title: "Permits handled", body: "Requirements review, the application, township approval, and inspections. We handle all of it." },
+  { icon: ShieldCheck, title: "Real warranty", body: "A 12-month workmanship warranty, plus manufacturer warranties of up to 50 years depending on material." },
+];
+---
+
+<div class="grid gap-6 md:grid-cols-3">
+  {
+    items.map(({ icon: Icon, title, body }) => (
+      <div class="rounded-xl border bg-card p-7">
+        <span class="inline-flex size-12 items-center justify-center rounded-lg bg-accent text-accent-blue">
+          <Icon class="size-6" />
+        </span>
+        <h3 class="mt-5 text-lg font-semibold">{title}</h3>
+        <p class="mt-2 text-muted-foreground">{body}</p>
+      </div>
+    ))
+  }
+</div>

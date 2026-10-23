@@ -1,0 +1,19 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import FinancingBlock from "@/components/sections/FinancingBlock.astro";
+import Estimator from "@/components/islands/Estimator";
+---
+
+<BaseLayout
+  title="Deck Cost Estimator | Turner's Decks"
+  description="Plan your deck budget. Answer a few questions about size, materials, railings, and stairs to see a realistic preliminary price range from Turner's Decks."
+>
+  <section class="bg-secondary">
+    <div class="container-site max-w-5xl py-10 md:py-16">
+      <h1 class="text-3xl font-bold md:text-4xl">Deck cost estimator</h1>
+      <p class="mt-2 max-w-2xl text-muted-foreground">What should you realistically budget for your deck? Answer what you can. "Not sure" is always fine, and measurements can be rough.</p>
+      <Estimator client:load />
+      <div class="mt-8"><FinancingBlock /></div>
+    </div>
+  </section>
+</BaseLayout>

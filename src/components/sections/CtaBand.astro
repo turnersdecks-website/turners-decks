@@ -1,0 +1,19 @@
+---
+import Button from "@/components/Button.astro";
+import { SITE } from "@/lib/site";
+interface Props { title?: string; body?: string }
+const { title = "Ready for a new deck?", body = "Get a free on-site estimate. No pressure, no sales pitch." } = Astro.props;
+---
+
+<section class="bg-primary">
+  <div class="container-site flex flex-col items-start gap-6 py-14 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 class="text-3xl font-bold text-primary-foreground">{title}</h2>
+      <p class="mt-2 text-primary-foreground/80">{body}</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+      <Button href={SITE.phoneHref} variant="outline-light" size="lg">Call {SITE.phone}</Button>
+    </div>
+  </div>
+</section>

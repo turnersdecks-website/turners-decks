@@ -1,0 +1,29 @@
+---
+import { Package, ShieldCheck } from "@lucide/astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+
+const items = [
+  { icon: ShieldCheck, title: "12-month workmanship warranty", body: "Covers our work on your deck for the first 12 months after the build." },
+  { icon: Package, title: "Manufacturer warranties up to 50 years", body: "Decking materials carry their own manufacturer warranty. Length depends on the material you choose." },
+];
+---
+
+<BaseLayout
+  title="Deck Warranty"
+  description="Every Turner's Decks build includes a 12-month workmanship warranty, plus manufacturer material warranties of up to 50 years."
+>
+  <PageHero eyebrow="Why us · Warranty" title="We stand behind our work" intro="Two layers of coverage on every deck." />
+  <section class="section container-site grid gap-6 md:grid-cols-2">
+    {items.map(({ icon: Icon, title, body }) => (
+      <div class="rounded-xl border bg-card p-8">
+        <Icon class="size-8 text-accent-blue" />
+        <h2 class="mt-4 text-2xl font-semibold">{title}</h2>
+        <p class="mt-2 text-muted-foreground">{body}</p>
+      </div>
+    ))}
+    <p class="text-sm text-muted-foreground md:col-span-2">[PLACEHOLDER: full warranty terms]</p>
+  </section>
+  <CtaBand />
+</BaseLayout>

@@ -1,0 +1,33 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import ServiceCards from "@/components/sections/ServiceCards.astro";
+import FinancingBlock from "@/components/sections/FinancingBlock.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { MATERIALS } from "@/lib/site";
+---
+
+<BaseLayout
+  title="Deck Building Services"
+  description="New decks, deck replacement, and pool decks in composite, capped PVC, and pressure-treated wood. Serving Berks, Montgomery, and Chester Counties, PA."
+>
+  <PageHero eyebrow="Services" title="Deck building services" intro="We build new decks, replace old ones, and build pool decks. Every job includes permits, handled start to finish." />
+  <section class="section container-site"><ServiceCards /></section>
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading eyebrow="Materials" title="Composite, capped PVC, or wood" />
+      <div class="mt-8 grid gap-5 md:grid-cols-3">
+        {MATERIALS.map((m) => (
+          <div class="rounded-xl border bg-card p-6">
+            <h3 class="text-lg font-semibold">{m.name}</h3>
+            <p class="mt-2 text-muted-foreground">{m.blurb}</p>
+          </div>
+        ))}
+      </div>
+      <p class="mt-6 text-sm text-muted-foreground">Have an old deck that needs work? We don't do repairs or staining, but we can replace it with a new deck that lasts.</p>
+      <div class="mt-8"><FinancingBlock /></div>
+    </div>
+  </section>
+  <CtaBand />
+</BaseLayout>

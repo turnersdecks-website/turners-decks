@@ -1,0 +1,45 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import BeforeAfterSlider from "@/components/sections/BeforeAfterSlider.astro";
+import Photo from "@/components/sections/Photo.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PROJECTS } from "@/lib/photos";
+
+const pairs = PROJECTS.filter((p) => p.before && p.after);
+const withPhotos = PROJECTS.filter((p) => p.photos.length);
+---
+
+<BaseLayout
+  title="Our Projects: Deck Gallery"
+  description="Real decks built by Turner's Decks: composite pool decks, deck replacements, ground-level composite decks, and elevated pressure-treated decks, with before-and-after photos."
+>
+  <PageHero eyebrow="Our projects" title="Recent decks we've built" intro="Real projects from across Berks, Montgomery, and Chester Counties." />
+  <section class="section container-site">
+    <SectionHeading eyebrow="Before & after" title="See the difference" intro="Drag each slider to compare." />
+    <div class="mt-10 grid gap-10 lg:grid-cols-2">
+      {pairs.map((p) => (
+        <figure>
+          <BeforeAfterSlider before={p.before!} after={p.after!} alt={p.title} />
+          <figcaption class="mt-3 font-heading font-semibold text-primary">{p.title} <span class="font-sans text-sm font-normal text-muted-foreground">· {p.type}</span></figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+  {withPhotos.map((p, i) => (
+    <section class:list={["section", { "bg-secondary": i % 2 === 0 }]}>
+      <div class="container-site">
+        <SectionHeading eyebrow={p.type} title={p.title} />
+        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {p.photos.map((ph) => (
+            <figure class="overflow-hidden rounded-xl">
+              <Photo photo={ph} class="aspect-[4/3] w-full object-cover" />
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+  <CtaBand title="Like what you see?" />
+</BaseLayout>

@@ -1,0 +1,14 @@
+---
+import { ArrowRight } from "@lucide/astro";
+import Button from "@/components/Button.astro";
+---
+
+<div class="flex flex-col items-start gap-6 rounded-2xl bg-accent-blue p-8 text-primary-foreground md:flex-row md:items-center md:justify-between md:p-12">
+  <div>
+    <h2 class="text-2xl font-bold text-primary-foreground md:text-3xl">Wondering what it'll cost?</h2>
+    <p class="mt-2 max-w-xl text-primary-foreground/85">
+      Answer six quick questions and get a ballpark price range in about a minute.
+    </p>
+  </div>
+  <Button href="/estimator" variant="light" size="lg">Try the Price Estimator <ArrowRight /></Button>
+</div>

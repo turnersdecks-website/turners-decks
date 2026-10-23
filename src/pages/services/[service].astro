@@ -1,0 +1,70 @@
+---
+// /services/new-decks, /services/deck-replacement, /services/pool-decks
+import { Check } from "@lucide/astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import StepList from "@/components/sections/StepList.astro";
+import FinancingBlock from "@/components/sections/FinancingBlock.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import QuoteForm from "@/components/islands/QuoteForm";
+import { MATERIALS, PERMIT_STEPS, SERVICES, type ServiceSlug } from "@/lib/site";
+import { SERVICE_CONTENT } from "@/lib/services";
+import { SERVICE_IMAGES } from "@/lib/photos";
+
+export function getStaticPaths() {
+  return SERVICES.map((s) => ({ params: { service: s.slug } }));
+}
+
+const slug = Astro.params.service as ServiceSlug;
+const c = SERVICE_CONTENT[slug];
+---
+
+<BaseLayout title={c.metaTitle} description={c.metaDesc}>
+  <PageHero eyebrow="Services" title={c.h1} intro={c.intro}>
+    <Button href="#quote" variant="cta" size="lg">Get a Free Estimate</Button>
+    <Button href="/estimator" variant="outline" size="lg">See What It'll Cost</Button>
+  </PageHero>
+
+  <section class="section container-site grid items-center gap-10 md:grid-cols-2">
+    <div class="relative overflow-hidden rounded-xl">
+      <Photo photo={SERVICE_IMAGES[slug]} alt={c.title} sizes="(min-width: 768px) 50vw, 100vw" class="aspect-[4/3] w-full object-cover" />
+    </div>
+    <div>
+      <SectionHeading title="What's included" />
+      <ul class="mt-6 space-y-3">
+        {c.points.map((p) => <li class="flex gap-3"><Check class="mt-0.5 size-5 shrink-0 text-accent-blue" />{p}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading eyebrow="Materials" title="Pick what fits your budget" />
+      <div class="mt-8 grid gap-5 md:grid-cols-3">
+        {MATERIALS.map((m) => (
+          <div class="rounded-xl border bg-card p-6">
+            <h3 class="text-lg font-semibold">{m.name}</h3>
+            <p class="mt-2 text-muted-foreground">{m.blurb}</p>
+          </div>
+        ))}
+      </div>
+      <div class="mt-8"><FinancingBlock /></div>
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading eyebrow="Permits" title="We handle the permit, start to finish" />
+    <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+  </section>
+
+  <section id="quote" class="section bg-secondary">
+    <div class="container-site max-w-3xl">
+      <SectionHeading title="Get a free on-site estimate" center />
+      <div class="mt-8"><QuoteForm client:visible defaultProject={c.formValue} /></div>
+    </div>
+  </section>
+  <CtaBand />
+</BaseLayout>

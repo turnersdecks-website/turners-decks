@@ -1,0 +1,18 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import ServiceAreasList from "@/components/sections/ServiceAreasList.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+---
+
+<BaseLayout
+  title="Service Areas: Berks, Montgomery & Chester County"
+  description="Turner's Decks builds decks within about 30 miles of Douglassville, PA, including Pottstown, Limerick, Collegeville, Reading, West Chester, and more."
+>
+  <PageHero eyebrow="Service areas" title="Where we build" intro="Based in Douglassville, we build decks within about 30 miles across Berks, Montgomery, and Chester Counties." />
+  <section class="section container-site">
+    <ServiceAreasList />
+    <p class="mt-10 text-muted-foreground">Don't see your town? If you're within about 30 miles of Douglassville, reach out. We may still be able to help.</p>
+  </section>
+  <CtaBand />
+</BaseLayout>
