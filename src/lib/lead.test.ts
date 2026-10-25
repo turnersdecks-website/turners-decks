@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildLeadRow } from "./lead";
-import { estimateProject, type EstimateInput } from "./pricing";
+import { buildSubmission } from "./lead";
+import { estimateProject, formatUSD, type EstimateInput } from "./pricing";
 
+const KEY = "test-key";
 const contact = { first_name: "Jane", last_name: "Doe", email: "jane@example.com", phone: "(610) 555-0123", zip: "19518" };
 
 const answers: EstimateInput = {
@@ -14,68 +15,46 @@ const answers: EstimateInput = {
   skirtingCoverage: "full", skirtingDoor: false, lighting: "none", features: [], neighbors: "no",
 };
 
-describe("lead handling", () => {
-  it("accepts a quote-form lead and normalizes the phone", () => {
-    const r = buildLeadRow({ source: "quote_form", ...contact, project_type: "New deck", company: "" });
+describe("Web3Forms submission", () => {
+  it("builds a quote-form email with reply-to set to the customer", () => {
+    const r = buildSubmission({ source: "quote_form", ...contact, project_type: "Pool deck", company: "" }, KEY);
     expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.row.phone).toBe("6105550123");
-      expect(r.row.estimate_mid).toBeNull();
-    }
+    if (!r.ok) return;
+    expect(r.payload).toMatchObject({
+      access_key: KEY,
+      email: "jane@example.com",
+      Name: "Jane Doe",
+      Phone: "(610) 555-0123",
+      "Project type": "Pool deck",
+      subject: "New quote request: Jane Doe (19518)",
+    });
+    expect(r.payload).not.toHaveProperty("Notes"); // blank fields are left out
   });
 
   it("rejects bad contact details with field messages", () => {
-    const r = buildLeadRow({ source: "quote_form", ...contact, email: "nope", zip: "123" });
+    const r = buildSubmission({ source: "quote_form", ...contact, email: "nope", zip: "123" }, KEY);
     expect(r.ok).toBe(false);
     if (!r.ok && "errors" in r) expect(Object.keys(r.errors).sort()).toEqual(["email", "zip"]);
   });
 
-  it("drops honeypot submissions quietly", () => {
-    const r = buildLeadRow({ source: "quote_form", ...contact, company: "Spam LLC" });
-    expect(r).toMatchObject({ ok: false, spam: true });
+  it("drops honeypot submissions without sending", () => {
+    expect(buildSubmission({ source: "quote_form", ...contact, company: "Spam LLC" }, KEY)).toEqual({ ok: false, spam: true });
   });
 
-  it("recomputes estimator prices on the server and ignores prices sent by the browser", () => {
-    const r = buildLeadRow({ source: "estimator", ...contact, answers, estimate_low: 1, estimate_high: 2, estimate_mid: 1 });
+  it("computes the estimate from the answers, not from anything sent in", () => {
+    const r = buildSubmission({ source: "estimator", ...contact, timing: "Within 3 months", answers, ...({ estimate_low: 1 } as object) }, KEY);
     expect(r.ok).toBe(true);
-    if (r.ok) {
-      const expected = estimateProject(answers);
-      expect([r.row.estimate_low, r.row.estimate_high, r.row.estimate_mid]).toEqual([expected.low, expected.high, expected.mid]);
-      expect(r.row.lead_summary).toContain("Customer: Jane Doe");
-      expect(JSON.parse(r.row.review_flags!)).toEqual([]);
-    }
+    if (!r.ok) return;
+    const e = estimateProject(answers);
+    const range = `${formatUSD(e.low)} to ${formatUSD(e.high)}`;
+    expect(r.payload["Estimate shown"]).toBe(range);
+    expect(r.payload.subject).toBe(`New estimator lead: Jane Doe, ${range}`);
+    expect(r.payload["Size"]).toBe("320 sq ft");
+    expect(r.payload["Full summary"]).toContain("Customer: Jane Doe");
+    expect(r.payload).not.toHaveProperty("estimate_low");
   });
 
   it("requires answers for estimator leads", () => {
-    expect(buildLeadRow({ source: "estimator", ...contact }).ok).toBe(false);
-  });
-});
-
-import { airtableFields, AIRTABLE } from "./airtable";
-
-describe("Airtable mapping", () => {
-  const f = AIRTABLE.f;
-  it("maps an estimator lead onto existing select options", () => {
-    const r = buildLeadRow({ source: "estimator", ...contact, timing: "Within 3 months", address: "1 Main St", answers }, new Date("2026-10-23T03:00:00Z"));
-    if (!r.ok) throw new Error("expected ok");
-    const x = airtableFields(r.row);
-    expect(x[f.name]).toBe("Jane Doe");
-    expect(x[f.phone]).toBe("(610) 555-0123");
-    expect(x[f.projectType]).toBe("Rebuild or replacement");
-    expect(x[f.material]).toBe("Composite");
-    expect(x[f.timeframe]).toBe("1 to 3 months");
-    expect(x[f.stage]).toBe("New");
-    expect(x[f.squareFootage]).toBe(320);
-    expect(x[f.leadDate]).toBe("2026-10-22"); // Eastern time, not UTC
-    expect(String(x[f.whatTheyWant])).toMatch(/^Website price estimator: \$\d/);
-  });
-
-  it("leaves selects blank when the answer has no matching option", () => {
-    const r = buildLeadRow({ source: "quote_form", ...contact, project_type: "Pool deck", material: "Capped PVC" });
-    if (!r.ok) throw new Error("expected ok");
-    const x = airtableFields(r.row);
-    expect(x[f.projectType]).toBeUndefined();
-    expect(x[f.material]).toBeUndefined();
-    expect(String(x[f.whatTheyWant])).toContain("Pool deck");
+    expect(buildSubmission({ source: "estimator", ...contact }, KEY).ok).toBe(false);
   });
 });

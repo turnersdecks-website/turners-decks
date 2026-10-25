@@ -5,10 +5,12 @@
 - Business facts live in `src/lib/site.ts`. Estimator pricing config + engine live in
   `src/lib/pricing.ts` (tested in `pricing.test.ts`); question wording and disclaimers live in
   `src/lib/estimator-questions.ts`, so prices and copy are each edited in one place.
-- Both forms POST to `/api/quote` (`functions/api/quote.ts`). The server validates with the same
-  zod schemas as the browser (`src/lib/quote.ts`), recomputes estimator prices from the answers,
-  stores the row in D1, and copies it to Airtable. Never trust prices sent by the browser.
-- Schema changes go in a new numbered file in `migrations/`; never edit an applied migration.
+- Both forms email leads through Web3Forms, posting from the browser (`submitLead` in
+  `src/lib/quote.ts`). The email body is built in `src/lib/lead.ts` (tested in `lead.test.ts`);
+  estimator prices are always computed from the answers there. The access key lives in
+  `SITE.web3formsKey`. It is public by design; do not move it to a server, since Web3Forms
+  server-side submissions need a paid plan.
+- There is no backend or database. Keep the site fully static.
 - Town pages come from the `TOWNS` list (one dynamic route). Adding a town is a data change;
   the sitemap picks it up automatically.
 - Google review text lives in `src/lib/reviews.ts`, copied word for word from Google. Do not add

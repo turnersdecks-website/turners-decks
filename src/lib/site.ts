@@ -11,6 +11,9 @@ export const SITE = {
   state: "PA",
   hours: "Mon–Fri 7 AM–6 PM · Sat & Sun 9 AM–5 PM", // matches Google Business Profile
   hic: "PA135647", // PA Home Improvement Contractor number: required on all advertising, including the website
+  // Web3Forms access key (web3forms.com). Public by design: it only lets this form email
+  // the address the key was created with. Leads go to that inbox.
+  web3formsKey: "", // [KEY] paste the access key here
   financingUrl: "#", // [LINK] Acorn Finance page
   url: "https://turnersdecks.com", // [DOMAIN] update when known
 };

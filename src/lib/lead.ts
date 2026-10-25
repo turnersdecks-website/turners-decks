@@ -1,129 +1,85 @@
-// Server-side lead handling: validate, recompute estimator prices from the raw
-// answers (never trust prices sent by the browser), and shape the database row.
-import { leadSchema } from "./quote";
-import { CALCULATOR_VERSION, PRICING_VERSION, estimateProject, type EstimateInput } from "./pricing";
+// Turns a validated website lead into the Web3Forms submission that emails it
+// to Turner's Decks. Pure function (no network) so it's easy to test.
+import { leadSchema, type Lead } from "./quote";
+import { estimateProject, formatUSD, type EstimateInput } from "./pricing";
 import { labelFor, leadSummary } from "./estimator-questions";
+import { SITE } from "./site";
 
-export type LeadRow = {
-  id: string;
-  created_at: string;
-  source: "quote_form" | "estimator";
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  zip: string;
-  project_type: string | null;
-  approx_size: string | null;
-  material: string | null;
-  height: string | null;
-  railing: string | null;
-  stairs: string | null;
-  estimate_low: number | null;
-  estimate_high: number | null;
-  estimate_mid: number | null;
-  notes: string | null;
-  answers: string | null;
-  review_flags: string | null;
-  calculator_version: string | null;
-  pricing_version: string | null;
-  address: string | null;
-  contact_method: string | null;
-  timing: string | null;
-  wants_financing: number | null;
-  lead_summary: string | null;
-};
+export type Submission = Record<string, string>;
 
 export type BuildResult =
-  | { ok: true; row: LeadRow }
-  | { ok: false; status: 400; errors: Record<string, string> }
-  | { ok: false; status: 204; spam: true };
+  | { ok: true; payload: Submission }
+  | { ok: false; spam: true }
+  | { ok: false; errors: Record<string, string> };
 
-const n = <T>(v: T | undefined | "") => (v === undefined || v === "" ? null : v);
+const CONTACT_METHOD: Record<string, string> = { phone: "Phone call", text: "Text", email: "Email" };
 
-export function buildLeadRow(body: unknown, now = new Date(), id: string = crypto.randomUUID()): BuildResult {
-  const parsed = leadSchema.safeParse(body);
+const prettyPhone = (p: string) => `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}`;
+
+/** Drops empty values so the email only shows answered fields. */
+const compact = (o: Record<string, string | undefined>) =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== "")) as Submission;
+
+export function buildSubmission(input: Lead, accessKey: string = SITE.web3formsKey): BuildResult {
+  const parsed = leadSchema.safeParse(input);
   if (!parsed.success) {
-    // A filled honeypot is a bot: accept quietly so it doesn't retry.
-    if (parsed.error.issues.some((i) => i.path[0] === "company")) return { ok: false, status: 204, spam: true };
+    // A filled honeypot means a bot: pretend it worked and send nothing.
+    if (parsed.error.issues.some((i) => i.path[0] === "company")) return { ok: false, spam: true };
     const errors: Record<string, string> = {};
     for (const i of parsed.error.issues) errors[String(i.path[0])] ??= i.message;
-    return { ok: false, status: 400, errors };
+    return { ok: false, errors };
   }
   const d = parsed.data;
+  const name = `${d.first_name} ${d.last_name}`;
 
-  const row: LeadRow = {
-    id,
-    created_at: now.toISOString(),
-    source: d.source,
-    first_name: d.first_name,
-    last_name: d.last_name,
+  // Web3Forms fields: `email` becomes the reply-to, so Pat can just hit Reply.
+  const base = {
+    access_key: accessKey,
+    from_name: `${SITE.name} website`,
     email: d.email,
-    phone: d.phone,
-    zip: d.zip,
-    project_type: n(d.project_type),
-    approx_size: n(d.approx_size),
-    material: n(d.material),
-    height: n(d.height),
-    railing: n(d.railing),
-    stairs: n(d.stairs),
-    estimate_low: null,
-    estimate_high: null,
-    estimate_mid: null,
-    notes: n(d.notes),
-    answers: null,
-    review_flags: null,
-    calculator_version: null,
-    pricing_version: null,
-    address: n(d.address),
-    contact_method: n(d.contact_method),
-    timing: n(d.timing),
-    wants_financing: d.wants_financing === undefined ? null : d.wants_financing ? 1 : 0,
-    lead_summary: null,
+    Name: name,
+    Phone: prettyPhone(d.phone),
+    ZIP: d.zip,
   };
 
-  if (d.source === "estimator") {
-    if (!d.answers) return { ok: false, status: 400, errors: { answers: "Missing estimator answers" } };
-    const a = { ...(d.answers as EstimateInput), zip: d.zip };
-    let r;
-    try {
-      r = estimateProject(a);
-    } catch {
-      return { ok: false, status: 400, errors: { answers: "Estimator answers could not be priced" } };
-    }
-    if (!Number.isFinite(r.mid)) return { ok: false, status: 400, errors: { answers: "Estimator answers could not be priced" } };
-    Object.assign(row, {
-      project_type: labelFor("projectType", a.projectType),
-      approx_size: `${r.sqft} sq ft`,
-      material: labelFor("material", a.material),
-      height: labelFor("height", a.height),
-      railing: a.railingSides === "none" ? "None" : `${labelFor("railingStyle", a.railingStyle)}, ~${r.railingLf} ft`,
-      stairs: labelFor("stairType", a.stairType),
-      estimate_low: r.low,
-      estimate_high: r.high,
-      estimate_mid: r.mid,
-      answers: JSON.stringify(a),
-      review_flags: JSON.stringify(r.flags),
-      calculator_version: CALCULATOR_VERSION,
-      pricing_version: PRICING_VERSION,
-      lead_summary: leadSummary(`${d.first_name} ${d.last_name}`, a, r, d.timing ?? "", d.notes ?? "").slice(0, 6000),
-    });
+  if (d.source === "quote_form") {
+    return {
+      ok: true,
+      payload: compact({
+        ...base,
+        subject: `New quote request: ${name} (${d.zip})`,
+        "Form": "Free estimate request",
+        "Project type": d.project_type,
+        "Approx. size": d.approx_size,
+        "Preferred material": d.material,
+        "Notes": d.notes,
+      }),
+    };
   }
-  return { ok: true, row };
+
+  if (!d.answers) return { ok: false, errors: { answers: "Missing estimator answers" } };
+  const a = { ...(d.answers as EstimateInput), zip: d.zip };
+  const r = estimateProject(a);
+  const range = `${formatUSD(r.low)} to ${formatUSD(r.high)}`;
+  return {
+    ok: true,
+    payload: compact({
+      ...base,
+      subject: `New estimator lead: ${name}, ${range}`,
+      "Form": "Price estimator",
+      "Estimate shown": range,
+      "Project type": labelFor("projectType", a.projectType),
+      "Size": `${r.sqft} sq ft`,
+      "Material": labelFor("material", a.material),
+      "Needs site review": r.flags.length ? r.flags.join("; ") : "No",
+      "Timing": d.timing,
+      "Best way to reach": d.contact_method && CONTACT_METHOD[d.contact_method],
+      "Project address": d.address,
+      "Wants financing info": d.wants_financing ? "Yes" : "No",
+      "Notes": d.notes,
+      "Full summary": leadSummary(name, a, r, d.timing ?? "", d.notes ?? ""),
+    }),
+  };
 }
 
-/** Plain-text notification body for the owner. */
-export function leadEmailText(row: LeadRow): string {
-  if (row.lead_summary) return `${row.lead_summary}\n\nPhone: ${row.phone}\nEmail: ${row.email}\nPreferred contact: ${row.contact_method ?? "—"}\nAddress: ${row.address ?? "—"}\nWants financing info: ${row.wants_financing ? "Yes" : "No"}`;
-  return [
-    "New quote request from the website",
-    `Customer: ${row.first_name} ${row.last_name}`,
-    `Phone: ${row.phone}`,
-    `Email: ${row.email}`,
-    `ZIP: ${row.zip}`,
-    `Project: ${row.project_type ?? "—"}`,
-    `Approx. size: ${row.approx_size ?? "—"}`,
-    `Material: ${row.material ?? "—"}`,
-    `Notes: ${row.notes ?? "—"}`,
-  ].join("\n");
-}
+export const WEB3FORMS_URL = "https://api.web3forms.com/submit";

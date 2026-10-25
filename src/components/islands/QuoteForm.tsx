@@ -1,4 +1,4 @@
-// "Get a free estimate" form (React island). Posts to /api/quote.
+// "Get a free estimate" form (React island). Emails the lead through Web3Forms.
 import { useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, Honeypot, Input, Label, Textarea } from "@/components/ui/fields";

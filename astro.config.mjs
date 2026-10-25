@@ -4,8 +4,7 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
-// Static site. The only server code is the Cloudflare Pages Function in
-// /functions (lead capture), which deploys alongside the built pages.
+// Fully static site. Lead forms post straight to Web3Forms from the browser.
 export default defineConfig({
   site: "https://turnersdecks.com",
   // URLs without a trailing slash (/services/pool-decks), same as the Lovable site.

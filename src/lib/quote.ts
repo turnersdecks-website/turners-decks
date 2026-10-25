@@ -1,5 +1,4 @@
-// Lead validation shared by the browser forms and the /api/quote function,
-// so the same rules run on both sides.
+// Lead validation for the quote form and the estimator, plus the submit call.
 import { z } from "zod";
 
 const phone = z
@@ -24,7 +23,7 @@ export const quoteSchema = contactSchema.extend({
 
 const opt = (max: number) => z.string().trim().max(max).optional();
 
-/** Everything the server accepts. Estimator prices are recomputed server-side from `answers`. */
+/** Everything a lead can carry. Estimator prices are computed from `answers`, not sent in. */
 export const leadSchema = contactSchema.extend({
   source: z.enum(["quote_form", "estimator"]),
   project_type: opt(60),
@@ -45,12 +44,32 @@ export const leadSchema = contactSchema.extend({
 
 export type Lead = z.input<typeof leadSchema>;
 
-export async function submitLead(lead: Lead): Promise<{ id: string }> {
-  const res = await fetch("/api/quote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(lead),
-  });
-  if (!res.ok) throw new Error("Something went wrong sending your request. Please try again or call us.");
-  return res.json();
+const FAILED = "Something went wrong sending your request. Please try again or call us.";
+
+/** Emails the lead to Turner's Decks through Web3Forms. */
+export async function submitLead(lead: Lead): Promise<void> {
+  const { buildSubmission, WEB3FORMS_URL } = await import("./lead");
+  const built = buildSubmission(lead);
+  if (!built.ok) {
+    if ("spam" in built) return; // honeypot filled: look successful, send nothing
+    throw new Error(FAILED);
+  }
+  if (!built.payload.access_key) {
+    console.error("Web3Forms access key is missing (SITE.web3formsKey in src/lib/site.ts)");
+    throw new Error(FAILED);
+  }
+  let ok = false;
+  try {
+    const res = await fetch(WEB3FORMS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(built.payload),
+    });
+    const data = (await res.json().catch(() => ({}))) as { success?: boolean; message?: string };
+    ok = res.ok && data.success === true;
+    if (!ok) console.error("Web3Forms rejected the submission", res.status, data.message);
+  } catch (err) {
+    console.error("Web3Forms request failed", err);
+  }
+  if (!ok) throw new Error(FAILED);
 }
