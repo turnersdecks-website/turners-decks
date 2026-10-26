@@ -128,7 +128,7 @@ export default function Estimator() {
           <div className="mb-2 flex justify-between text-sm text-muted-foreground">
             <span>{done ? "Your estimate" : `Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}</span>
             {step > 0 && !done && (
-              <button type="button" onClick={() => setStep((s) => s - 1)} className="inline-flex items-center gap-1 font-medium text-accent-blue">
+              <button type="button" onClick={() => setStep((s) => s - 1)} className="-my-2 -mr-2 inline-flex min-h-11 items-center gap-1 rounded-md px-2 font-medium text-accent-blue hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <ArrowLeft className="size-4" /> Back
               </button>
             )}
@@ -321,13 +321,13 @@ export default function Estimator() {
                     </div>
                     <div>
                       <Label htmlFor="e-cm">Best way to reach you</Label>
-                      <select id="e-cm" name="contact_method" className="mt-1.5 h-11 w-full rounded-md border bg-background px-3">
+                      <select id="e-cm" name="contact_method" className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base">
                         <option value="phone">Phone call</option><option value="text">Text</option><option value="email">Email</option>
                       </select>
                     </div>
                     <div>
                       <Label htmlFor="e-timing">When would you like it built?</Label>
-                      <select id="e-timing" name="timing" className="mt-1.5 h-11 w-full rounded-md border bg-background px-3">
+                      <select id="e-timing" name="timing" className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base">
                         <option>As soon as possible</option><option>Within 3 months</option><option>3–6 months</option><option>Next year</option><option>Just planning</option>
                       </select>
                     </div>

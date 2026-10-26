@@ -1,13 +1,16 @@
 ---
 import { PROCESS_STEPS } from "@/lib/site";
+interface Props { level?: 2 | 3 }
+const { level = 3 } = Astro.props;
+const H = `h${level}` as const;
 ---
 
 <ol class="grid gap-6 md:grid-cols-4">
   {
     PROCESS_STEPS.map((s, i) => (
       <li class="relative rounded-xl bg-card p-6 shadow-card">
-        <span class="font-heading text-4xl font-bold text-accent-blue/25">0{i + 1}</span>
-        <h3 class="mt-2 text-lg font-semibold">{s.title}</h3>
+        <span aria-hidden="true" class="font-heading text-4xl font-bold text-accent-blue/25">0{i + 1}</span>
+        <H class="mt-2 text-lg font-semibold">{s.title}</H>
         <p class="mt-2 text-sm text-muted-foreground">{s.body}</p>
       </li>
     ))

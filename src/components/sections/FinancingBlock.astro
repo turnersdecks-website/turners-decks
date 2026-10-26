@@ -2,13 +2,16 @@
 import { BadgeCheck } from "@lucide/astro";
 import Button from "@/components/Button.astro";
 import { SITE } from "@/lib/site";
+interface Props { level?: 2 | 3 }
+const { level = 3 } = Astro.props;
+const H = `h${level}` as const;
 ---
 
 <div class="flex flex-col gap-5 rounded-xl border bg-card p-7 md:flex-row md:items-center md:justify-between">
   <div class="flex gap-4">
     <BadgeCheck class="mt-1 size-7 shrink-0 text-accent-blue" />
     <div>
-      <h3 class="text-lg font-semibold">Financing available</h3>
+      <H class="text-lg font-semibold">Financing available</H>
       <p class="mt-1 text-muted-foreground">
         {SITE.financingUrl
           ? "Pay over time through Acorn Finance. Checking your rate won't affect your credit score."

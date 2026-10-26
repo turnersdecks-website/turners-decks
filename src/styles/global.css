@@ -67,7 +67,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.91 0.01 260);
-  --input: oklch(0.88 0.012 260);
+  --input: oklch(0.62 0.025 262);           /* form field borders: 3.6:1 on white (WCAG 1.4.11) */
   --ring: oklch(0.46 0.09 259);
   --shadow-cta: 0 8px 20px -8px color-mix(in oklab, var(--accent-blue) 60%, transparent);
   --shadow-card: 0 1px 2px color-mix(in oklab, var(--primary) 6%, transparent),
@@ -78,8 +78,10 @@
   * {
     border-color: var(--color-border);
   }
-  html {
-    scroll-behavior: smooth;
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   body {
     background-color: var(--color-background);
@@ -127,6 +129,15 @@
     color-mix(in oklab, var(--primary) 55%, transparent) 55%,
     color-mix(in oklab, var(--primary) 15%, transparent) 100%
   );
+}
+
+/* Honor the OS "reduce motion" setting everywhere, including third-party animation classes. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Native <details> accordion (replaces the Radix accordion). */
