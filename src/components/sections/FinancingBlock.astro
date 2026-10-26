@@ -10,9 +10,11 @@ import { SITE } from "@/lib/site";
     <div>
       <h3 class="text-lg font-semibold">Financing available</h3>
       <p class="mt-1 text-muted-foreground">
-        Pay over time through Acorn Finance. Checking your rate won't affect your credit score.
+        {SITE.financingUrl
+          ? "Pay over time through Acorn Finance. Checking your rate won't affect your credit score."
+          : "Pay over time through Acorn Finance. Ask us about it at your free estimate."}
       </p>
     </div>
   </div>
-  <Button href={SITE.financingUrl} variant="outline" size="lg" external>Check your rate</Button>
+  {SITE.financingUrl && <Button href={SITE.financingUrl} variant="outline" size="lg" external>Check your rate</Button>}
 </div>

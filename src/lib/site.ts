@@ -14,7 +14,7 @@ export const SITE = {
   // Web3Forms access key (web3forms.com). Public by design: it only lets this form email
   // the address the key was created with. Leads go to that inbox.
   web3formsKey: "", // [KEY] paste the access key here
-  financingUrl: "#", // [LINK] Acorn Finance page
+  financingUrl: "", // [LINK] Acorn Finance page; the "Check your rate" button stays hidden until this is set
   url: "https://turnersdecks.com", // [DOMAIN] update when known
 };
 

@@ -1,7 +1,7 @@
 // "Get a free estimate" form (React island). Emails the lead through Web3Forms.
-import { useState, type ComponentProps, type FormEvent } from "react";
+import { useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Button, Honeypot, Input, Label, Textarea } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { quoteSchema, submitLead } from "@/lib/quote";
 
 const selectCls =
@@ -11,6 +11,8 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [serverError, setServerError] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  useFocusFirstError(formRef, errors);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,6 +25,7 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
       return;
     }
     setErrors({});
+    setServerError("");
     setStatus("sending");
     try {
       await submitLead({ source: "quote_form", ...parsed.data, company: data.company ?? "" });
@@ -46,13 +49,13 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
   const field = (name: string, label: string, props: ComponentProps<"input"> = {}) => (
     <div>
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} className="mt-1.5 h-11 text-base" aria-invalid={!!errors[name]} {...props} />
-      {errors[name] && <p className="mt-1 text-sm text-destructive">{errors[name]}</p>}
+      <Input id={name} name={name} className="mt-1.5 h-11 text-base" aria-invalid={!!errors[name]} aria-describedby={errors[name] ? `${name}-error` : undefined} {...props} />
+      <FieldError id={`${name}-error`} message={errors[name]} />
     </div>
   );
 
   return (
-    <form onSubmit={onSubmit} noValidate className="relative space-y-5 rounded-xl border bg-card p-6 shadow-card md:p-8">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="relative space-y-5 rounded-xl border bg-card p-6 shadow-card md:p-8">
       <Honeypot />
       <div className="grid gap-5 sm:grid-cols-2">
         {field("first_name", "First name", { autoComplete: "given-name" })}
@@ -62,13 +65,13 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
         {field("zip", "Zip code", { inputMode: "numeric", maxLength: 5, autoComplete: "postal-code" })}
         <div>
           <Label htmlFor="project_type">Project type</Label>
-          <select id="project_type" name="project_type" defaultValue={defaultProject ?? ""} className={`mt-1.5 ${selectCls}`}>
+          <select id="project_type" name="project_type" defaultValue={defaultProject ?? ""} className={`mt-1.5 ${selectCls}`} aria-invalid={!!errors["project_type"]} aria-describedby={errors["project_type"] ? "project_type-error" : undefined}>
             <option value="" disabled>Choose one</option>
             <option>New deck</option>
             <option>Deck replacement</option>
             <option>Pool deck</option>
           </select>
-          {errors["project_type"] && <p className="mt-1 text-sm text-destructive">{errors["project_type"]}</p>}
+          <FieldError id="project_type-error" message={errors["project_type"]} />
         </div>
         {field("approx_size", "Approximate size (optional)", { placeholder: "e.g. 12 x 16 ft" })}
         <div>
@@ -85,7 +88,7 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
         <Label htmlFor="notes">Notes (optional)</Label>
         <Textarea id="notes" name="notes" rows={4} maxLength={2000} className="mt-1.5 text-base" placeholder="Tell us about your yard, timeline, or anything else." />
       </div>
-      {status === "error" && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
+      {status === "error" && <SendError message={serverError} />}
       <Button type="submit" variant="cta" size="lg" className="w-full" disabled={status === "sending"}>
         {status === "sending" ? "Sending…" : "Request My Free Estimate"}
       </Button>

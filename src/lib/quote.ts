@@ -44,7 +44,7 @@ export const leadSchema = contactSchema.extend({
 
 export type Lead = z.input<typeof leadSchema>;
 
-const FAILED = "Something went wrong sending your request. Please try again or call us.";
+const FAILED = "We couldn't send your request. Please try again, or call us and we'll take it over the phone.";
 
 /** Emails the lead to Turner's Decks through Web3Forms. */
 export async function submitLead(lead: Lead): Promise<void> {

@@ -1,6 +1,7 @@
 // Small form primitives for the React islands (same classes as the Lovable shadcn versions).
-import type { ComponentProps } from "react";
+import { useEffect, type ComponentProps, type RefObject } from "react";
 import { buttonVariants, cn, type ButtonSize, type ButtonVariant } from "@/lib/utils";
+import { SITE } from "@/lib/site";
 
 export function Button({ className, variant, size, type = "button", ...props }: ComponentProps<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
   return <button type={type} className={cn(buttonVariants({ variant, size }), className)} {...props} />;
@@ -42,6 +43,31 @@ export function Progress({ value, className, ...props }: ComponentProps<"div"> &
   return (
     <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)} className={cn("relative h-2 w-full overflow-hidden rounded-full bg-primary/20", className)} {...props}>
       <div className="h-full w-full flex-1 bg-primary transition-all" style={{ transform: `translateX(-${100 - value}%)` }} />
+    </div>
+  );
+}
+
+/** After a failed submit, move focus to the first invalid field so it's on screen and announced. */
+export function useFocusFirstError(ref: RefObject<HTMLElement | null>, errors: object) {
+  useEffect(() => {
+    if (!Object.keys(errors).length) return;
+    ref.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [errors, ref]);
+}
+
+/** Inline field error, linked to its input through aria-describedby={id}. */
+export function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return <p id={id} className="mt-1 text-sm text-destructive">{message}</p>;
+}
+
+/** Send failure with a tap-to-call fallback, so a lead is never lost to a network error. */
+export function SendError({ message }: { message: string }) {
+  if (!message) return null;
+  return (
+    <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive" role="alert">
+      <p>{message}</p>
+      <a href={SITE.phoneHref} className="mt-1 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">Call {SITE.phone}</a>
     </div>
   );
 }

@@ -43,7 +43,7 @@ const faqs = townFaqs(town.name);
   <section class="section container-site">
     <SectionHeading eyebrow="Permits" title={`Deck Permits in ${town.name}`} intro="Here's how we handle the permit for your deck, in four steps." />
     <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
-    <p class="mt-4 text-sm text-muted-foreground">[PLACEHOLDER: {town.name}-specific permit notes, e.g. township office and typical timeline]</p>
+    {/* [CONTENT] town-specific permit notes (township office, typical timeline) */}
   </section>
 
   <section class="section bg-secondary">
@@ -58,7 +58,7 @@ const faqs = townFaqs(town.name);
     <p class="mt-4 max-w-2xl text-muted-foreground">
       We've been building decks around Douglassville since {SITE.since}, and {town.name} is well within our regular service area.
     </p>
-    <p class="mt-2 text-sm text-muted-foreground">[PLACEHOLDER: local details, neighborhoods, or notes about building in {town.name}]</p>
+    {/* [CONTENT] local details, neighborhoods, or notes about building in this town */}
   </section>
 
   <section class="section bg-secondary">

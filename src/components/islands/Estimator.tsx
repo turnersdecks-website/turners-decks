@@ -1,8 +1,8 @@
 // Deck cost estimator (React island). Pricing lives in lib/pricing.ts and
 // question wording in lib/estimator-questions.ts; this file is only the UI.
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Plus, Trash2 } from "lucide-react";
-import { Button, Honeypot, Input, Label, LinkButton, Progress, Textarea } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { contactSchema, submitLead } from "@/lib/quote";
 import { estimateProject, formatUSD, type EstimateInput, type EstimateResult } from "@/lib/pricing";
 import { DISCLAIMERS, INCLUDED, OPTIONS, PRICE_FACTORS, labelFor, projectSummary, type Opt } from "@/lib/estimator-questions";
@@ -50,6 +50,8 @@ export default function Estimator() {
   const [a, setA] = useState<EstimateInput>(DEFAULTS);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Errs>({});
+  const rootRef = useRef<HTMLDivElement>(null);
+  useFocusFirstError(rootRef, errors);
   const [sending, setSending] = useState(false);
   const [serverError, setServerError] = useState("");
   const [done, setDone] = useState<EstimateResult | null>(null);
@@ -121,7 +123,7 @@ export default function Estimator() {
   const pct = done ? 100 : ((step + 1) / (STEPS.length + 1)) * 100;
 
   return (
-    <div>
+    <div ref={rootRef}>
         <div className="mt-8">
           <div className="mb-2 flex justify-between text-sm text-muted-foreground">
             <span>{done ? "Your estimate" : `Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}</span>
@@ -153,6 +155,7 @@ export default function Estimator() {
                           <div key={d} className="w-32">
                             <Label htmlFor={`s${idx}-${d}`}>{d === "width" ? "Width (ft)" : "Depth (ft)"}</Label>
                             <Input id={`s${idx}-${d}`} type="number" inputMode="decimal" min={3} max={100} value={s[d] || ""} className="mt-1 h-11"
+                              aria-invalid={!!errors.sections && !(s[d] >= 3 && s[d] <= 100)} aria-describedby={errors.sections ? "sections-error" : undefined}
                               onChange={(e) => set({ sections: a.sections.map((x, j) => (j === idx ? { ...x, [d]: Number(e.target.value) } : x)) })} />
                           </div>
                         ))}
@@ -161,7 +164,7 @@ export default function Estimator() {
                         )}
                       </div>
                     ))}
-                    {errors.sections && <p className="text-sm text-destructive" role="alert">{errors.sections}</p>}
+                    <FieldError id="sections-error" message={errors.sections} />
                     {a.sections.length < 5 && (
                       <Button type="button" variant="outline" size="sm" onClick={() => set({ sections: [...a.sections, { width: 0, depth: 0 }] })}><Plus className="size-4" /> Add a section</Button>
                     )}
@@ -180,8 +183,8 @@ export default function Estimator() {
                   <Choice k="townhouse" label="Is this a townhouse or rowhome?" a={a} set={set} />
                   <div>
                     <Label htmlFor="zip" className="font-heading font-semibold text-primary">Project ZIP code</Label>
-                    <Input id="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" value={a.zip} onChange={(e) => set({ zip: e.target.value.replace(/\D/g, "") })} className="mt-1.5 h-11 w-40" aria-invalid={!!errors.zip} />
-                    {errors.zip && <p className="mt-1 text-sm text-destructive" role="alert">{errors.zip}</p>}
+                    <Input id="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" value={a.zip} onChange={(e) => set({ zip: e.target.value.replace(/\D/g, "") })} className="mt-1.5 h-11 w-40" aria-invalid={!!errors.zip} aria-describedby={errors.zip ? "zip-error" : undefined} />
+                    <FieldError id="zip-error" message={errors.zip} />
                   </div>
                   <Choice k="hoa" label="Does the property have an HOA?" a={a} set={set} cols={3} />
                   <Choice k="historic" label="Is it in a historic district?" a={a} set={set} cols={3} />
@@ -203,8 +206,8 @@ export default function Estimator() {
                       <div>
                         <Label htmlFor="rlf" className="font-heading font-semibold text-primary">Railing length in feet (optional)</Label>
                         <p className="text-sm text-muted-foreground">Leave blank and we'll estimate it from your deck size. Our estimate: about {result.railingLf} ft.</p>
-                        <Input id="rlf" type="number" min={0} max={1000} value={a.railingLf ?? ""} onChange={(e) => set({ railingLf: e.target.value === "" ? undefined : Number(e.target.value) })} className="mt-1.5 h-11 w-40" />
-                        {errors.railingLf && <p className="mt-1 text-sm text-destructive" role="alert">{errors.railingLf}</p>}
+                        <Input id="rlf" type="number" min={0} max={1000} value={a.railingLf ?? ""} onChange={(e) => set({ railingLf: e.target.value === "" ? undefined : Number(e.target.value) })} className="mt-1.5 h-11 w-40" aria-invalid={!!errors.railingLf} aria-describedby={errors.railingLf ? "rlf-error" : undefined} />
+                        <FieldError id="rlf-error" message={errors.railingLf} />
                       </div>
                       <Choice k="railingStyle" label="Railing style" a={a} set={set} />
                     </>
@@ -308,8 +311,8 @@ export default function Estimator() {
                     {([["first_name", "First name", "given-name", "text"], ["last_name", "Last name", "family-name", "text"], ["email", "Email", "email", "email"], ["phone", "Phone", "tel", "tel"]] as const).map(([n, l, ac, t]) => (
                       <div key={n}>
                         <Label htmlFor={`e-${n}`}>{l}</Label>
-                        <Input id={`e-${n}`} name={n} type={t} autoComplete={ac} className="mt-1.5 h-11 text-base" aria-invalid={!!errors[n]} />
-                        {errors[n] && <p className="mt-1 text-sm text-destructive" role="alert">{errors[n]}</p>}
+                        <Input id={`e-${n}`} name={n} type={t} autoComplete={ac} className="mt-1.5 h-11 text-base" aria-invalid={!!errors[n]} aria-describedby={errors[n] ? `e-${n}-error` : undefined} />
+                        <FieldError id={`e-${n}-error`} message={errors[n]} />
                       </div>
                     ))}
                     <div className="sm:col-span-2">
@@ -335,7 +338,7 @@ export default function Estimator() {
                     <label className="flex items-center gap-3 sm:col-span-2"><input type="checkbox" name="financing" className="size-5" /> Send me financing information</label>
                   </div>
                   <p className="text-xs text-muted-foreground">We only use your information to follow up on this project. We never sell it.</p>
-                  {serverError && <p className="text-sm text-destructive" role="alert">{serverError}</p>}
+                  <SendError message={serverError} />
                   <Button type="submit" variant="cta" size="lg" className="w-full" disabled={sending}>{sending ? "Calculating…" : "Show My Price Range"}</Button>
                 </form>
               )}
