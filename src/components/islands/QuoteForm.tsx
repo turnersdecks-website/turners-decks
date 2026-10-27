@@ -40,10 +40,10 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
   if (status === "done") {
     return (
       <div className="rounded-xl border bg-card p-8 text-center shadow-card" role="status">
-        <CheckCircle2 className="mx-auto size-12 text-cedar" />
+        <CheckCircle2 className="mx-auto size-12 text-stone" />
         <h3 className="mt-4 text-2xl font-semibold">Thanks, we got it.</h3>
         <p className="mt-2 text-muted-foreground">{SITE.ownerFirst} will call you {SITE.responseTime} to set up your free on-site estimate.</p>
-        <p className="mt-4 text-muted-foreground">Need us sooner? <a href={SITE.phoneHref} className="inline-flex min-h-11 items-center font-semibold text-cedar underline underline-offset-4">Call {SITE.phone}</a></p>
+        <p className="mt-4 text-muted-foreground">Need us sooner? <a href={SITE.phoneHref} className="inline-flex min-h-11 items-center font-semibold text-stone underline underline-offset-4">Call {SITE.phone}</a></p>
       </div>
     );
   }
