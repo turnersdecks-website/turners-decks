@@ -1,24 +1,30 @@
 ---
-import { ClipboardCheck, Hammer, ShieldCheck } from "@lucide/astro";
+// Why us: a real framing photo beside three plain statements. The photo does the
+// persuading; the list just says what's true.
+import Photo from "./Photo.astro";
+import { PHOTO } from "@/lib/photos";
 import { SITE } from "@/lib/site";
 
 const items = [
-  { icon: Hammer, title: "Built by carpenters", body: `Founded by professional carpenter ${SITE.owner} in ${SITE.since}. No sales teams, just people who build decks.` },
-  { icon: ClipboardCheck, title: "Permits handled", body: "Requirements review, the application, township approval, and inspections. We handle all of it." },
-  { icon: ShieldCheck, title: "Real warranty", body: "A 12-month workmanship warranty, plus manufacturer warranties of up to 50 years depending on material." },
+  { title: "Built by carpenters", body: `Founded by professional carpenter ${SITE.owner} in ${SITE.since}. No sales team, just people who build decks.` },
+  { title: "Permits handled", body: "Requirements review, the application, township approval, and inspections. We handle all of it." },
+  { title: "Real warranty", body: "A 12-month workmanship warranty, plus manufacturer warranties of up to 50 years depending on material." },
 ];
 ---
 
-<div class="grid gap-6 md:grid-cols-3">
-  {
-    items.map(({ icon: Icon, title, body }) => (
-      <div class="rounded-xl border bg-card p-7">
-        <span class="inline-flex size-12 items-center justify-center rounded-lg bg-accent text-accent-blue">
-          <Icon class="size-6" />
-        </span>
-        <h3 class="mt-5 text-lg font-semibold">{title}</h3>
-        <p class="mt-2 text-muted-foreground">{body}</p>
-      </div>
-    ))
-  }
+<div class="grid items-center gap-10 md:grid-cols-2 lg:gap-16">
+  <figure>
+    <Photo photo={PHOTO.framing} sizes="(min-width: 768px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-lg object-cover" />
+    <figcaption class="mt-3 text-sm text-muted-foreground">Posts, beams, and joists on one of our elevated decks, before the decking goes on.</figcaption>
+  </figure>
+  <ul>
+    {
+      items.map(({ title, body }) => (
+        <li class="border-t border-primary/15 py-6 first:border-t-0 first:pt-0 last:pb-0">
+          <h3 class="text-xl font-semibold">{title}</h3>
+          <p class="mt-2 text-muted-foreground">{body}</p>
+        </li>
+      ))
+    }
+  </ul>
 </div>

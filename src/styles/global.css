@@ -6,8 +6,10 @@
 
 /*
  * Turner's Decks design system.
- * Brand: navy #1D3058 (primary), steel blue #37578C (buttons/accents),
- * slate #68708A, light gray, white, gold #D1A648 (review stars only).
+ * Navy #1D3058 carries the brand (headings, footer, CTA band). Cedar #A34D16 is the
+ * one warm accent: primary buttons, links, icons, small labels. Never set cedar text
+ * on navy (2.3:1). Neutrals are warm off-whites, like sanded lumber, not cool grays.
+ * Steel blue #37578C is kept only for focus rings. Gold #D1A648 is for review stars only.
  */
 
 @theme inline {
@@ -32,7 +34,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-blue: var(--accent-blue);
+  --color-cedar: var(--cedar);
+  --color-cedar-deep: var(--cedar-deep);
+  /* Legacy alias: Estimator.tsx still uses accent-blue classes. Remove once it moves to cedar. */
+  --color-accent-blue: var(--cedar);
   --color-slate: var(--slate);
   --color-star: var(--star);
   --color-destructive: var(--destructive);
@@ -47,29 +52,31 @@
 
 :root {
   --radius: 0.5rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.99 0.006 80);         /* warm off-white */
   --foreground: oklch(0.29 0.07 264);
-  --card: oklch(1 0 0);
+  --card: oklch(0.997 0.003 80);
   --card-foreground: oklch(0.29 0.07 264);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.997 0.003 80);
   --popover-foreground: oklch(0.29 0.07 264);
   --primary: oklch(0.31 0.075 264);          /* navy #1D3058 */
-  --primary-foreground: oklch(1 0 0);
-  --accent-blue: oklch(0.46 0.09 259);        /* steel blue #37578C */
+  --primary-foreground: oklch(0.995 0.004 80);
+  --cedar: oklch(0.52 0.13 48);               /* #A34D16: 5.7:1 with light text, 5.6:1 on background */
+  --cedar-deep: oklch(0.46 0.12 45);          /* #8C3D12: hover/pressed */
+  --steel: oklch(0.46 0.09 259);              /* steel blue #37578C: focus rings only */
   --slate: oklch(0.54 0.035 270);             /* #68708A */
   --star: oklch(0.75 0.12 83);                /* gold #D1A648 */
-  --secondary: oklch(0.965 0.006 260);        /* light gray */
+  --secondary: oklch(0.965 0.014 78);         /* warm paper */
   --secondary-foreground: oklch(0.31 0.075 264);
-  --muted: oklch(0.965 0.006 260);
-  --muted-foreground: oklch(0.54 0.035 270);
-  --accent: oklch(0.93 0.02 260);
+  --muted: oklch(0.965 0.014 78);
+  --muted-foreground: oklch(0.5 0.03 265);    /* 5.4:1 on paper */
+  --accent: oklch(0.94 0.022 72);
   --accent-foreground: oklch(0.31 0.075 264);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.01 260);
+  --border: oklch(0.9 0.016 75);
   --input: oklch(0.62 0.025 262);           /* form field borders: 3.6:1 on white (WCAG 1.4.11) */
-  --ring: oklch(0.46 0.09 259);
-  --shadow-cta: 0 8px 20px -8px color-mix(in oklab, var(--accent-blue) 60%, transparent);
+  --ring: var(--steel);
+  --shadow-cta: 0 8px 20px -8px color-mix(in oklab, var(--cedar) 55%, transparent);
   --shadow-card: 0 1px 2px color-mix(in oklab, var(--primary) 6%, transparent),
     0 8px 24px -12px color-mix(in oklab, var(--primary) 18%, transparent);
 }
@@ -119,7 +126,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-accent-blue);
+  color: var(--color-cedar);
 }
 
 @utility hero-overlay {

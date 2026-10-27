@@ -15,8 +15,8 @@ const H = `h${level}` as const;
         <ul class="mt-2">
           {TOWNS.filter((t) => t.county === c).map((t) => (
             <li>
-              <a href={`/deck-builder-in-${t.slug}-pa`} class="inline-flex min-h-11 items-center gap-1.5 text-foreground hover:text-accent-blue">
-                <MapPin class="size-4 shrink-0 text-accent-blue" aria-hidden="true" /> {t.name}
+              <a href={`/deck-builder-in-${t.slug}-pa`} class="inline-flex min-h-11 items-center gap-1.5 text-foreground hover:text-cedar">
+                <MapPin class="size-4 shrink-0 text-cedar" aria-hidden="true" /> {t.name}
               </a>
             </li>
           ))}

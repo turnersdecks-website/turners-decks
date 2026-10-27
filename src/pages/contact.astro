@@ -18,10 +18,10 @@ import { localBusinessSchema } from "@/lib/seo";
         <h1 class="mt-2 text-4xl font-bold md:text-5xl">Get a free estimate</h1>
         <p class="mt-4 text-lg text-muted-foreground">Tell us about your project and we'll set up a free on-site visit.</p>
         <ul class="mt-8 space-y-3">
-          <li><a href={SITE.phoneHref} class="inline-flex min-h-11 items-center gap-3 font-semibold hover:text-accent-blue"><Phone class="size-5 shrink-0 text-accent-blue" aria-hidden="true" /> {SITE.phone}</a></li>
-          <li><a href={`mailto:${SITE.email}`} class="inline-flex min-h-11 items-center gap-3 hover:text-accent-blue"><Mail class="size-5 shrink-0 text-accent-blue" aria-hidden="true" /> {SITE.email}</a></li>
-          <li class="flex gap-3"><MapPin class="size-5 shrink-0 text-accent-blue" aria-hidden="true" /> {SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</li>
-          <li class="flex gap-3"><Clock class="size-5 shrink-0 text-accent-blue" aria-hidden="true" /> {SITE.hours}</li>
+          <li><a href={SITE.phoneHref} class="inline-flex min-h-11 items-center gap-3 font-semibold hover:text-cedar"><Phone class="size-5 shrink-0 text-cedar" aria-hidden="true" /> {SITE.phone}</a></li>
+          <li><a href={`mailto:${SITE.email}`} class="inline-flex min-h-11 items-center gap-3 hover:text-cedar"><Mail class="size-5 shrink-0 text-cedar" aria-hidden="true" /> {SITE.email}</a></li>
+          <li class="flex gap-3"><MapPin class="size-5 shrink-0 text-cedar" aria-hidden="true" /> {SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</li>
+          <li class="flex gap-3"><Clock class="size-5 shrink-0 text-cedar" aria-hidden="true" /> {SITE.hours}</li>
         </ul>
       </div>
       <QuoteForm client:load />

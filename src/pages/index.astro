@@ -44,7 +44,7 @@ import { SITE } from "@/lib/site";
         New decks, replacements, and pool decks across Berks, Montgomery, and Chester Counties. Built by carpenters, with every permit handled for you.
       </p>
       <div class="mt-6 flex flex-wrap gap-3">
-        <Button href="/contact" variant="light" size="lg">Get a Free Estimate <ArrowRight aria-hidden="true" /></Button>
+        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate <ArrowRight aria-hidden="true" /></Button>
         <Button href="/estimator" variant="outline-light" size="lg"><Calculator aria-hidden="true" /> Try the Price Estimator</Button>
       </div>
       <p class="mt-4 text-base text-primary-foreground/85">
@@ -62,13 +62,13 @@ import { SITE } from "@/lib/site";
   </section>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="What we build" title="Three things, done well" />
+    <SectionHeading title="Three things, done well" />
     <div class="mt-10"><ServiceCards /></div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="Why Turner's Decks" title="Built by carpenters, not a sales team" />
+      <SectionHeading title="Built by carpenters, not a sales team" />
       <div class="mt-10"><WhyUsGrid /></div>
     </div>
   </section>
@@ -76,8 +76,8 @@ import { SITE } from "@/lib/site";
   <section class="section container-site">
     <div class="grid items-center gap-10 md:grid-cols-2">
       <div>
-        <SectionHeading eyebrow="Before & after" title="From worn out to built to last" intro="Drag the slider to see a tired wood deck replaced with low-maintenance composite." />
-        <Button href="/gallery" variant="cta" size="lg" class="mt-8">See More Projects</Button>
+        <SectionHeading title="From worn out to built to last" intro="Drag the slider to see a tired wood deck replaced with low-maintenance composite." />
+        <Button href="/gallery" variant="outline" size="lg" class="mt-8">See More Projects</Button>
       </div>
       <BeforeAfterSlider before={PHOTO.replacementBefore2} after={PHOTO.replacementSkirt} alt="Deck replacement" />
     </div>
@@ -87,19 +87,19 @@ import { SITE } from "@/lib/site";
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="Service areas" title="Within about 30 miles of Douglassville" />
+      <SectionHeading title="Within about 30 miles of Douglassville" />
       <div class="mt-10"><ServiceAreasList /></div>
     </div>
   </section>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="Reviews" title="What customers say" center />
+    <SectionHeading title="What customers say" center />
     <div class="mt-10"><GoogleReviews /></div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="How it works" title="Our process, in four steps" />
+      <SectionHeading title="Our process, in four steps" />
       <div class="mt-10"><ProcessSteps /></div>
     </div>
   </section>

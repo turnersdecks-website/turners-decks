@@ -15,7 +15,7 @@ export const buttonVariants = cva(
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        cta: "bg-accent-blue text-primary-foreground font-semibold shadow-cta hover:bg-primary",
+        cta: "bg-cedar text-primary-foreground font-semibold shadow-cta hover:bg-cedar-deep",
         "outline-light":
           "border border-primary-foreground/60 text-primary-foreground font-semibold hover:bg-primary-foreground hover:text-primary",
         light: "bg-primary-foreground text-primary font-semibold hover:bg-secondary",
