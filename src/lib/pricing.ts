@@ -277,7 +277,7 @@ export function estimateProject(i: EstimateInput, cfg: P = PRICING): EstimateRes
   flag(i.historic === "yes", "Historic district");
   flag(i.privacyWall === "screen", "Custom privacy screen");
   flag(i.shape === "other", "Custom project shape");
-  flag(i.projectType === "expansion", "Expansion — integration with existing deck");
+  flag(i.projectType === "expansion", "Expansion: tying into the existing deck");
   flag(serviceArea === "outside", "Outside the normal service area");
 
   const unsureCount = [

@@ -1,9 +1,10 @@
-// Deck cost estimator (React island). Pricing lives in lib/pricing.ts and
+// Deck price estimator (React island). Pricing lives in lib/pricing.ts and
 // question wording in lib/estimator-questions.ts; this file is only the UI.
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, Phone, Plus, Trash2 } from "lucide-react";
 import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { contactSchema, submitLead } from "@/lib/quote";
+import { SITE } from "@/lib/site";
 import { estimateProject, formatUSD, type EstimateInput, type EstimateResult } from "@/lib/pricing";
 import { DISCLAIMERS, INCLUDED, OPTIONS, PRICE_FACTORS, labelFor, projectSummary, type Opt } from "@/lib/estimator-questions";
 
@@ -305,7 +306,7 @@ export default function Estimator() {
                           ? "Your project is near the edge of our service area. Availability may depend on project size and location."
                           : "Your project appears to fall within our typical service and project range."}
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">Tell us where to send it and your full price range and project summary will appear on the next screen.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Your price range and project summary appear on the next screen. {SITE.ownerFirst} gets a copy, to follow up and confirm the price at a free site visit. No sales team, and we never share your details.</p>
                   </div>
                   <div className="grid gap-5 sm:grid-cols-2">
                     {([["first_name", "First name", "given-name", "text"], ["last_name", "Last name", "family-name", "text"], ["email", "Email", "email", "email"], ["phone", "Phone", "tel", "tel"]] as const).map(([n, l, ac, t]) => (
@@ -339,7 +340,7 @@ export default function Estimator() {
                   </div>
                   <p className="text-xs text-muted-foreground">We only use your information to follow up on this project. We never sell it.</p>
                   <SendError message={serverError} />
-                  <Button type="submit" variant="cta" size="lg" className="w-full" disabled={sending}>{sending ? "Calculating…" : "Show My Price Range"}</Button>
+                  <Button type="submit" variant="cta" size="lg" className="w-full" disabled={sending}>{sending ? "Sending…" : "Show My Price Range"}</Button>
                 </form>
               )}
 
@@ -381,10 +382,10 @@ function Result({ a, r }: { a: EstimateInput; r: EstimateResult }) {
         )}
         <p className="mx-auto mt-5 max-w-2xl text-sm text-muted-foreground">{DISCLAIMERS.primary}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <LinkButton href="/contact" variant="cta" size="lg">Request a Site Visit</LinkButton>
+          <LinkButton href={SITE.phoneHref} variant="cta" size="lg"><Phone className="size-4" aria-hidden="true" /> Call {SITE.phone}</LinkButton>
           <LinkButton href="/gallery" variant="outline" size="lg">See Our Work</LinkButton>
         </div>
-        <p className="mt-4 text-sm text-muted-foreground">We have your details and will be in touch soon.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{SITE.ownerFirst} has your details and will reach out {SITE.responseTime} to book your free site visit. Want it sooner? Give us a call.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

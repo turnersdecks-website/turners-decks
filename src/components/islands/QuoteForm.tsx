@@ -3,6 +3,7 @@ import { useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, FieldError, Honeypot, Input, Label, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { quoteSchema, submitLead } from "@/lib/quote";
+import { SITE } from "@/lib/site";
 
 const selectCls =
   "flex h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -41,7 +42,8 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
       <div className="rounded-xl border bg-card p-8 text-center shadow-card" role="status">
         <CheckCircle2 className="mx-auto size-12 text-accent-blue" />
         <h3 className="mt-4 text-2xl font-semibold">Thanks, we got it.</h3>
-        <p className="mt-2 text-muted-foreground">We'll reach out shortly to set up your free on-site estimate.</p>
+        <p className="mt-2 text-muted-foreground">{SITE.ownerFirst} will call you {SITE.responseTime} to set up your free on-site estimate.</p>
+        <p className="mt-4 text-muted-foreground">Need us sooner? <a href={SITE.phoneHref} className="inline-flex min-h-11 items-center font-semibold text-accent-blue underline underline-offset-4">Call {SITE.phone}</a></p>
       </div>
     );
   }

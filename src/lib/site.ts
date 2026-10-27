@@ -3,6 +3,8 @@
 export const SITE = {
   name: "Turner's Decks",
   owner: "Pat Turner",
+  ownerFirst: "Pat",
+  responseTime: "within one business day", // [CONFIRM] promised in form success messages
   since: 2018,
   phone: "(484) 824-0373",
   phoneHref: "tel:+14848240373",
@@ -74,7 +76,7 @@ export const TOWNS: { slug: string; name: string; county: County }[] = [
 export const findTown = (slug: string) => TOWNS.find((t) => t.slug === slug);
 
 export const PROCESS_STEPS = [
-  { title: "Free on-site estimate", body: "We come out, measure, and talks through what you want and what it'll cost." },
+  { title: "Free on-site estimate", body: "We come out, measure, and talk through what you want and what it'll cost." },
   { title: "Design & permits", body: "We finalize the plan and handle the permit application and township approval." },
   { title: "The build", body: "Our carpenters build your deck to the plan, with no sales team in the middle." },
   { title: "Inspection & walkthrough", body: "We schedule the final inspection and walk the finished deck with you." },
