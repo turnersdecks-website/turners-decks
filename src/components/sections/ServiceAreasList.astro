@@ -2,18 +2,21 @@
 import { MapPin } from "@lucide/astro";
 import { TOWNS, type County } from "@/lib/site";
 const COUNTIES: County[] = ["Berks", "Montgomery", "Chester"];
+interface Props { level?: 2 | 3 }
+const { level = 3 } = Astro.props;
+const H = `h${level}` as const;
 ---
 
 <div class="grid gap-8 md:grid-cols-3">
   {
     COUNTIES.map((c) => (
       <div>
-        <h3 class="font-heading text-lg font-semibold">{c} County</h3>
-        <ul class="mt-3 space-y-2">
+        <H class="font-heading text-lg font-semibold">{c} County</H>
+        <ul class="mt-2">
           {TOWNS.filter((t) => t.county === c).map((t) => (
             <li>
-              <a href={`/deck-builder-in-${t.slug}-pa`} class="inline-flex items-center gap-1.5 text-foreground hover:text-accent-blue">
-                <MapPin class="size-4 text-accent-blue" /> {t.name}
+              <a href={`/deck-builder-in-${t.slug}-pa`} class="inline-flex min-h-11 items-center gap-1.5 text-foreground hover:text-stone">
+                <MapPin class="size-4 shrink-0 text-stone" aria-hidden="true" /> {t.name}
               </a>
             </li>
           ))}

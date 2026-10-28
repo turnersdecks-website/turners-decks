@@ -1,5 +1,5 @@
 ---
-import { ArrowRight, Calculator } from "@lucide/astro";
+import { ArrowRight, Calculator, Phone } from "@lucide/astro";
 import { Picture } from "astro:assets";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Button from "@/components/Button.astro";
@@ -44,9 +44,12 @@ import { SITE } from "@/lib/site";
         New decks, replacements, and pool decks across Berks, Montgomery, and Chester Counties. Built by carpenters, with every permit handled for you.
       </p>
       <div class="mt-6 flex flex-wrap gap-3">
-        <Button href="/contact" variant="light" size="lg">Get a Free Estimate <ArrowRight aria-hidden="true" /></Button>
-        <Button href="/estimator" variant="outline-light" size="lg"><Calculator aria-hidden="true" /> See What It'll Cost</Button>
+        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate <ArrowRight aria-hidden="true" /></Button>
+        <Button href="/estimator" variant="outline-light" size="lg"><Calculator aria-hidden="true" /> Try the Price Estimator</Button>
       </div>
+      <p class="mt-4 text-base text-primary-foreground/85">
+        Rather talk it through? <a href={SITE.phoneHref} class="inline-flex min-h-11 items-center gap-1.5 font-semibold text-primary-foreground underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Phone class="size-4" aria-hidden="true" />Call {SITE.phone}</a>
+      </p>
       <a href="/gallery" class="group mt-7 inline-flex max-w-full items-center gap-4 rounded-md text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <span class="flex shrink-0 gap-2">
           {[PHOTO.groundComposite, PHOTO.replacementDeck, PHOTO.poolDeck].map((photo) => (
@@ -59,13 +62,13 @@ import { SITE } from "@/lib/site";
   </section>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="What we build" title="Three things, done well" />
+    <SectionHeading title="Three things, done well" />
     <div class="mt-10"><ServiceCards /></div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="Why Turner's Decks" title="Built by carpenters, not a sales team" />
+      <SectionHeading title="Built by carpenters, not a sales team" />
       <div class="mt-10"><WhyUsGrid /></div>
     </div>
   </section>
@@ -73,8 +76,8 @@ import { SITE } from "@/lib/site";
   <section class="section container-site">
     <div class="grid items-center gap-10 md:grid-cols-2">
       <div>
-        <SectionHeading eyebrow="Before & after" title="From worn out to built to last" intro="Drag the slider to see a tired wood deck replaced with low-maintenance composite." />
-        <Button href="/gallery" variant="cta" size="lg" class="mt-8">See More Projects</Button>
+        <SectionHeading title="From worn out to built to last" intro="Drag the slider to see a tired wood deck replaced with low-maintenance composite." />
+        <Button href="/gallery" variant="outline" size="lg" class="mt-8">See More Projects</Button>
       </div>
       <BeforeAfterSlider before={PHOTO.replacementBefore2} after={PHOTO.replacementSkirt} alt="Deck replacement" />
     </div>
@@ -84,19 +87,19 @@ import { SITE } from "@/lib/site";
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="Service areas" title="Within about 30 miles of Douglassville" />
+      <SectionHeading title="Within about 30 miles of Douglassville" />
       <div class="mt-10"><ServiceAreasList /></div>
     </div>
   </section>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="Reviews" title="What customers say" center />
+    <SectionHeading title="What customers say" center />
     <div class="mt-10"><GoogleReviews /></div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="How it works" title="Our process, in four steps" />
+      <SectionHeading title="Our process, in four steps" />
       <div class="mt-10"><ProcessSteps /></div>
     </div>
   </section>

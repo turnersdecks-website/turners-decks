@@ -21,20 +21,20 @@ const company = [
       </p>
     </div>
     <div>
-      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Services</h3>
+      <h2 class="font-heading text-sm font-semibold text-primary-foreground">Services</h2>
       <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
         {SERVICES.map((s) => <li><a href={`/services/${s.slug}`} class="hover:text-primary-foreground">{s.title}</a></li>)}
         <li><a href="/estimator" class="hover:text-primary-foreground">Price Estimator</a></li>
       </ul>
     </div>
     <div>
-      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Company</h3>
+      <h2 class="font-heading text-sm font-semibold text-primary-foreground">Company</h2>
       <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
         {company.map(([label, href]) => <li><a href={href} class="hover:text-primary-foreground">{label}</a></li>)}
       </ul>
     </div>
     <div>
-      <h3 class="font-heading text-sm font-semibold text-primary-foreground">Contact</h3>
+      <h2 class="font-heading text-sm font-semibold text-primary-foreground">Contact</h2>
       <ul class="mt-4 space-y-2 text-sm text-primary-foreground/75">
         <li><a href={SITE.phoneHref} class="hover:text-primary-foreground">{SITE.phone}</a></li>
         <li><a href={`mailto:${SITE.email}`} class="hover:text-primary-foreground">{SITE.email}</a></li>

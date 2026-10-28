@@ -27,7 +27,7 @@ const NAV = [
       { label: "Reviews", to: "/reviews" },
     ],
   },
-  { label: "Contact", to: "/contact" },
+  { label: "Contact", to: "/contact", mobileOnly: true },
 ];
 
 const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/, "$1") || "/";
@@ -39,18 +39,18 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
 
     <nav class="hidden items-center gap-0 xl:gap-1 lg:flex" aria-label="Main">
       {
-        NAV.map((item) =>
+        NAV.filter((item) => !item.mobileOnly).map((item) =>
           item.children ? (
             <div class="group relative">
               <a
                 href={item.to}
-                class="flex items-center gap-1 rounded-md px-2 py-2 text-sm font-medium text-foreground hover:text-accent-blue xl:px-3"
+                class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium text-foreground hover:text-stone xl:px-3"
               >
                 {item.label} <ChevronDown class="size-3.5" />
               </a>
               <div class="invisible absolute left-0 top-full min-w-48 rounded-lg border bg-popover p-2 opacity-0 shadow-card transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                 {item.children.map((c) => (
-                  <a href={c.to} class="block rounded-md px-3 py-2 text-sm hover:bg-secondary hover:text-accent-blue">
+                  <a href={c.to} class="block rounded-md px-3 py-2 text-sm hover:bg-secondary hover:text-stone">
                     {c.label}
                   </a>
                 ))}
@@ -60,8 +60,8 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
             <a
               href={item.to}
               class:list={[
-                "rounded-md px-2 py-2 text-sm font-medium hover:text-accent-blue xl:px-3",
-                path === item.to ? "text-accent-blue" : "text-foreground",
+                "whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium hover:text-stone xl:px-3",
+                path === item.to ? "text-stone" : "text-foreground",
               ]}
               aria-current={path === item.to ? "page" : undefined}
             >
@@ -73,15 +73,20 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
     </nav>
 
     <div class="flex items-center gap-2">
-      <a href={SITE.phoneHref} class="hidden items-center gap-1.5 text-sm font-semibold text-primary 2xl:flex">
-        <Phone class="size-4" />
-        {SITE.phone}
+      <a
+        href={SITE.phoneHref}
+        class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:px-2 xl:px-3"
+        aria-label={`Call ${SITE.phone}`}
+      >
+        <Phone class="size-5 lg:size-4" aria-hidden="true" />
+        <span class="lg:hidden">Call</span>
+        <span class="hidden xl:inline">{SITE.phone}</span>
       </a>
-      <Button href="/contact" variant="cta" class="hidden sm:inline-flex">Get a Free Estimate</Button>
+      <Button href="/contact" variant="cta" class="hidden h-11 sm:inline-flex">Get a Free Estimate</Button>
       <button
         type="button"
         id="menu-toggle"
-        class="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-primary hover:bg-accent lg:hidden"
+        class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-primary hover:bg-accent lg:hidden"
         aria-label="Open menu"
         aria-expanded="false"
         aria-controls="mobile-nav"
@@ -108,7 +113,10 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
           </div>
         ))
       }
-      <Button href="/contact" variant="cta" size="lg" class="mt-4">Get a Free Estimate</Button>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button>
+        <Button href={SITE.phoneHref} variant="outline" size="lg"><Phone aria-hidden="true" /> Call {SITE.phone}</Button>
+      </div>
     </nav>
   </div>
 </header>

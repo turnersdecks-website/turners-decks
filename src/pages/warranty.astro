@@ -18,12 +18,12 @@ const items = [
   <section class="section container-site grid gap-6 md:grid-cols-2">
     {items.map(({ icon: Icon, title, body }) => (
       <div class="rounded-xl border bg-card p-8">
-        <Icon class="size-8 text-accent-blue" />
+        <Icon class="size-8 text-stone" />
         <h2 class="mt-4 text-2xl font-semibold">{title}</h2>
         <p class="mt-2 text-muted-foreground">{body}</p>
       </div>
     ))}
-    <p class="text-sm text-muted-foreground md:col-span-2">[PLACEHOLDER: full warranty terms]</p>
+    {/* [CONTENT] full warranty terms */}
   </section>
   <CtaBand />
 </BaseLayout>

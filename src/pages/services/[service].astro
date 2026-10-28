@@ -25,7 +25,7 @@ const c = SERVICE_CONTENT[slug];
 <BaseLayout title={c.metaTitle} description={c.metaDesc}>
   <PageHero eyebrow="Services" title={c.h1} intro={c.intro}>
     <Button href="#quote" variant="cta" size="lg">Get a Free Estimate</Button>
-    <Button href="/estimator" variant="outline" size="lg">See What It'll Cost</Button>
+    <Button href="/estimator" variant="outline" size="lg">Try the Price Estimator</Button>
   </PageHero>
 
   <section class="section container-site grid items-center gap-10 md:grid-cols-2">
@@ -35,7 +35,7 @@ const c = SERVICE_CONTENT[slug];
     <div>
       <SectionHeading title="What's included" />
       <ul class="mt-6 space-y-3">
-        {c.points.map((p) => <li class="flex gap-3"><Check class="mt-0.5 size-5 shrink-0 text-accent-blue" />{p}</li>)}
+        {c.points.map((p) => <li class="flex gap-3"><Check class="mt-0.5 size-5 shrink-0 text-stone" />{p}</li>)}
       </ul>
     </div>
   </section>

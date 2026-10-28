@@ -6,8 +6,10 @@
 
 /*
  * Turner's Decks design system.
- * Brand: navy #1D3058 (primary), steel blue #37578C (buttons/accents),
- * slate #68708A, light gray, white, gold #D1A648 (review stars only).
+ * Navy #1D3058 carries the brand (headings, footer, CTA band). Stone gray #54595F, from
+ * the original turnersdecks.com, is the accent: primary buttons, links, small labels.
+ * Never set stone text on navy (1.6:1). Neutrals are the original site's light grays.
+ * Steel blue #37578C is kept only for focus rings. Gold #D1A648 is for review stars only.
  */
 
 @theme inline {
@@ -32,7 +34,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-blue: var(--accent-blue);
+  --color-stone: var(--stone);
+  --color-stone-deep: var(--stone-deep);
+  /* Legacy alias: Estimator.tsx still uses accent-blue classes. Remove once it moves to stone. */
+  --color-accent-blue: var(--stone);
   --color-slate: var(--slate);
   --color-star: var(--star);
   --color-destructive: var(--destructive);
@@ -41,7 +46,6 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --shadow-cta: var(--shadow-cta);
   --shadow-card: var(--shadow-card);
 }
 
@@ -55,21 +59,22 @@
   --popover-foreground: oklch(0.29 0.07 264);
   --primary: oklch(0.31 0.075 264);          /* navy #1D3058 */
   --primary-foreground: oklch(1 0 0);
-  --accent-blue: oklch(0.46 0.09 259);        /* steel blue #37578C */
+  --stone: oklch(0.45 0.012 250);             /* #54595F: 7:1 with white text */
+  --stone-deep: oklch(0.38 0.012 250);        /* #42464B: hover/pressed */
+  --steel: oklch(0.46 0.09 259);              /* steel blue #37578C: focus rings only */
   --slate: oklch(0.54 0.035 270);             /* #68708A */
   --star: oklch(0.75 0.12 83);                /* gold #D1A648 */
-  --secondary: oklch(0.965 0.006 260);        /* light gray */
+  --secondary: oklch(0.966 0.003 265);        /* #F4F5F7, original section gray */
   --secondary-foreground: oklch(0.31 0.075 264);
-  --muted: oklch(0.965 0.006 260);
-  --muted-foreground: oklch(0.54 0.035 270);
-  --accent: oklch(0.93 0.02 260);
+  --muted: oklch(0.966 0.003 265);
+  --muted-foreground: oklch(0.5 0.03 265);    /* 5.6:1 on section gray */
+  --accent: oklch(0.94 0.006 265);
   --accent-foreground: oklch(0.31 0.075 264);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.01 260);
-  --input: oklch(0.88 0.012 260);
-  --ring: oklch(0.46 0.09 259);
-  --shadow-cta: 0 8px 20px -8px color-mix(in oklab, var(--accent-blue) 60%, transparent);
+  --border: oklch(0.91 0.005 265);
+  --input: oklch(0.62 0.025 262);           /* form field borders: 3.6:1 on white (WCAG 1.4.11) */
+  --ring: var(--steel);
   --shadow-card: 0 1px 2px color-mix(in oklab, var(--primary) 6%, transparent),
     0 8px 24px -12px color-mix(in oklab, var(--primary) 18%, transparent);
 }
@@ -78,8 +83,10 @@
   * {
     border-color: var(--color-border);
   }
-  html {
-    scroll-behavior: smooth;
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   body {
     background-color: var(--color-background);
@@ -117,7 +124,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-accent-blue);
+  color: var(--color-stone);
 }
 
 @utility hero-overlay {
@@ -127,6 +134,15 @@
     color-mix(in oklab, var(--primary) 55%, transparent) 55%,
     color-mix(in oklab, var(--primary) 15%, transparent) 100%
   );
+}
+
+/* Honor the OS "reduce motion" setting everywhere, including third-party animation classes. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Native <details> accordion (replaces the Radix accordion). */

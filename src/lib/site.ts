@@ -3,6 +3,8 @@
 export const SITE = {
   name: "Turner's Decks",
   owner: "Pat Turner",
+  ownerFirst: "Pat",
+  responseTime: "within one business day", // [CONFIRM] promised in form success messages
   since: 2018,
   phone: "(484) 824-0373",
   phoneHref: "tel:+14848240373",
@@ -11,10 +13,7 @@ export const SITE = {
   state: "PA",
   hours: "Mon–Fri 7 AM–6 PM · Sat & Sun 9 AM–5 PM", // matches Google Business Profile
   hic: "PA135647", // PA Home Improvement Contractor number: required on all advertising, including the website
-  // Web3Forms access key (web3forms.com). Public by design: it only lets this form email
-  // the address the key was created with. Leads go to that inbox.
-  web3formsKey: "", // [KEY] paste the access key here
-  financingUrl: "#", // [LINK] Acorn Finance page
+  financingUrl: "", // [LINK] Acorn Finance page; the "Check your rate" button stays hidden until this is set
   url: "https://turnersdecks.com", // [DOMAIN] update when known
 };
 
@@ -74,7 +73,7 @@ export const TOWNS: { slug: string; name: string; county: County }[] = [
 export const findTown = (slug: string) => TOWNS.find((t) => t.slug === slug);
 
 export const PROCESS_STEPS = [
-  { title: "Free on-site estimate", body: "We come out, measure, and talks through what you want and what it'll cost." },
+  { title: "Free on-site estimate", body: "We come out, measure, and talk through what you want and what it'll cost." },
   { title: "Design & permits", body: "We finalize the plan and handle the permit application and township approval." },
   { title: "The build", body: "Our carpenters build your deck to the plan, with no sales team in the middle." },
   { title: "Inspection & walkthrough", body: "We schedule the final inspection and walk the finished deck with you." },
