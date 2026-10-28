@@ -11,7 +11,7 @@ import Estimator from "@/components/islands/Estimator";
   <section class="bg-secondary">
     <div class="container-site max-w-5xl py-10 md:py-16">
       <h1 class="text-3xl font-bold md:text-4xl">Deck price estimator</h1>
-      <p class="mt-2 max-w-2xl text-muted-foreground">What should you realistically budget for your deck? Nine short steps, about 3 minutes. "Not sure" is always fine, and rough measurements are OK. At the end we ask where to reach you, then show your price range.</p>
+      {/* The intro, questions and prices come from the CRM's Published version (the island loads them). */}
       <Estimator client:load />
       <div class="mt-8"><FinancingBlock level={2} /></div>
     </div>

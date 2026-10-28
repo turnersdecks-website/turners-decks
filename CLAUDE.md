@@ -2,18 +2,18 @@
 
 - Static Astro site. Keep pages as `.astro` with no client JavaScript unless a feature truly
   needs it; the only React islands are `QuoteForm` and `Estimator`.
-- Business facts live in `src/lib/site.ts`. Estimator pricing config + engine live in
-  `src/lib/pricing.ts` (tested in `pricing.test.ts`); question wording and disclaimers live in
-  `src/lib/estimator-questions.ts`, so prices and copy are each edited in one place.
-  _Being replaced: both move into the CRM's Estimator settings (`docs/adr/0003`)._
-- Both forms email leads through Web3Forms, posting from the browser (`submitLead` in
-  `src/lib/quote.ts`). The email body is built in `src/lib/lead.ts` (tested in `lead.test.ts`);
-  estimator prices are always computed from the answers there. The access key lives in
-  `SITE.web3formsKey`. It is public by design; do not move it to a server, since Web3Forms
-  server-side submissions need a paid plan.
-  _Being replaced: leads will post to the CRM intake and Web3Forms is removed (`docs/adr/0002`)._
-- There is no backend or database. Keep the site fully static.
-  _Being replaced: a separate CRM app on Cloudflare is coming; the public site stays static (`docs/adr/0001`)._
+- Business facts live in `src/lib/site.ts`. Estimator questions, options, disclaimers and prices
+  live in the CRM's Estimator settings; the estimator island loads the latest Published version
+  (`GET /api/public/estimator`, no prices) and the CRM prices the answers (`docs/adr/0003`). The
+  site has no pricing code: do not add any. Its types and step rules mirror the CRM in
+  `src/lib/estimator-public.ts`, and it never imports `crm/` code.
+- Both forms post leads from the browser to the CRM intake through `src/lib/crm-intake.ts`
+  (payload builders + `submitToCrm`, tested in `crm-intake.test.ts` and against the real intake in
+  `crm/test/intake-contract.test.ts`), with Turnstile and the `website` honeypot
+  (`docs/adr/0002`). Build-time env: `PUBLIC_CRM_URL`, `PUBLIC_TURNSTILE_SITE_KEY`
+  (`.env.example`). Keep the builders free of Astro and browser globals.
+- The CRM is a separate app in `crm/` (Cloudflare Worker + D1, `docs/adr/0001`) with its own
+  rules, dependencies and tests. The public site stays fully static: no server code or database.
 - Town pages come from the `TOWNS` list (one dynamic route). Adding a town is a data change;
   the sitemap picks it up automatically.
 - Google review text lives in `src/lib/reviews.ts`, copied word for word from Google. Do not add

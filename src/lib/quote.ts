@@ -1,4 +1,4 @@
-// Lead validation for the quote form and the estimator, plus the submit call.
+// Contact-field validation for the quote form and the estimator's contact step. Sending is in crm-intake.ts.
 import { z } from "zod";
 
 const phone = z
@@ -21,55 +21,9 @@ export const quoteSchema = contactSchema.extend({
   notes: z.string().trim().max(2000).optional(),
 });
 
-const opt = (max: number) => z.string().trim().max(max).optional();
-
-/** Everything a lead can carry. Estimator prices are computed from `answers`, not sent in. */
-export const leadSchema = contactSchema.extend({
-  source: z.enum(["quote_form", "estimator"]),
-  project_type: opt(60),
-  approx_size: opt(120),
-  material: opt(60),
-  height: opt(60),
-  railing: opt(120),
-  stairs: opt(120),
-  notes: opt(2000),
-  address: opt(200),
-  contact_method: z.enum(["phone", "text", "email"]).optional(),
-  timing: opt(40),
-  wants_financing: z.boolean().optional(),
-  answers: z.record(z.unknown()).optional(),
-  // Honeypot: real visitors never see or fill this field.
-  company: z.string().max(0).optional(),
-});
-
-export type Lead = z.input<typeof leadSchema>;
-
-const FAILED = "We couldn't send your request. Please try again, or call us and we'll take it over the phone.";
-
-/** Emails the lead to Turner's Decks through Web3Forms. */
-export async function submitLead(lead: Lead): Promise<void> {
-  const { buildSubmission, WEB3FORMS_URL } = await import("./lead");
-  const built = buildSubmission(lead);
-  if (!built.ok) {
-    if ("spam" in built) return; // honeypot filled: look successful, send nothing
-    throw new Error(FAILED);
-  }
-  if (!built.payload.access_key) {
-    console.error("Web3Forms access key is missing (SITE.web3formsKey in src/lib/site.ts)");
-    throw new Error(FAILED);
-  }
-  let ok = false;
-  try {
-    const res = await fetch(WEB3FORMS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(built.payload),
-    });
-    const data = (await res.json().catch(() => ({}))) as { success?: boolean; message?: string };
-    ok = res.ok && data.success === true;
-    if (!ok) console.error("Web3Forms rejected the submission", res.status, data.message);
-  } catch (err) {
-    console.error("Web3Forms request failed", err);
-  }
-  if (!ok) throw new Error(FAILED);
+/** Field errors from a failed parse, first message per field. */
+export function fieldErrors(issues: z.ZodIssue[]): Record<string, string> {
+  const errs: Record<string, string> = {};
+  for (const i of issues) errs[String(i.path[0])] ??= i.message;
+  return errs;
 }

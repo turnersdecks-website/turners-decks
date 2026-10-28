@@ -72,12 +72,12 @@ export function SendError({ message }: { message: string }) {
   );
 }
 
-/** Hidden honeypot input. Bots fill it; the server drops those submissions. */
+/** Hidden honeypot input (`website`, the CRM's honeypot). Bots fill it; the CRM tells them it worked and drops it. */
 export function Honeypot() {
   return (
     <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: 1, height: 1, overflow: "hidden" }}>
-      <label htmlFor="hp-company">Company</label>
-      <input id="hp-company" name="company" tabIndex={-1} autoComplete="off" />
+      <label htmlFor="hp-website">Website</label>
+      <input id="hp-website" name="website" tabIndex={-1} autoComplete="off" />
     </div>
   );
 }

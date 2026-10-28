@@ -1,8 +1,10 @@
-// "Get a free estimate" form (React island). Emails the lead through Web3Forms.
+// "Get a free estimate" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
 import { useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, FieldError, Honeypot, Input, Label, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
-import { quoteSchema, submitLead } from "@/lib/quote";
+import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
+import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
+import { fieldErrors, quoteSchema } from "@/lib/quote";
 import { SITE } from "@/lib/site";
 
 const selectCls =
@@ -14,24 +16,35 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
   const [serverError, setServerError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(formRef, errors);
+  const turnstile = useTurnstile();
+  const keys = useRef(new SubmissionKeys());
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     const parsed = quoteSchema.safeParse(data);
     if (!parsed.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of parsed.error.issues) errs[String(issue.path[0])] ??= issue.message;
-      setErrors(errs);
+      setErrors(fieldErrors(parsed.error.issues));
       return;
     }
     setErrors({});
     setServerError("");
     setStatus("sending");
+    const fields = { ...parsed.data, website: data.website ?? "" };
     try {
-      await submitLead({ source: "quote_form", ...parsed.data, company: data.company ?? "" });
+      await submitToCrm(
+        quotePayload(fields, {
+          submissionKey: keys.current.keyFor(fields),
+          turnstileToken: turnstile.token ?? "",
+          href: window.location.href,
+          referrer: document.referrer,
+          viewportWidth: window.innerWidth,
+        }),
+      );
       setStatus("done");
     } catch (err) {
+      console.error("[crm-intake]", err);
+      if (turnstile.token) turnstile.reset();
       setServerError((err as Error).message);
       setStatus("error");
     }
@@ -90,6 +103,7 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
         <Label htmlFor="notes">Notes (optional)</Label>
         <Textarea id="notes" name="notes" rows={4} maxLength={2000} className="mt-1.5 text-base" placeholder="Tell us about your yard, timeline, or anything else." />
       </div>
+      <TurnstileBox boxRef={turnstile.ref} />
       {status === "error" && <SendError message={serverError} />}
       <Button type="submit" variant="cta" size="lg" className="w-full" disabled={status === "sending"}>
         {status === "sending" ? "Sending…" : "Request My Free Estimate"}
