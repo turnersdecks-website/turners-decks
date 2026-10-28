@@ -56,6 +56,7 @@ describe('changing company settings', () => {
       timezone: 'America/New_York',
       owner_alert_emails: 'pat@turnersdecks.com, office@turnersdecks.com',
       texting_enabled: 0,
+      estimate_email_template: expect.stringContaining('{low}'),
     })
   })
 

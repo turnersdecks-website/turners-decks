@@ -28,6 +28,7 @@ it('has exactly the v1 columns', async () => {
     'timezone',
     'owner_alert_emails',
     'texting_enabled',
+    'estimate_email_template', // FLW-200
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })

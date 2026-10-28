@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // Better Auth tables (email + password, admin plugin). Times are epoch ms.
 // App tables are Pine & Gable's (its PLAN.md > Data model), cut to v1: Leads, activity, stage history, Quote files,
@@ -385,7 +385,68 @@ export const companySettings = sqliteTable(
     timezone: text('timezone').notNull(),
     ownerAlertEmails: text('owner_alert_emails'),
     textingEnabled: integer('texting_enabled', { mode: 'boolean' }).notNull().default(false),
+    /** The Estimate email (FLW-200): `{placeholder}`s, and a first line "Subject: ..." becomes the subject. */
+    estimateEmailTemplate: text('estimate_email_template').notNull().default(''),
   },
   // New columns are validated by the server (settings.functions.ts); a CHECK here would force a table rebuild.
   (t) => [check('company_settings_single_row', sql`${t.id} = 1`)],
+)
+
+// Estimator settings (ADR 0003, FLW-200). The draft is the one document the owner edits; `revision` makes saves and
+// publishes compare-and-swap so two tabs never overwrite each other or publish content nobody reviewed. Published
+// versions are append-only: code never updates or deletes a row. The document JSON is validated by
+// src/lib/estimator/document.ts before it is written.
+export const estimatorDraft = sqliteTable(
+  'estimator_draft',
+  {
+    id: integer('id').primaryKey().default(1),
+    documentJson: text('document_json').notNull(),
+    revision: integer('revision').notNull().default(1),
+    updatedAt: updatedAt(),
+    updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [check('estimator_draft_single_row', sql`${t.id} = 1`)],
+)
+
+export const estimatorVersions = sqliteTable('estimator_versions', {
+  version: integer('version').primaryKey(),
+  documentJson: text('document_json').notNull(),
+  /** The draft revision this version was published from (null for the seeded version 1). */
+  draftRevision: integer('draft_revision'),
+  publishedAt: integer('published_at', { mode: 'timestamp_ms' }).notNull(),
+  publishedBy: text('published_by').references(() => user.id, { onDelete: 'set null' }),
+})
+
+// Estimate snapshots (GLOSSARY): what one estimator Form submission showed the Homeowner, frozen. Never updated;
+// one per Form submission. `questions_json` is the Published version's public questions (labels as shown), so a
+// Lead page never needs the old version to explain it.
+export const estimateSnapshots = sqliteTable(
+  'estimate_snapshots',
+  {
+    id: text('id').primaryKey(),
+    leadId: text('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    submissionId: text('submission_id')
+      .notNull()
+      .references(() => formSubmissions.id, { onDelete: 'cascade' }),
+    version: integer('version')
+      .notNull()
+      .references(() => estimatorVersions.version),
+    engineRevision: integer('engine_revision').notNull(),
+    questionsJson: text('questions_json').notNull(),
+    answersJson: text('answers_json').notNull(),
+    defaultedJson: text('defaulted_json').notNull(),
+    lineItemsJson: text('line_items_json').notNull(),
+    flagsJson: text('flags_json').notNull(),
+    low: integer('low').notNull(),
+    mid: integer('mid').notNull(),
+    high: integer('high').notNull(),
+    belowMinimum: integer('below_minimum', { mode: 'boolean' }).notNull(),
+    sqft: real('sqft').notNull(),
+    railingLf: integer('railing_lf').notNull(),
+    serviceArea: text('service_area').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('estimate_snapshots_submission').on(t.submissionId), index('estimate_snapshots_lead').on(t.leadId, t.createdAt)],
 )
