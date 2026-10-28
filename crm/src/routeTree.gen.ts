@@ -22,6 +22,7 @@ import { Route as ApiLeadFilesRouteImport } from './routes/api/lead-files'
 import { Route as StaffLeadsIdRouteImport } from './routes/_staff/leads_.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiLeadFilesIdRouteImport } from './routes/api/lead-files.$id'
+import { Route as ApiPublicEstimatorRouteImport } from './routes/api/public/estimator'
 import { Route as ApiPublicIntakeRouteImport } from './routes/api/public/intake'
 
 const StaffRoute = StaffRouteImport.update({
@@ -88,6 +89,11 @@ const ApiLeadFilesIdRoute = ApiLeadFilesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiLeadFilesRoute,
 } as any)
+const ApiPublicEstimatorRoute = ApiPublicEstimatorRouteImport.update({
+  id: '/api/public/estimator',
+  path: '/api/public/estimator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIntakeRoute = ApiPublicIntakeRouteImport.update({
   id: '/api/public/intake',
   path: '/api/public/intake',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof StaffLeadsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
+  '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
 }
 export interface FileRoutesByTo {
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof StaffLeadsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
+  '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
 }
 export interface FileRoutesById {
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_staff/leads_/$id': typeof StaffLeadsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
+  '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
 }
 export interface FileRouteTypes {
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/api/auth/$'
     | '/api/lead-files/$id'
+    | '/api/public/estimator'
     | '/api/public/intake'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/api/auth/$'
     | '/api/lead-files/$id'
+    | '/api/public/estimator'
     | '/api/public/intake'
   id:
     | '__root__'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_staff/leads_/$id'
     | '/api/auth/$'
     | '/api/lead-files/$id'
+    | '/api/public/estimator'
     | '/api/public/intake'
   fileRoutesById: FileRoutesById
 }
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   ApiLeadFilesRoute: typeof ApiLeadFilesRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPublicEstimatorRoute: typeof ApiPublicEstimatorRoute
   ApiPublicIntakeRoute: typeof ApiPublicIntakeRoute
 }
 
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLeadFilesIdRouteImport
       parentRoute: typeof ApiLeadFilesRoute
     }
+    '/api/public/estimator': {
+      id: '/api/public/estimator'
+      path: '/api/public/estimator'
+      fullPath: '/api/public/estimator'
+      preLoaderRoute: typeof ApiPublicEstimatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/intake': {
       id: '/api/public/intake'
       path: '/api/public/intake'
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   ApiLeadFilesRoute: ApiLeadFilesRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPublicEstimatorRoute: ApiPublicEstimatorRoute,
   ApiPublicIntakeRoute: ApiPublicIntakeRoute,
 }
 export const routeTree = rootRouteImport

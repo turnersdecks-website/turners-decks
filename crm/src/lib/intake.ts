@@ -6,6 +6,7 @@ import { addressKey } from '#/lib/address-key'
 import { toE164 } from '#/lib/phone'
 import { type OutboxEnv, enqueueJob, kickJobs } from '#/lib/outbox'
 import { formAckEnvelope, ownerAlertEnvelope } from '#/lib/outbox-kinds'
+import { type PricedEstimate, estimateEmail, isPricingFailure, priceEstimatorPayload, projectTypeLabel, snapshotInsert, usd } from '#/lib/intake-estimate'
 import { leadCreated } from '#/lib/stage-history.server'
 import { verifyTurnstile } from '#/lib/turnstile'
 
@@ -277,11 +278,24 @@ async function processSubmission(
   if (invalid || !mapped) return markRejected(invalid ?? 'invalid', reject(422, invalid ?? 'invalid'))
 
   try {
+    // FLW-201: an estimator submission is priced against the Published version it names, before any Lead write.
+    let estimate: PricedEstimate | undefined
+    if (trimmedNonEmptyString(payload!.source) === 'estimator') {
+      const priced = await priceEstimatorPayload(db, payload!)
+      if (isPricingFailure(priced)) {
+        const result = reject(422, priced.error)
+        if (priced.errors) result.body.errors = priced.errors
+        return markRejected(priced.error, result)
+      }
+      estimate = priced
+      mapped.zip ??= priced.answers.zip
+      mapped.serviceType ??= projectTypeLabel(priced)
+    }
     // A twin request may create the same Homeowner's Lead between our lookup and our insert: the unique
     // phone/email index refuses ours, and the second pass attaches to theirs.
     for (let attempt = 1; ; attempt++) {
       try {
-        return await upsertLead(db, { submissionId, token, receivedAt, payload: payload!, mapped })
+        return await upsertLead(db, { submissionId, token, receivedAt, payload: payload!, mapped, estimate })
       } catch (err) {
         if (attempt >= 2 || !isUniqueViolation(err)) throw err
       }
@@ -304,14 +318,23 @@ async function upsertLead(
     receivedAt,
     payload,
     mapped,
-  }: { submissionId: string; token: Date; receivedAt: Date; payload: Record<string, unknown>; mapped: LeadFields },
+    estimate,
+  }: {
+    submissionId: string
+    token: Date
+    receivedAt: Date
+    payload: Record<string, unknown>
+    mapped: LeadFields
+    estimate?: PricedEstimate
+  },
 ): Promise<IntakeResult> {
   const { byPhone, byEmail } = await findLeads(db, mapped)
   const existing = byPhone ?? byEmail
   const leadId = existing?.id ?? crypto.randomUUID()
   // Phone and email match different Leads: attach to the phone match (A), copy neither, flag A for review.
   const other = byPhone && byEmail && byPhone.id !== byEmail.id ? byEmail : undefined
-  const body = { ok: true, success: true, lead_id: leadId }
+  // The estimate rides in the stored result, so a retry of this submission gets the identical price.
+  const body = { ok: true, success: true, lead_id: leadId, ...(estimate ? { estimate: estimate.publicResult } : {}) }
   const now = new Date()
 
   const writes: BatchItem<'sqlite'>[] = []
@@ -367,11 +390,12 @@ async function upsertLead(
       id: crypto.randomUUID(),
       leadId,
       kind: 'form',
-      body: activitySummary(payload),
+      body: activitySummary(payload, estimate),
       dedupeKey: `form:${submissionId}`,
       createdAt: receivedAt,
     }),
   )
+  if (estimate) writes.push(snapshotInsert(db, estimate, { leadId, submissionId, at: receivedAt }))
   // Text consent only from the explicit SMS checkbox; it happened when the Form submission was received.
   if (payload.sms_consent === true && mapped.phoneE164) {
     writes.push(
@@ -396,7 +420,9 @@ async function upsertLead(
   // A matched Lead is acknowledged only at its stored email (plan 010 F4).
   const email = existing ? existing.email : mapped.email
   const envelopes = { owner_alert: ownerAlertEnvelope(name, settings), form_ack: formAckEnvelope({ email }, settings) }
-  const jobKinds = email ? (['owner_alert', 'form_ack'] as const) : (['owner_alert'] as const)
+  // FLW-201: an estimator submission gets its Estimate email instead of the acknowledgement, at the address given
+  // in this Form submission (it only repeats what this Homeowner just saw), never a matched Lead's stored address.
+  const jobKinds = estimate ? (['owner_alert'] as const) : email ? (['owner_alert', 'form_ack'] as const) : (['owner_alert'] as const)
   const jobIds: string[] = []
   for (const kind of jobKinds) {
     const envelope = envelopes[kind]
@@ -405,6 +431,17 @@ async function upsertLead(
       dedupeKey: `${kind}:${submissionId}`,
       payload: { lead_id: leadId, submission_id: submissionId, ...envelope },
       envelope,
+    })
+    jobIds.push(job.id)
+    writes.push(job.insert)
+  }
+  if (estimate && mapped.email) {
+    const emailOut = estimateEmail(settings, estimate, mapped.email, mapped.firstName)
+    const job = enqueueJob(db, {
+      kind: 'estimate_email',
+      dedupeKey: `estimate_email:${submissionId}`,
+      payload: emailOut,
+      envelope: { to: [mapped.email], subject: emailOut.subject },
     })
     jobIds.push(job.id)
     writes.push(job.insert)
@@ -434,17 +471,25 @@ function mergedKey(existing: LeadMatch, f: LeadFields) {
   return addressKey({ street: existing.street ?? f.street, zip: existing.zip ?? f.zip })
 }
 
-/** The Homeowner's answers, one `key: value` per line, for the `form` activity. */
-function activitySummary(p: Record<string, unknown>): string {
+/**
+ * The Homeowner's answers, one `key: value` per line, for the `form` activity. Estimator answers are left out: the
+ * Estimate snapshot holds them, so the activity gets the range instead.
+ */
+function activitySummary(p: Record<string, unknown>, estimate?: PricedEstimate): string {
   const lines = Object.keys(p)
-    .filter((k) => !NOT_BUSINESS_KEYS.has(k) && k !== 'website')
+    .filter((k) => !NOT_BUSINESS_KEYS.has(k) && !ESTIMATOR_KEYS.has(k) && k !== 'website')
     .flatMap((k) => {
       const v = p[k]
       if (v === null || v === undefined || v === '') return []
       return [`${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`]
     })
-  return [`Website form (${trimmedNonEmptyString(p.source) ?? 'unknown'})`, ...lines].join('\n').slice(0, 8000)
+  const priced = estimate
+    ? [`estimate: ${usd(estimate.result.low)} to ${usd(estimate.result.high)} (Published version ${estimate.version})`]
+    : []
+  return [`Website form (${trimmedNonEmptyString(p.source) ?? 'unknown'})`, ...priced, ...lines].join('\n').slice(0, 8000)
 }
+
+const ESTIMATOR_KEYS = new Set(['answers', 'defaulted', 'estimator_version'])
 
 type LeadMatch = {
   id: string
@@ -521,23 +566,33 @@ function conflictNote(f: LeadFields, other: LeadMatch): string {
   ].join('\n')
 }
 
-/** Explicit field map from the site's `submitLead` JSON to Lead columns. Null = not a Lead. */
+/**
+ * Explicit field map from the site's JSON to Lead columns. Null = not a Lead. Turner's forms (FLW-201) send
+ * `first_name`/`last_name`, a separate `zip`, `project_type` and `notes`; the ported single `name`, `projectType`
+ * and `message` are still read.
+ */
 export function mapSitePayload(p: Record<string, unknown>): LeadFields | null {
-  const [firstName, ...rest] = (trimmedNonEmptyString(p.name) ?? '').split(/\s+/)
+  const given = trimmedNonEmptyString(p.first_name)
+  const [splitFirst, ...rest] = (trimmedNonEmptyString(p.name) ?? '').split(/\s+/)
+  const firstName = given?.slice(0, 60) ?? splitFirst
+  const lastName = given ? (trimmedNonEmptyString(p.last_name)?.slice(0, 60) ?? null) : rest.join(' ') || null
   const email = validEmail(trimmedNonEmptyString(p.email))
   const phone = trimmedNonEmptyString(p.phone)
   const phoneE164 = toE164(phone)
   if (!firstName || (!email && !phoneE164)) return null
+  const address = splitAddress(trimmedNonEmptyString(p.address))
+  const zip = trimmedNonEmptyString(p.zip)
   return {
     firstName,
-    lastName: rest.join(' ') || null,
+    lastName,
     email,
     emailLower: email?.toLowerCase() ?? null,
     phone,
     phoneE164,
-    ...splitAddress(trimmedNonEmptyString(p.address)),
-    serviceType: trimmedNonEmptyString(p.projectType),
-    message: trimmedNonEmptyString(p.message),
+    ...address,
+    zip: address.zip ?? (zip && /^\d{5}$/.test(zip) ? zip : null),
+    serviceType: trimmedNonEmptyString(p.projectType) ?? trimmedNonEmptyString(p.project_type),
+    message: trimmedNonEmptyString(p.message) ?? trimmedNonEmptyString(p.notes),
   }
 }
 

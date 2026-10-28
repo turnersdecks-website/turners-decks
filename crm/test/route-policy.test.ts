@@ -9,6 +9,7 @@ const PUBLIC_PAGES = ['/sign-in', '/forgot-password', '/reset-password']
 const PUBLIC_SERVER_ROUTES: Record<string, string[] | '*'> = {
   '/api/auth/$': '*', // Better Auth authorizes its own endpoints
   '/api/public/intake': ['POST', 'OPTIONS'],
+  '/api/public/estimator': ['GET', 'HEAD'], // FLW-201: questions only, never prices
 }
 
 const routes = Object.values(getRouter().routesById) as AnyRoute[]

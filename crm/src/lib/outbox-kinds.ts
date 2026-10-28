@@ -1,7 +1,7 @@
 import { type SQL, eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { getDb } from '#/db/client'
-import { leads } from '#/db/schema'
+import { estimateSnapshots, formSubmissions, leads } from '#/db/schema'
 import type { Email } from '#/lib/email'
 import type { Envelope, Job, JobOutcome, OutboxEnv } from '#/lib/outbox'
 import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from '#/lib/settings.server'
@@ -54,13 +54,28 @@ export const JOB_KINDS: Record<string, JobKind> = {
       if (!to.length) return null
       const name = fullName(lead) || 'a Homeowner'
       const address = [lead.street, lead.city, lead.state, lead.zip].filter(Boolean).join(', ')
+      // FLW-201: the estimate and timing this Form submission carried (the snapshot never changes after intake).
+      const [snapshot, submission] = payload.submission_id
+        ? await Promise.all([
+            db.select().from(estimateSnapshots).where(eq(estimateSnapshots.submissionId, payload.submission_id)).get(),
+            db.select({ rawBody: formSubmissions.rawBody }).from(formSubmissions).where(eq(formSubmissions.id, payload.submission_id)).get(),
+          ])
+        : [undefined, undefined]
+      const raw = submission ? safeJson(submission.rawBody) : {}
+      const flags = snapshot ? (JSON.parse(snapshot.flagsJson) as string[]) : []
       const lines = [
         `New Lead from the website: ${name}`,
         '',
         line('Phone', lead.phone),
         line('Email', lead.email),
+        line('ZIP', lead.zip),
         line('Address', address),
         line('Service', lead.serviceType),
+        snapshot ? `Estimate shown: ${usd(snapshot.low)} to ${usd(snapshot.high)} (Published version ${snapshot.version})` : null,
+        snapshot ? `Needs site review: ${flags.length ? flags.join('; ') : 'No'}` : null,
+        line('Timing', text(raw.timing)),
+        line('Best way to reach', text(raw.contact_method)),
+        raw.wants_financing === true ? 'Wants financing information: Yes' : null,
         line('Message', lead.message),
         '',
         `Open in the CRM: ${env.BETTER_AUTH_URL}/leads/${lead.id}`,
@@ -68,6 +83,9 @@ export const JOB_KINDS: Record<string, JobKind> = {
       return { to, subject, text: lines.join('\n') }
     },
   },
+
+  // FLW-201: rendered and frozen at intake (src/lib/intake-estimate.ts > estimateEmail); sent exactly as stored.
+  estimate_email: { render: async (p: Email) => (p?.to ? p : null) },
 
   form_ack: {
     async render(payload: LeadJobPayload, { db, env }) {
@@ -97,4 +115,14 @@ export const JOB_KINDS: Record<string, JobKind> = {
 }
 
 const fullName = (l: { firstName: string | null; lastName: string | null }) => [l.firstName, l.lastName].filter(Boolean).join(' ')
+const usd = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 200) : null)
+function safeJson(s: string): Record<string, unknown> {
+  try {
+    const v: unknown = JSON.parse(s)
+    return v && typeof v === 'object' ? (v as Record<string, unknown>) : {}
+  } catch {
+    return {}
+  }
+}
 const line = (label: string, value: string | null) => (value ? `${label}: ${value}` : null)
