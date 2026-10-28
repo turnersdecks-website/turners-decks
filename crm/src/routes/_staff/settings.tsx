@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Save, UserRound } from 'lucide-react'
+import { Building2, Mail, Save, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -11,11 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { Separator } from '#/components/ui/separator'
 import { Textarea } from '#/components/ui/textarea'
 import { errorMessage } from '#/lib/errors'
+import { updateEstimateEmailTemplate } from '#/lib/estimator-settings.functions'
+import { ESTIMATE_EMAIL_PLACEHOLDERS } from '#/lib/estimator/email-template'
 import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, updateProfileName } from '#/lib/settings.functions'
 import { cn } from '#/lib/utils'
 
 // Company settings, ported from Pine & Gable's /settings and cut to v1: Your profile and Company (name, contact,
-// timezone, Owner alert emails). Pine & Gable's Roofing products, Estimates, Phone line and Postcard sections come back
+// timezone, Owner alert emails) and the Estimate email template (FLW-203). Pine & Gable's Roofing products, Estimates, Phone line and Postcard sections come back
 // with those features. Every Staff member can rename themselves; everything else is admin only, so staff-role Staff see
 // just "Your profile". Server guards are the real check (requireAdmin on every company write).
 // Layout (plan 007 K9): kit original/(settings): a section nav on the left (a Select on phones) and content sections
@@ -32,6 +34,7 @@ export const Route = createFileRoute('/_staff/settings')({
 const SECTIONS = [
   { id: 'profile', title: 'Your profile', icon: UserRound },
   { id: 'company', title: 'Company', icon: Building2 },
+  { id: 'estimate-email', title: 'Estimate email', icon: Mail },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id']
 
@@ -229,43 +232,111 @@ function AdminSettings() {
 
   return (
     <>
-      <ContentSection id="company" title="Company">
+      {/* Wrapped so the sticky Save bar stays with the Company form and does not float over the Estimate email. */}
+      <div className="space-y-10">
+        <ContentSection id="company" title="Company">
+          <Card className="shadow-xs">
+            <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
+              {field('name', 'Company name', { required: true })}
+              {field('phone', 'Phone', { type: 'tel' })}
+              {field('email', 'Email', { type: 'email' })}
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <select id="timezone" value={f.timezone} onChange={(e) => setF({ ...f, timezone: e.target.value })} className={selectClass}>
+                  {(TIMEZONES.includes(f.timezone) ? TIMEZONES : [f.timezone, ...TIMEZONES]).map((tz) => (
+                    <option key={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-2">{field('serviceArea', 'Service area')}</div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="ownerAlertEmails">Owner alert emails</Label>
+                <Textarea
+                  id="ownerAlertEmails"
+                  rows={2}
+                  value={f.ownerAlertEmails}
+                  placeholder="turnersdecks@gmail.com"
+                  onChange={(e) => setF({ ...f, ownerAlertEmails: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">Where new-Lead Owner alert emails go. Separate addresses with commas.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </ContentSection>
+  
+        {/* One save for the Company form, kept in reach while scrolling. */}
+        <div className="sticky bottom-0 z-10 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:px-0">
+          <Button onClick={save} disabled={busy} className="max-sm:w-full">
+            <Save />
+            {busy ? 'Saving…' : 'Save settings'}
+          </Button>
+        </div>
+      </div>
+
+      <EstimateEmailSection template={settings.estimateEmailTemplate} />
+    </>
+  )
+}
+
+/** The Estimate email a Homeowner gets after the estimator (its own Save: a separate server function). */
+function EstimateEmailSection({ template: saved }: { template: string }) {
+  const router = useRouter()
+  const [template, setTemplate] = useState(saved)
+  const [busy, setBusy] = useState(false)
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      await updateEstimateEmailTemplate({ data: { template } })
+      toast.success('Estimate email saved')
+      await router.invalidate()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ContentSection
+      id="estimate-email"
+      title="Estimate email"
+      description="The email a Homeowner gets right after using the online estimator, with their price range."
+    >
+      <form onSubmit={save}>
         <Card className="shadow-xs">
-          <CardContent className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-            {field('name', 'Company name', { required: true })}
-            {field('phone', 'Phone', { type: 'tel' })}
-            {field('email', 'Email', { type: 'email' })}
+          <CardContent className="space-y-4 p-4 sm:p-6">
             <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
-              <select id="timezone" value={f.timezone} onChange={(e) => setF({ ...f, timezone: e.target.value })} className={selectClass}>
-                {(TIMEZONES.includes(f.timezone) ? TIMEZONES : [f.timezone, ...TIMEZONES]).map((tz) => (
-                  <option key={tz}>{tz}</option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-2">{field('serviceArea', 'Service area')}</div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="ownerAlertEmails">Owner alert emails</Label>
+              <Label htmlFor="estimateEmailTemplate">Email text</Label>
               <Textarea
-                id="ownerAlertEmails"
-                rows={2}
-                value={f.ownerAlertEmails}
-                placeholder="turnersdecks@gmail.com"
-                onChange={(e) => setF({ ...f, ownerAlertEmails: e.target.value })}
+                id="estimateEmailTemplate"
+                rows={14}
+                value={template}
+                onChange={(e) => setTemplate(e.target.value)}
+                className="font-mono text-sm"
+                required
               />
-              <p className="text-xs text-muted-foreground">Where new-Lead Owner alert emails go. Separate addresses with commas.</p>
+              <p className="text-xs text-muted-foreground">
+                Start with a line like “Subject: Your deck estimate” to set the subject. The words in braces are filled in for
+                each Homeowner. Keep {'{low}'} and {'{high}'} so they see their range.
+              </p>
+              <ul className="flex flex-wrap gap-1.5" aria-label="Placeholders">
+                {ESTIMATE_EMAIL_PLACEHOLDERS.map((p) => (
+                  <li key={p}>
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{`{${p}}`}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" disabled={busy || template === saved}>
+                {busy ? 'Saving…' : 'Save Estimate email'}
+              </Button>
             </div>
           </CardContent>
         </Card>
-      </ContentSection>
-
-      {/* One save for the Company form, kept in reach while scrolling. */}
-      <div className="sticky bottom-0 z-10 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur sm:mx-0 sm:px-0">
-        <Button onClick={save} disabled={busy} className="max-sm:w-full">
-          <Save />
-          {busy ? 'Saving…' : 'Save settings'}
-        </Button>
-      </div>
-    </>
+      </form>
+    </ContentSection>
   )
 }

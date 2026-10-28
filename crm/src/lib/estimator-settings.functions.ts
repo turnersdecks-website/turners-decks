@@ -4,7 +4,8 @@ import { eq } from 'drizzle-orm'
 import { getDb } from '#/db/client'
 import { companySettings, user } from '#/db/schema'
 import { ESTIMATE_EMAIL_PLACEHOLDERS } from '#/lib/estimator/email-template'
-import { DATA_DRIVEN, PRICE_FIELDS, REQUIRED_VALUES } from '#/lib/estimator/document'
+import { DATA_DRIVEN, PRICE_FIELDS, type QuestionKey, REQUIRED_VALUES } from '#/lib/estimator/document'
+import { SEED_DOCUMENT } from '#/lib/estimator/seed'
 import { publishDraft, readDraft, readLatestVersion, saveDraft } from '#/lib/estimator/settings.server'
 import { requireAdmin, requireStaff } from '#/lib/guards'
 import { badRequest, fieldErrorsResponse, optionalText, record } from '#/lib/input'
@@ -28,7 +29,16 @@ export const getEstimatorSettings = createServerFn({ method: 'GET' })
       live: { version: live.version, publishedAt: live.publishedAt.getTime(), publishedBy: publisher?.name ?? null },
       // The draft differs from what Homeowners see.
       unpublished: JSON.stringify(draft.document) !== JSON.stringify(live.document),
-      rules: { dataDriven: DATA_DRIVEN, priceFields: PRICE_FIELDS, requiredValues: REQUIRED_VALUES },
+      rules: {
+        dataDriven: DATA_DRIVEN,
+        priceFields: PRICE_FIELDS,
+        requiredValues: REQUIRED_VALUES,
+        // FLW-203: the editor offers Delete only on options the owner added (not in Published version 1). Built here,
+        // inside the handler, so the seed's prices never reach the browser bundle.
+        seedValues: Object.fromEntries(
+          DATA_DRIVEN.map((k) => [k, (SEED_DOCUMENT.questions.find((q) => q.key === k)?.options ?? []).map((o) => o.value)]),
+        ) as Partial<Record<QuestionKey, string[]>>,
+      },
     }
   })
 

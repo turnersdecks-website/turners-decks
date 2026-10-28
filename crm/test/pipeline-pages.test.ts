@@ -43,7 +43,7 @@ describe('Lead detail /leads/$id', () => {
     expect(html).toContain('Oct 20, 2026, 10:00 AM')
   })
 
-  it('shows no Book appointment, Send mailer or Estimate actions (not in v1)', async () => {
+  it('shows no Book appointment or Send mailer actions (not in v1)', async () => {
     const { cookie } = await signedInStaff('admin')
     const id = await insertLead({ firstName: 'Scope', lastName: 'Lead' })
 
@@ -51,7 +51,6 @@ describe('Lead detail /leads/$id', () => {
 
     expect(html).not.toContain('Book appointment')
     expect(html).not.toContain('Send mailer')
-    expect(html).not.toContain('Estimate')
   })
 
   it('offers Delete Lead to admins only', async () => {
@@ -70,7 +69,7 @@ describe('Lead detail /leads/$id', () => {
       state: m[1].match(/data-state="(\w+)"/)?.[1],
     }))
 
-  it('shows the Homeowner, Activities and Quote tabs and the Stage control with the current stage', async () => {
+  it('shows the Homeowner, Activities, Estimate and Quote tabs and the Stage control with the current stage', async () => {
     const { cookie } = await signedInStaff('staff')
     const id = await insertLead({ firstName: 'Tab', lastName: 'Lead', stage: 'quoted' })
 
@@ -80,6 +79,7 @@ describe('Lead detail /leads/$id', () => {
     expect(tabs(html)).toEqual([
       { label: 'Homeowner', state: 'active' },
       { label: 'Activities', state: 'inactive' },
+      { label: 'Estimate', state: 'inactive' },
       { label: 'Quote', state: 'inactive' },
     ])
     const stage = html.match(/<button\b[^>]*aria-label="Pipeline stage"[^>]*>[\s\S]*?<\/button>/)?.[0]
@@ -160,9 +160,21 @@ describe('Settings /settings', () => {
     expect(html).not.toMatch(/Turner(&#x27;|')s Decks<\//)
     expect(html).not.toContain('Owner alert emails')
     expect(html).not.toContain('Save settings')
+    expect(html).not.toContain('Save Estimate email')
   })
 
-  it('lets an admin edit the company and Owner alert emails, with no Estimate, phone line or postcard sections', async () => {
+  it('lets an admin edit the Estimate email, with the placeholders it can use', async () => {
+    const { cookie } = await signedInStaff('admin')
+
+    const html = await page('/settings', cookie)
+
+    expect(html).toContain('id="estimateEmailTemplate"')
+    expect(html).toContain('Subject: Your deck estimate from {company_name}')
+    for (const p of ['{first_name}', '{low}', '{high}', '{review_note}', '{company_phone}', '{disclaimer}']) expect(html).toContain(p)
+    expect(html).toContain('Save Estimate email')
+  })
+
+  it('lets an admin edit the company and Owner alert emails, with no phone line or postcard sections', async () => {
     const { cookie } = await signedInStaff('admin')
 
     const html = await page('/settings', cookie)

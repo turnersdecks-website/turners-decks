@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dispatchJob } from '#/lib/outbox'
 import type { EstimatorDocument } from '#/lib/estimator/document'
 import { SEED_DOCUMENT } from '#/lib/estimator/seed'
-import { BASE, DUMMY_TOKEN, SITE_ORIGIN, mockSiteverify, postIntake, randomPhone } from './intake-helpers'
+import { BASE, DUMMY_TOKEN, ESTIMATOR_ANSWERS, SITE_ORIGIN, estimatorPayload, mockSiteverify, postIntake, randomPhone } from './intake-helpers'
 import { mockResend, sendingEnv } from './outbox-helpers'
 
 // FLW-201 (seam 1): the public estimator endpoint and estimator Form submissions at intake.
@@ -13,37 +13,7 @@ beforeEach(() => {
 })
 afterEach(() => vi.restoreAllMocks())
 
-const ANSWERS = {
-  projectType: 'replacement', shape: 'rectangle', sections: [{ width: 20, depth: 16 }], attached: 'yes',
-  height: 'low', layout: 'rectangle', slope: 'flat', access: 'standard', townhouse: 'no', zip: '19518',
-  hoa: 'no', historic: 'no', material: 'standardComposite', railingSides: 'three', railingLf: 35,
-  railingStyle: 'whiteVinyl', gates: '0', privacyWall: 'none', stairType: 'standard', stairCount: '1',
-  stairRails: 'one', closedRisers: false, landing: 'none', demolition: 'full', fascia: 'standard',
-  pattern: 'standard', skirting: 'none', lighting: 'none', features: [], neighbors: 'no',
-}
-
-// The shape the site's estimator sends (src/lib/crm-intake.ts > estimatorPayload).
-function estimatorPayload(overrides: Record<string, unknown> = {}) {
-  return {
-    source: 'estimator',
-    submission_key: crypto.randomUUID(),
-    turnstile_token: DUMMY_TOKEN,
-    website: '',
-    first_name: 'Jane',
-    last_name: 'Doe',
-    email: `jane-${crypto.randomUUID()}@example.com`,
-    phone: randomPhone(),
-    zip: '19518',
-    timing: 'Within 3 months',
-    contact_method: 'phone',
-    wants_financing: true,
-    notes: 'Back deck is rotting.',
-    estimator_version: 1,
-    answers: ANSWERS,
-    defaulted: [],
-    ...overrides,
-  }
-}
+const ANSWERS = ESTIMATOR_ANSWERS
 
 const submissionOf = (key: string) =>
   env.DB.prepare('SELECT id FROM form_submissions WHERE submission_key = ?').bind(key).first<{ id: string }>().then((r) => r!.id)

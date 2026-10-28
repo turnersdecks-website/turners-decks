@@ -3,6 +3,7 @@ import { SearchX, Trash2, UserRound } from 'lucide-react'
 import { useState, type ComponentType, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '#/components/confirm-dialog'
+import { EstimateSnapshots } from '#/components/EstimateSnapshots'
 import { EmptyState } from '#/components/empty-state'
 import { LeadActivity } from '#/components/LeadActivity'
 import { QuoteFiles } from '#/components/QuoteFiles'
@@ -16,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import type { PipelineStage } from '#/db/schema'
 import { formatWhen } from '#/lib/dates'
 import { errorMessage } from '#/lib/errors'
+import { listEstimateSnapshots } from '#/lib/estimate-snapshots.functions'
 import { listLeadFiles } from '#/lib/lead-files.functions'
 import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, updateLead } from '#/lib/leads.functions'
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
@@ -26,12 +28,13 @@ import { cn } from '#/lib/utils'
 // issue-detail-1/2): a header with the breadcrumb, name and the actions bar (admin-only Delete Lead), then the kit's
 // underline tabs (ecommerce/product-detail-1). Homeowner: the editable fields with the Stage dropdown in their card
 // header, beside a right rail of key/value rows (details, Assigned to). Activities: the activity timeline and stage
-// history. Quote: the five Quote file slots (QuoteFiles).
-// Not in Good Cover v1 (they come back with their features): the Estimate tab and saved Estimates, Book appointment,
+// history. Estimate (FLW-203): the Lead's Estimate snapshots from the online estimator. Quote: the five Quote file
+// slots (QuoteFiles).
+// Not in Good Cover v1 (they come back with their features): Pine & Gable's saved Estimates, Book appointment,
 // Send mailer, and the Prospect history / Possible Prospects rail sections.
 // The tab lives in `?tab=` (no param = Homeowner), so SSR renders the right one; every panel stays mounted (hidden
 // when inactive) so a half-typed note or Homeowner edit survives a tab switch.
-const LEAD_TABS = ['activities', 'quote'] as const
+const LEAD_TABS = ['activities', 'estimate', 'quote'] as const
 type LeadTab = (typeof LEAD_TABS)[number]
 
 async function loadLeadPage(leadId: string) {
@@ -40,13 +43,14 @@ async function loadLeadPage(leadId: string) {
     throw error
   }
   const input = { data: { leadId } }
-  const [found, files, staff, settings] = await Promise.all([
+  const [found, files, snapshots, staff, settings] = await Promise.all([
     getLead(input).catch(notFoundAsNull),
     listLeadFiles(input),
+    listEstimateSnapshots(input),
     listAssignableStaff(),
     getCompanySettings(),
   ])
-  return { found, files, staff, timeZone: settings.timezone }
+  return { found, files, snapshots, staff, timeZone: settings.timezone }
 }
 export const Route = createFileRoute('/_staff/leads_/$id')({
   head: () => ({ meta: [{ title: 'Lead - Turner’s Decks CRM' }] }),
@@ -167,7 +171,7 @@ function HomeownerCard({ lead, timeZone, busy, onStage, refresh }: { lead: LeadR
 const panelClass = 'mt-0 data-[state=inactive]:hidden'
 
 function LeadDetail() {
-  const { found, files, staff, timeZone } = Route.useLoaderData()
+  const { found, files, snapshots, staff, timeZone } = Route.useLoaderData()
   const { staff: me } = Route.useRouteContext()
   const { tab } = Route.useSearch()
   const router = useRouter()
@@ -278,6 +282,9 @@ function LeadDetail() {
             <TabsTrigger variant="line" value="activities">
               Activities
             </TabsTrigger>
+            <TabsTrigger variant="line" value="estimate">
+              Estimate
+            </TabsTrigger>
             <TabsTrigger variant="line" value="quote">
               Quote
             </TabsTrigger>
@@ -328,6 +335,10 @@ function LeadDetail() {
 
         <TabsContent value="activities" forceMount className={panelClass}>
           <LeadActivity leadId={lead.id} phone={lead.phone} activity={activity} stageHistory={stageHistory} timeZone={timeZone} onChange={refresh} />
+        </TabsContent>
+
+        <TabsContent value="estimate" forceMount className={panelClass}>
+          <EstimateSnapshots snapshots={snapshots} timeZone={timeZone} />
         </TabsContent>
 
         <TabsContent value="quote" forceMount className={panelClass}>

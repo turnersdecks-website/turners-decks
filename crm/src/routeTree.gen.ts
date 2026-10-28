@@ -20,6 +20,7 @@ import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
 import { Route as StaffSubmissionsRouteImport } from './routes/_staff/submissions'
 import { Route as ApiLeadFilesRouteImport } from './routes/api/lead-files'
 import { Route as StaffLeadsIdRouteImport } from './routes/_staff/leads_.$id'
+import { Route as StaffSettingsEstimatorRouteImport } from './routes/_staff/settings_.estimator'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiLeadFilesIdRouteImport } from './routes/api/lead-files.$id'
 import { Route as ApiPublicEstimatorRouteImport } from './routes/api/public/estimator'
@@ -79,6 +80,11 @@ const StaffLeadsIdRoute = StaffLeadsIdRouteImport.update({
   path: '/leads/$id',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffSettingsEstimatorRoute = StaffSettingsEstimatorRouteImport.update({
+  id: '/settings_/estimator',
+  path: '/settings/estimator',
+  getParentRoute: () => StaffRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/leads/$id': typeof StaffLeadsIdRoute
+  '/settings/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/': typeof StaffIndexRoute
   '/leads/$id': typeof StaffLeadsIdRoute
+  '/settings/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/_staff/': typeof StaffIndexRoute
   '/_staff/leads_/$id': typeof StaffLeadsIdRoute
+  '/_staff/settings_/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/lead-files/$id': typeof ApiLeadFilesIdRoute
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/submissions'
     | '/api/lead-files'
     | '/leads/$id'
+    | '/settings/estimator'
     | '/api/auth/$'
     | '/api/lead-files/$id'
     | '/api/public/estimator'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/api/lead-files'
     | '/'
     | '/leads/$id'
+    | '/settings/estimator'
     | '/api/auth/$'
     | '/api/lead-files/$id'
     | '/api/public/estimator'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/api/lead-files'
     | '/_staff/'
     | '/_staff/leads_/$id'
+    | '/_staff/settings_/estimator'
     | '/api/auth/$'
     | '/api/lead-files/$id'
     | '/api/public/estimator'
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffLeadsIdRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/_staff/settings_/estimator': {
+      id: '/_staff/settings_/estimator'
+      path: '/settings/estimator'
+      fullPath: '/settings/estimator'
+      preLoaderRoute: typeof StaffSettingsEstimatorRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -330,6 +349,7 @@ interface StaffRouteChildren {
   StaffSubmissionsRoute: typeof StaffSubmissionsRoute
   StaffIndexRoute: typeof StaffIndexRoute
   StaffLeadsIdRoute: typeof StaffLeadsIdRoute
+  StaffSettingsEstimatorRoute: typeof StaffSettingsEstimatorRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
@@ -339,6 +359,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffSubmissionsRoute: StaffSubmissionsRoute,
   StaffIndexRoute: StaffIndexRoute,
   StaffLeadsIdRoute: StaffLeadsIdRoute,
+  StaffSettingsEstimatorRoute: StaffSettingsEstimatorRoute,
 }
 
 const StaffRouteWithChildren = StaffRoute._addFileChildren(StaffRouteChildren)

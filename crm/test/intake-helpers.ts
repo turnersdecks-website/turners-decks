@@ -36,6 +36,39 @@ export function inspectionFormPayload(overrides: Record<string, unknown> = {}) {
   }
 }
 
+/** Answers to every question the estimator asks for a 20 × 16 replacement deck (Published version 1: $38,000 to $47,000). */
+export const ESTIMATOR_ANSWERS = {
+  projectType: 'replacement', shape: 'rectangle', sections: [{ width: 20, depth: 16 }], attached: 'yes',
+  height: 'low', layout: 'rectangle', slope: 'flat', access: 'standard', townhouse: 'no', zip: '19518',
+  hoa: 'no', historic: 'no', material: 'standardComposite', railingSides: 'three', railingLf: 35,
+  railingStyle: 'whiteVinyl', gates: '0', privacyWall: 'none', stairType: 'standard', stairCount: '1',
+  stairRails: 'one', closedRisers: false, landing: 'none', demolition: 'full', fascia: 'standard',
+  pattern: 'standard', skirting: 'none', lighting: 'none', features: [], neighbors: 'no',
+}
+
+// The shape the site's estimator sends (src/lib/crm-intake.ts > estimatorPayload).
+export function estimatorPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    source: 'estimator',
+    submission_key: crypto.randomUUID(),
+    turnstile_token: DUMMY_TOKEN,
+    website: '',
+    first_name: 'Jane',
+    last_name: 'Doe',
+    email: `jane-${crypto.randomUUID()}@example.com`,
+    phone: randomPhone(),
+    zip: '19518',
+    timing: 'Within 3 months',
+    contact_method: 'phone',
+    wants_financing: true,
+    notes: 'Back deck is rotting.',
+    estimator_version: 1,
+    answers: ESTIMATOR_ANSWERS,
+    defaulted: [],
+    ...overrides,
+  }
+}
+
 export function intakeRequest(body: unknown, opts: { ip?: string; origin?: string | null; method?: string } = {}) {
   const headers: Record<string, string> = {
     'content-type': 'application/json',

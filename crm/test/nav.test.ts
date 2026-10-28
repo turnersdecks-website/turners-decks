@@ -4,14 +4,14 @@ import { headerTrail, isFullBleed, isNavItemActive, visibleNavGroups } from '#/l
 const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.title))
 
 describe('sidebar navigation', () => {
-  it('shows Staff the Pipeline and All Leads, without admin-only items', () => {
-    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads'])
-    expect(titles('staff')).toEqual(['Pipeline', 'All Leads'])
+  it('shows Staff the Pipeline, All Leads and Estimator settings, without admin-only items', () => {
+    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads', 'Company'])
+    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Estimator settings'])
   })
 
   it('shows an admin Company settings and Submissions as well', () => {
     const company = visibleNavGroups('admin').find((g) => g.title === 'Company')!
-    expect(company.items.map((i) => i.title)).toEqual(['Company settings', 'Submissions'])
+    expect(company.items.map((i) => i.title)).toEqual(['Company settings', 'Estimator settings', 'Submissions'])
   })
 
   it('has none of the screens that are not in v1', () => {
@@ -22,7 +22,7 @@ describe('sidebar navigation', () => {
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/crm', '/leads', '/settings', '/submissions'])
+    expect(urls).toEqual(['/crm', '/leads', '/settings', '/settings/estimator', '/submissions'])
   })
 
   it('marks an item active on its path and sub-paths, and Pipeline (not All Leads) on a Lead page', () => {
@@ -33,6 +33,12 @@ describe('sidebar navigation', () => {
     expect(isNavItemActive('/leads', '/leads')).toBe(true)
     expect(isNavItemActive('/settings', '/crm')).toBe(false)
   })
+
+  it('marks only Estimator settings active on /settings/estimator', () => {
+    expect(isNavItemActive('/settings/estimator', '/settings/estimator')).toBe(true)
+    expect(isNavItemActive('/settings/estimator', '/settings')).toBe(false)
+    expect(isNavItemActive('/settings', '/settings')).toBe(true)
+  })
 })
 
 describe('header title and breadcrumbs', () => {
@@ -40,6 +46,7 @@ describe('header title and breadcrumbs', () => {
     expect(headerTrail('/crm', 'staff')).toEqual({ title: 'Pipeline' })
     expect(headerTrail('/leads', 'staff')).toEqual({ title: 'All Leads' })
     expect(headerTrail('/submissions', 'admin')).toEqual({ title: 'Submissions' })
+    expect(headerTrail('/settings/estimator', 'staff')).toEqual({ title: 'Estimator settings' })
     expect(headerTrail('/crm/', 'staff')).toEqual({ title: 'Pipeline' })
   })
 
