@@ -98,6 +98,15 @@ it('the Submissions page shows an admin the rejected and failed submissions', as
   expect(html).toContain('Replay')
 })
 
+it('the Submissions page names a submission from Turner’s forms, which send first and last name apart', async () => {
+  const { cookie } = await signedInStaff('admin')
+  await failedSubmission({ name: undefined, first_name: 'Gwen', last_name: 'Split' })
+
+  const html = await (await SELF.fetch(`${BASE}/submissions`, { headers: { cookie } })).text()
+
+  expect(html).toContain('Gwen Split')
+})
+
 it('the Submissions page tells a staff-role Staff member it is for admins', async () => {
   const { cookie } = await signedInStaff('staff')
 

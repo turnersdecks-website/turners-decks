@@ -93,7 +93,9 @@ function contactOf(raw: string): { name: string | null; phone: string | null; em
   try {
     const p = JSON.parse(raw) as Record<string, unknown>
     const s = (k: string) => (typeof p[k] === 'string' && p[k] ? (p[k] as string).slice(0, 200) : null)
-    return { name: s('name'), phone: s('phone'), email: s('email') }
+    // Turner's forms send first_name/last_name (FLW-202); `name` is the ported single field.
+    const split = [s('first_name'), s('last_name')].filter(Boolean).join(' ')
+    return { name: s('name') ?? (split || null), phone: s('phone'), email: s('email') }
   } catch {
     return { name: null, phone: null, email: null }
   }

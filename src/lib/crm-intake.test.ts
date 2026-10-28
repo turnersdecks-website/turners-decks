@@ -107,6 +107,14 @@ describe("submitToCrm", () => {
     expect(f.calls).toHaveLength(2);
   });
 
+  it("retries with the same key when the reply's body breaks off after its headers", async () => {
+    const broken = new Response(new ReadableStream({ start: (c) => c.error(new TypeError("connection reset")) }), { status: 200 });
+    const f = fakeFetch(broken, json(200, { ok: true, success: true, estimate: RESULT }));
+    expect((await submitToCrm(payload(), opts(f))).kind).toBe("estimate");
+    expect(f.calls).toHaveLength(2);
+    expect(f.calls[0]!.body.submission_key).toBe(f.calls[1]!.body.submission_key);
+  });
+
   it("on 409 retries once under a new key, then stops", async () => {
     const ok = fakeFetch(json(409, { error: "fingerprint_mismatch" }), json(200, { ok: true, success: true }));
     expect(await submitToCrm(payload(), opts(ok, { newKey: () => "key-2" }))).toEqual({ kind: "received" });

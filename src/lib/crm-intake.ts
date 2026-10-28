@@ -221,7 +221,15 @@ async function postOnce(doFetch: Fetch, url: string, body: string, timeoutMs: nu
       body,
     });
     if (res.status >= 500) return { kind: "retry", code: `http_${res.status}` };
-    const json: unknown = await res.json().catch(() => null);
+    // Read the body inside the try: a stalled or dropped body is a transport failure and is retried with the same
+    // key (Codex review). Only a body that arrives but is not JSON is treated as an answer.
+    const text = await res.text();
+    let json: unknown = null;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      json = null;
+    }
     if (!json || typeof json !== "object" || Array.isArray(json)) {
       // 413 and friends may come from the edge without a JSON body.
       return { kind: "answer", status: res.status, json: {} };
