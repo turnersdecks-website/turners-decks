@@ -1,0 +1,217 @@
+/*
+ * Good Cover CRM design tokens: Pine & Gable's Admin Kit token layout (its ADR 0006, kit src/app/globals.css) in Good
+ * Cover's brand (site src/styles/global.css): Ink text, Paper surfaces (no pure white), Copper deep for actions,
+ * Chalk blue focus rings, Copper light highlights; Public Sans with Domine headings. Light and dark.
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * The :root and .dark blocks hold the values (oklch only); @theme inline maps them to Tailwind utilities
+ * (--color-primary -> bg-primary). To add a semantic colour: add it to :root and .dark, then register
+ * --color-<name>: var(--<name>) in @theme inline.
+ */
+
+:root {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-display: "Domine", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --radius: 0.75rem;
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* Paper tint (site: Paper lifted 50% toward white) and Ink */
+  --background: oklch(0.978 0.007 84.58);
+  --foreground: oklch(0.2724 0.0249 251.15);
+  --card: oklch(0.99 0.004 84.58);
+  --card-foreground: oklch(0.2724 0.0249 251.15);
+  --popover: oklch(0.99 0.004 84.58);
+  --popover-foreground: oklch(0.2724 0.0249 251.15);
+  /* Copper deep #9A4F1F: the site's button colour */
+  --primary: oklch(0.5112 0.1165 49.66);
+  --primary-foreground: oklch(0.9563 0.0143 84.58);
+  /* Paper #F5F0E6 and Paper 2 */
+  --secondary: oklch(0.9563 0.0143 84.58);
+  --secondary-foreground: oklch(0.2724 0.0249 251.15);
+  --muted: oklch(0.945 0.0137 84.58);
+  /* Gray #4A5663 */
+  --muted-foreground: oklch(0.4477 0.0262 250.5);
+  --accent: oklch(0.945 0.0137 84.58);
+  --accent-foreground: oklch(0.2724 0.0249 251.15);
+  /* Copper light #E0935C: "Needs review", the Quoted stage */
+  --highlight: oklch(0.7298 0.1172 55.27);
+  --highlight-foreground: oklch(0.2724 0.0249 251.15);
+  --destructive: oklch(0.52 0.19 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  /* Kit semantic tokens, tuned to sit next to copper and chalk */
+  --success: oklch(0.5 0.11 155);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.75 0.15 80);
+  --warning-foreground: oklch(0.2724 0.0249 251.15);
+  --priority-1: oklch(0.52 0.19 27);
+  --priority-2: oklch(0.5112 0.1165 49.66);
+  --priority-3: oklch(0.75 0.15 80);
+  --priority-4: oklch(0.4477 0.0262 250.5);
+  /* Rule soft (site: Ink 18% into Paper) */
+  --border: oklch(0.86 0.012 84.58);
+  --input: oklch(0.82 0.012 84.58);
+  /* Chalk #2F5D8C */
+  --ring: oklch(0.4685 0.092 250.84);
+  /* Charts: copper deep, chalk, sky, copper light, gray */
+  --chart-1: oklch(0.5112 0.1165 49.66);
+  --chart-2: oklch(0.4685 0.092 250.84);
+  --chart-3: oklch(0.7555 0.0705 248.78);
+  --chart-4: oklch(0.7298 0.1172 55.27);
+  --chart-5: oklch(0.4477 0.0262 250.5);
+  --sidebar: oklch(0.9563 0.0143 84.58);
+  --sidebar-foreground: oklch(0.2724 0.0249 251.15);
+  --sidebar-primary: oklch(0.5112 0.1165 49.66);
+  --sidebar-primary-foreground: oklch(0.9563 0.0143 84.58);
+  --sidebar-accent: oklch(0.92 0.015 84.58);
+  --sidebar-accent-foreground: oklch(0.2724 0.0249 251.15);
+  --sidebar-border: oklch(0.86 0.012 84.58);
+  --sidebar-ring: oklch(0.4685 0.092 250.84);
+  --sidebar-scrollbar-thumb: color-mix(in srgb, var(--sidebar-foreground) 15%, transparent);
+  --sidebar-scrollbar-thumb-hover: color-mix(in srgb, var(--sidebar-foreground) 25%, transparent);
+}
+
+/* Ink surfaces (the site's dark bands), Paper text, Copper light actions, Sky focus rings. */
+.dark {
+  --background: oklch(0.2 0.02 251.15);
+  --foreground: oklch(0.9563 0.0143 84.58);
+  --card: oklch(0.2724 0.0249 251.15);
+  --card-foreground: oklch(0.9563 0.0143 84.58);
+  --popover: oklch(0.2724 0.0249 251.15);
+  --popover-foreground: oklch(0.9563 0.0143 84.58);
+  --primary: oklch(0.7298 0.1172 55.27);
+  --primary-foreground: oklch(0.2 0.02 251.15);
+  --secondary: oklch(0.32 0.025 251.15);
+  --secondary-foreground: oklch(0.9563 0.0143 84.58);
+  --muted: oklch(0.32 0.025 251.15);
+  --muted-foreground: oklch(0.78 0.02 250.5);
+  --accent: oklch(0.32 0.025 251.15);
+  --accent-foreground: oklch(0.9563 0.0143 84.58);
+  --highlight: oklch(0.7298 0.1172 55.27);
+  --highlight-foreground: oklch(0.2 0.02 251.15);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.72 0.13 160);
+  --success-foreground: oklch(0.2 0.02 251.15);
+  --warning: oklch(0.81 0.15 82);
+  --warning-foreground: oklch(0.2 0.02 251.15);
+  --priority-1: oklch(0.704 0.191 22.216);
+  --priority-2: oklch(0.7298 0.1172 55.27);
+  --priority-3: oklch(0.81 0.15 82);
+  --priority-4: oklch(0.78 0.02 250.5);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.7555 0.0705 248.78);
+  --chart-1: oklch(0.7298 0.1172 55.27);
+  --chart-2: oklch(0.7555 0.0705 248.78);
+  --chart-3: oklch(0.6 0.09 250.84);
+  --chart-4: oklch(0.85 0.06 55.27);
+  --chart-5: oklch(0.78 0.02 250.5);
+  --sidebar: oklch(0.23 0.022 251.15);
+  --sidebar-foreground: oklch(0.9563 0.0143 84.58);
+  --sidebar-primary: oklch(0.7298 0.1172 55.27);
+  --sidebar-primary-foreground: oklch(0.2 0.02 251.15);
+  --sidebar-accent: oklch(0.32 0.025 251.15);
+  --sidebar-accent-foreground: oklch(0.9563 0.0143 84.58);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.7555 0.0705 248.78);
+  --sidebar-scrollbar-thumb: color-mix(in srgb, var(--sidebar-foreground) 8%, transparent);
+  --sidebar-scrollbar-thumb-hover: color-mix(in srgb, var(--sidebar-foreground) 12%, transparent);
+}
+
+@theme inline {
+  --font-heading: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-priority-1: var(--priority-1);
+  --color-priority-2: var(--priority-2);
+  --color-priority-3: var(--priority-3);
+  --color-priority-4: var(--priority-4);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Page titles in Domine, as the site's headings. */
+  h1 {
+    @apply font-heading;
+  }
+
+  /* Full-height screens (the Pipeline) opt in with data-layout="fixed". */
+  body:has([data-layout="fixed"]) {
+    overflow: hidden;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media print {
+  [data-sidebar], header { display: none !important; }
+  .report-page { break-after: page; max-width: none; }
+}

@@ -1,0 +1,13 @@
+# Copy to .dev.vars for `npm run dev` / `npm run preview`. Generate a secret: openssl rand -base64 32
+BETTER_AUTH_SECRET=replace-with-32+-random-bytes
+# The CRM's own address: http://localhost:3000 for `npm run dev`, http://localhost:4173 for `npm run preview`.
+BETTER_AUTH_URL=http://localhost:3000
+# First admin, created on the first sign-in while no admin exists (inert afterwards).
+SEED_ADMIN_EMAIL=owner@example.com
+SEED_ADMIN_PASSWORD=replace-with-a-strong-password
+# Intake: Cloudflare's dummy Turnstile secret (always passes). ENVIRONMENT and the CORS allowlist for
+# local dev are vars in wrangler.jsonc > env.development.
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+# Optional: Resend API key. Without it emails (Owner alerts, acknowledgements, password resets) stay queued and a
+# redacted warning is logged; they go out once the key is set.
+# RESEND_API_KEY=re_replace_with_resend_key

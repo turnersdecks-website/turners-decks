@@ -1,0 +1,114 @@
+/**
+ * Turner's Decks CRM Worker (ported from Good Cover's CRM, itself from the Pine & Gable CRM). https://developers.cloudflare.com/workers/wrangler/configuration/
+ *
+ * Top level = production. `--env staging` = staging. database_id values are placeholders until Kevin creates the
+ * D1 databases (`wrangler d1 create turners-decks-crm`, `... turners-decks-crm-staging`) and pastes the real ids here.
+ * Secrets (BETTER_AUTH_SECRET, BETTER_AUTH_URL) are set with `wrangler secret put` and, locally, in `.dev.vars`
+ * (see `.dev.vars.example`). SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD create the first admin on the first sign-in
+ * while no admin exists (src/lib/seed-admin.ts) and are inert afterwards; that admin should change the password
+ * after signing in. (Declared so `.dev.vars` loads them locally.)
+ *
+ * Intake (src/lib/intake.ts): TURNSTILE_SECRET_KEY is a secret. ENVIRONMENT is "production" or "staging"
+ * (Turnstile strictly enforced) or "development" (env.development below; Cloudflare's dummy Turnstile keys accepted).
+ * INTAKE_ALLOWED_ORIGINS is the comma-separated CORS allowlist; its hostnames are also the Turnstile
+ * hostnames accepted. INTAKE_RATE_LIMITER is the per-IP limit (Workers Rate Limiting binding; namespace ids
+ * are per account and must be unique).
+ *
+ * Email outbox (src/lib/outbox.ts, Pine & Gable ADR 0004): RESEND_API_KEY is a secret, deliberately not in
+ * `secrets.required` for staging/production until the Resend account and DNS exist (declared for env.development so
+ * `.dev.vars` can set it): with no key nothing is sent, a redacted warning is logged, and queued jobs go out once the
+ * key is set. Optional EMAIL_FROM overrides the sender. The cron below runs src/lib/cron.ts (outbox retries, backlog
+ * alarms and Quote file cleanup every 5 minutes); `triggers` is inherited by every env.
+ *
+ * Quote files (src/lib/lead-files.server.ts): LEAD_FILES is one private R2 bucket per environment, never public
+ * (no r2.dev URL, no custom domain): turners-decks-crm-files (production), -staging, -dev (local; Miniflare simulates
+ * it under .wrangler/ and the tests use the top-level binding). Files are served only through /api/lead-files/<id>
+ * with a Staff session.
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "turners-decks-crm",
+	"compatibility_date": "2026-10-06",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": "./src/server.ts",
+	"observability": { "enabled": true },
+	"upload_source_maps": true,
+	"secrets": {
+		"required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "SEED_ADMIN_EMAIL", "SEED_ADMIN_PASSWORD", "TURNSTILE_SECRET_KEY"]
+	},
+	// The site's production origins (../src/lib/site.ts SITE.url).
+	"vars": {
+		"ENVIRONMENT": "production",
+		"INTAKE_ALLOWED_ORIGINS": "https://turnersdecks.com,https://www.turnersdecks.com"
+	},
+	"ratelimits": [
+		{ "name": "INTAKE_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+		{ "name": "AUTH_RATE_LIMITER", "namespace_id": "2001", "simple": { "limit": 5, "period": 60 } }
+	],
+	"triggers": { "crons": ["*/5 * * * *"] },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "turners-decks-crm",
+			"database_id": "00000000-0000-0000-0000-000000000002",
+			"migrations_dir": "drizzle"
+		}
+	],
+	"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files" }],
+	"env": {
+		// Local only (`npm run dev` / `npm run preview` set CLOUDFLARE_ENV=development). Declared secrets limit what
+		// `.dev.vars` may set, so the non-secret local values live here. Its D1 is a separate local file (own database_id):
+		// migrate it with `wrangler d1 migrations apply DB --local --env development`.
+		"development": {
+			// RESEND_API_KEY is optional: listed only so `.dev.vars` may set it (wrangler just warns locally when it is
+			// missing; the code handles a missing key).
+			"secrets": {
+				"required": [
+					"BETTER_AUTH_SECRET",
+					"BETTER_AUTH_URL",
+					"SEED_ADMIN_EMAIL",
+					"SEED_ADMIN_PASSWORD",
+					"TURNSTILE_SECRET_KEY",
+					"RESEND_API_KEY"
+				]
+			},
+			"vars": { "ENVIRONMENT": "development", "INTAKE_ALLOWED_ORIGINS": "http://localhost:4321" },
+			"ratelimits": [
+				{ "name": "INTAKE_RATE_LIMITER", "namespace_id": "1000", "simple": { "limit": 10, "period": 60 } },
+				{ "name": "AUTH_RATE_LIMITER", "namespace_id": "2000", "simple": { "limit": 5, "period": 60 } }
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "turners-decks-crm",
+					"database_id": "00000000-0000-0000-0000-000000000000",
+					"migrations_dir": "drizzle"
+				}
+			],
+			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-dev" }]
+		},
+		"staging": {
+			"secrets": {
+				"required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "SEED_ADMIN_EMAIL", "SEED_ADMIN_PASSWORD", "TURNSTILE_SECRET_KEY"]
+			},
+			// Placeholder origin until the staging Pages project exists (FLW-204).
+			"vars": {
+				"ENVIRONMENT": "staging",
+				"INTAKE_ALLOWED_ORIGINS": "https://turners-decks-staging.pages.dev"
+			},
+			"ratelimits": [
+				{ "name": "INTAKE_RATE_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
+				{ "name": "AUTH_RATE_LIMITER", "namespace_id": "2002", "simple": { "limit": 5, "period": 60 } }
+			],
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "turners-decks-crm-staging",
+					"database_id": "00000000-0000-0000-0000-000000000001",
+					"migrations_dir": "drizzle"
+				}
+			],
+			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-staging" }]
+		}
+	}
+}
