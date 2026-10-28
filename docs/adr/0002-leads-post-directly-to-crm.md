@@ -13,9 +13,10 @@ would split leads between the inbox and the CRM. This is the same move Pine & Ga
 
 - The CLAUDE.md rules about `SITE.web3formsKey` and `submitLead` posting to Web3Forms are retired once the cutover
   ships.
-- The CRM emails the owner about every new Lead through Resend, using the ported email outbox with retries, as Good
+- The CRM emails the owner about every Form submission that becomes or joins a Lead through Resend, using the ported email outbox with retries, as Good
   Cover and Pine & Gable do. Email is a notification of a stored Lead, never a second place leads live.
 - There is no backup path. If the CRM intake is unreachable after the client's automatic retries, the site shows a
-  clear error with tap-to-call and keeps the visitor's answers so they can try again. Good Cover's backup Pages
+  clear error with tap-to-call and keeps the visitor's answers so they can try again. If the estimator cannot load
+  its questions from the CRM at all, it shows the same error with tap-to-call instead of the steps. Good Cover's backup Pages
   Function was considered and rejected: it could not show a price, and leads sent through it would exist only in the
   inbox.

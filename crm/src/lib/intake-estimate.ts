@@ -22,14 +22,23 @@ export type PricedEstimate = {
   publicResult: PublicResult
 }
 
-export type PricingFailure = { error: 'unknown_version' | 'invalid_answers'; errors?: AnswerErrors }
+export type PricingFailure = { error: 'unknown_version' | 'outdated_version' | 'invalid_answers'; errors?: AnswerErrors }
+
+/**
+ * How long a superseded Published version is still accepted: a Homeowner who opened the estimator just before the
+ * owner published can finish on the version they answered. Older versions are refused, so a tampered request cannot
+ * be priced at an old, cheaper price list (code review of FLW-201).
+ */
+export const SUPERSEDED_GRACE_MS = 24 * 60 * 60 * 1000
 
 /** Prices an estimator payload (`estimator_version`, `answers`, `defaulted`). Throws if the engine misbehaves. */
-export async function priceEstimatorPayload(db: Db, p: Record<string, unknown>): Promise<PricedEstimate | PricingFailure> {
+export async function priceEstimatorPayload(db: Db, p: Record<string, unknown>, now = Date.now()): Promise<PricedEstimate | PricingFailure> {
   const version = p.estimator_version
   if (typeof version !== 'number' || !Number.isSafeInteger(version) || version < 1) return { error: 'unknown_version' }
   const row = await db.select().from(estimatorVersions).where(eq(estimatorVersions.version, version)).get()
   if (!row) return { error: 'unknown_version' }
+  const next = await db.select({ publishedAt: estimatorVersions.publishedAt }).from(estimatorVersions).where(eq(estimatorVersions.version, version + 1)).get()
+  if (next && now - next.publishedAt.getTime() > SUPERSEDED_GRACE_MS) return { error: 'outdated_version' }
   const doc = JSON.parse(row.documentJson) as EstimatorDocument
   const parsed = parseAnswers(doc, p.answers, p.defaulted)
   if (!parsed.ok) return { error: 'invalid_answers', errors: parsed.errors }

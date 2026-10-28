@@ -21,7 +21,8 @@ _Avoid_: Contact, customer (only after a Lead is won), client, prospect, user
 ## Leads
 
 **Lead**:
-The record of one Homeowner's inquiry from the website or entered by hand, from first contact until it is won or lost.
+The record of one Homeowner's inquiries from the website or entered by hand, from first contact until it is won or
+lost. A repeat Form submission with the same phone or email joins the existing Lead.
 _Avoid_: Contact, customer, prospect, opportunity, submission
 
 **Pipeline stage**:
@@ -62,12 +63,17 @@ The step that turns a Form submission into a new or updated Lead.
 _Avoid_: Ingest, webhook
 
 **Owner alert**:
-The email the Owner gets about every new Lead, with a link to the CRM.
+The email the Owner gets about every Form submission that becomes or joins a Lead, with a link to the CRM.
 _Avoid_: Notification, lead email
 
+**Acknowledgement**:
+The email a Homeowner gets after the quote form, saying their request arrived.
+_Avoid_: Confirmation, receipt
+
 **Estimate email**:
-The email a Homeowner gets after using the estimator, with their price range.
-_Avoid_: Confirmation, acknowledgement, quote email
+The email a Homeowner gets after using the estimator, with their price range. It replaces the Acknowledgement for
+estimator Form submissions.
+_Avoid_: Confirmation, quote email
 
 ## Estimator
 
@@ -81,6 +87,6 @@ the owner publishes.
 _Avoid_: Release, revision
 
 **Estimate snapshot**:
-What a Lead keeps from the estimator: the Published version number, the questions and options shown, the
-Homeowner's answers, and the resulting price range.
+What a Lead keeps from one estimator Form submission: the Published version number, the questions and options shown,
+the Homeowner's answers, and the resulting price range. A Lead has one per estimator Form submission.
 _Avoid_: Quote (a Quote is a formal proposal)

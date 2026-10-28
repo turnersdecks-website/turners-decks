@@ -17,6 +17,6 @@ work (estimator settings, deck wording) is added on top.
 ## Consequences
 
 - The CLAUDE.md rules "There is no backend or database. Keep the site fully static" apply to the public site only,
-  not to the CRM. The one exception on the public site is the estimator, which loads its settings from the CRM at
-  run time (ADR 0003).
+  not to the CRM. The one exception on the public site is the estimator, which loads the latest Published version's
+  questions and options (never prices) from the CRM at run time (ADR 0003).
 - Two deploys (site + CRM) with a cross-origin intake between them.

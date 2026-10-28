@@ -281,7 +281,7 @@ async function processSubmission(
     // FLW-201: an estimator submission is priced against the Published version it names, before any Lead write.
     let estimate: PricedEstimate | undefined
     if (trimmedNonEmptyString(payload!.source) === 'estimator') {
-      const priced = await priceEstimatorPayload(db, payload!)
+      const priced = await priceEstimatorPayload(db, payload!, receivedAt.getTime())
       if (isPricingFailure(priced)) {
         const result = reject(422, priced.error)
         if (priced.errors) result.body.errors = priced.errors

@@ -94,6 +94,18 @@ describe('an estimator Form submission', () => {
     expect(latest.estimate.low).toBeGreaterThan(60000)
   })
 
+  it('is refused (422) on a version superseded more than a day ago, so an old price list cannot be replayed', async () => {
+    const stale = await publish(() => {})
+    const newer = await publish(() => {})
+    await env.DB.prepare('UPDATE estimator_versions SET published_at = ? WHERE version = ?').bind(Date.now() - 25 * 60 * 60 * 1000, newer).run()
+    const res = await postIntake(estimatorPayload({ estimator_version: stale }))
+    expect(res.status).toBe(422)
+    expect((await res.json<{ error: string }>()).error).toBe('outdated_version')
+    // Within the day, the Homeowner who started on the older version can still finish.
+    await env.DB.prepare('UPDATE estimator_versions SET published_at = ? WHERE version = ?').bind(Date.now() - 60 * 1000, newer).run()
+    expect((await postIntake(estimatorPayload({ estimator_version: stale }))).status).toBe(200)
+  })
+
   it('is refused (422) for a version that does not exist, and makes no Lead', async () => {
     const body = estimatorPayload({ estimator_version: 9999 })
     const res = await postIntake(body)

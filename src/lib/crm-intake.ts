@@ -139,7 +139,7 @@ function refusal(status: number, code: string): string {
   if (code === "turnstile_failed") return "The security check didn't go through. Please try again.";
   if (status === 429) return "Too many tries in a short time. Please wait a minute and try again.";
   if (code === "invalid_answers") return "Some of your answers need another look. Please check them and try again.";
-  if (code === "unknown_version") return "The estimator was just updated. Please reload the page and try again.";
+  if (code === "unknown_version" || code === "outdated_version") return "The estimator was just updated. Please reload the page and try again.";
   if (code === "missing_name_or_contact") return "Please enter your name and a phone number or email.";
   return SEND_FAILED;
 }
