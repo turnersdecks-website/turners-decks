@@ -104,7 +104,7 @@
 				{
 					"binding": "DB",
 					"database_name": "turners-decks-crm-staging",
-					"database_id": "00000000-0000-0000-0000-000000000001",
+					"database_id": "2b9e5d35-a5ae-48dd-b5af-0bcf85c29d0e",
 					"migrations_dir": "drizzle"
 				}
 			],
