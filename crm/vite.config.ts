@@ -5,7 +5,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
 export default defineConfig({
-  resolve: { tsconfigPaths: true },
   // The Worker answers CORS itself (intake allowlist); Vite's dev/preview CORS would otherwise answer
   // every preflight for localhost origins before the Worker sees it.
   server: { cors: false },
