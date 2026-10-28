@@ -46,8 +46,10 @@ describe('pricing a deck against Published version 1', () => {
     expect(r.low).toBe(10000)
   })
 
-  it('always prices removal on a full replacement', () => {
+  it('always prices at least a full removal on a replacement, unless the homeowner removes it', () => {
     expect(price({ demolition: 'none' }).lineItems.demolition).toBe(3250)
+    expect(price({ demolition: 'deckingOnly' }).lineItems.demolition).toBe(3250)
+    expect(price({ demolition: 'largeRestricted' }).lineItems.demolition).toBe(6000)
   })
 
   it('flags townhouses and HOA properties for site review', () => {

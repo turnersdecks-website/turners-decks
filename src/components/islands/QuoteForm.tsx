@@ -24,6 +24,9 @@ export default function QuoteForm({ defaultProject }: { defaultProject?: string 
     const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     const parsed = quoteSchema.safeParse(data);
     if (!parsed.success) {
+      // A new attempt that fails validation sent nothing: drop the previous send failure.
+      setStatus("idle");
+      setServerError("");
       setErrors(fieldErrors(parsed.error.issues));
       return;
     }

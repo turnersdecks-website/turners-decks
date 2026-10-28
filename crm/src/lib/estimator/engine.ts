@@ -115,8 +115,9 @@ export function estimate(doc: EstimatorDocument, a: Answers): EstimateResult {
   // 8. Demolition (a redeck always removes the old boards; a replacement always removes the old deck)
   let demolition = price('demolition', 'price')
   const demoPrice = (v: string) => option(doc, 'demolition', v).price.price ?? 0
+  // A replacement promises a full tear-out, so a narrower removal answer never prices it lower (code review).
   if (redeck && a.demolition !== 'homeowner') demolition = Math.max(demolition, demoPrice('deckingOnly'))
-  if (a.projectType === 'replacement' && a.demolition === 'none') demolition = demoPrice('full')
+  if (a.projectType === 'replacement' && a.demolition !== 'homeowner') demolition = Math.max(demolition, demoPrice('full'))
 
   // 9. Fascia + patterns
   const fascia = edge * price('fascia', 'perLf')
