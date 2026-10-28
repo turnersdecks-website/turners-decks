@@ -221,9 +221,10 @@ export function estimateProject(i: EstimateInput, cfg: P = PRICING): EstimateRes
     }
   }
 
-  // 8. Demolition (redeck always removes old boards)
+  // 8. Demolition (redeck always removes old boards; replacement always removes the old deck)
   let demolition: number = cfg.demolition[i.demolition];
   if (redeck && i.demolition !== "homeowner") demolition = Math.max(demolition, cfg.demolition.deckingOnly);
+  if (i.projectType === "replacement" && i.demolition === "none") demolition = cfg.demolition.full;
 
   // 9. Fascia + patterns
   const fascia = edge * cfg.fasciaPerLf[i.fascia];
@@ -275,6 +276,8 @@ export function estimateProject(i: EstimateInput, cfg: P = PRICING): EstimateRes
   flag(redeck && i.unstable === "yes", "Existing deck moves or feels unstable");
   flag(redeck && i.framingSound !== "yes", "Existing framing condition unknown");
   flag(i.historic === "yes", "Historic district");
+  flag(i.townhouse === "yes" || i.access === "townhouse", "Townhouse or attached home");
+  flag(i.hoa === "yes", "HOA approval may be required");
   flag(i.privacyWall === "screen", "Custom privacy screen");
   flag(i.shape === "other", "Custom project shape");
   flag(i.projectType === "expansion", "Expansion: tying into the existing deck");
@@ -287,7 +290,7 @@ export function estimateProject(i: EstimateInput, cfg: P = PRICING): EstimateRes
   const uncertain = unsureCount >= 2 || serviceArea === "unknown";
 
   const [lo, hi] = flags.length ? cfg.customerRange.review : uncertain ? cfg.customerRange.uncertain : cfg.customerRange.standard;
-  const low = Math.max(roundEstimate(mid * lo), belowMinimum ? cfg.minimumProjectPrice : 0);
+  const low = Math.max(roundEstimate(mid * lo), cfg.minimumProjectPrice);
   const high = roundEstimate(mid * hi);
 
   return { sqft, railingLf, lineItems, mid: Math.round(mid), low, high, belowMinimum, flags, uncertain, serviceArea };

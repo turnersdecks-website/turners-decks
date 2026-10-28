@@ -43,6 +43,8 @@ function Choice<K extends keyof EstimateInput>({ k, label, a, set, cols = 2, hel
   );
 }
 
+const townhouseOrHoa = (a: EstimateInput) => a.townhouse === "yes" || a.access === "townhouse" || a.hoa === "yes";
+
 function Note({ children }: { children: ReactNode }) {
   return <p className="rounded-lg border-l-4 border-accent-blue bg-secondary p-4 text-sm text-muted-foreground">{children}</p>;
 }
@@ -140,7 +142,7 @@ export default function Estimator() {
         {done ? <Result a={a} r={done} /> : (
           <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_280px]">
             <div className="space-y-7 rounded-xl bg-card p-6 shadow-card md:p-8">
-              {step === 0 && <Choice k="projectType" label="What type of project are you considering?" a={a} set={(p) => set({ ...p, demolition: p.projectType === "replacement" ? "full" : p.projectType === "redeck" ? "deckingRailings" : a.demolition })} />}
+              {step === 0 && <Choice k="projectType" label="What type of project are you considering?" a={a} set={(p) => set({ ...p, demolition: p.projectType === "replacement" ? "full" : p.projectType === "redeck" ? "deckingRailings" : "none" })} />}
               {step === 0 && redeck && <Note>{DISCLAIMERS.redeck}</Note>}
 
               {step === 1 && (
@@ -189,6 +191,7 @@ export default function Estimator() {
                   </div>
                   <Choice k="hoa" label="Does the property have an HOA?" a={a} set={set} cols={3} />
                   <Choice k="historic" label="Is it in a historic district?" a={a} set={set} cols={3} />
+                  {townhouseOrHoa(a) && <Note>{DISCLAIMERS.townhouseHoa}</Note>}
                 </>
               )}
 
@@ -411,6 +414,7 @@ function Result({ a, r }: { a: EstimateInput; r: EstimateResult }) {
 
       <div className="space-y-3 text-sm text-muted-foreground">
         {a.projectType === "redeck" && <Note>{DISCLAIMERS.redeck}</Note>}
+        {townhouseOrHoa(a) && <Note>{DISCLAIMERS.townhouseHoa} <a href={SITE.phoneHref} className="font-medium text-accent-blue underline">{SITE.phone}</a></Note>}
         <Note>{DISCLAIMERS.permit}</Note>
         <Note>{DISCLAIMERS.material}</Note>
       </div>

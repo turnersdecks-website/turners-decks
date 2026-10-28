@@ -210,6 +210,8 @@ export function leadSummary(name: string, i: EstimateInput, r: EstimateResult, t
     ...projectSummary(i, r).map(([k, v]) => `${k}: ${v}`),
     `Desired timing: ${timing || "—"}`,
     `Displayed range: ${formatUSD(r.low)} to ${formatUSD(r.high)} (internal midpoint ${formatUSD(r.mid)})`,
+    `Townhouse or rowhome: ${labelFor("townhouse", i.townhouse)}`,
+    `HOA: ${labelFor("hoa", i.hoa)}`,
     `Manual review flags: ${r.flags.length ? r.flags.join("; ") : "None"}`,
     `Neighbors interested: ${labelFor("neighbors", i.neighbors)}`,
     `Customer notes: ${notes || "—"}`,
@@ -227,6 +229,8 @@ export const DISCLAIMERS = {
     "Material pricing can vary by manufacturer, product line, color, availability, and market conditions. Final material selections are confirmed before a formal proposal is issued.",
   homeownerDemo:
     "If you remove the existing deck yourself, the site must be fully cleared, safe, and ready before construction begins.",
+  townhouseHoa:
+    "Townhouses and HOA properties often have shared walls, setback rules, or approval steps that change the price. Treat this range as a starting point and call us for pricing on your property.",
   lighting:
     "Electrical upgrades, new circuits, transformer locations, outlets, and related house wiring may require separate pricing.",
   neighbors:

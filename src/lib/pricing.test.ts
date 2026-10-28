@@ -26,6 +26,23 @@ describe("deck estimator", () => {
     expect(r.low).toBe(10000);
   });
 
+  it("never shows a low end under the minimum, even just above it", () => {
+    const r = estimateProject({ ...base, projectType: "new", sections: [{ width: 10, depth: 10 }], material: "pressureTreated", height: "ground", railingSides: "none", stairType: "none", demolition: "none", lighting: "stairs", features: ["drinkRail", "bench"] });
+    expect(r.belowMinimum).toBe(false);
+    expect(r.mid * 0.9).toBeLessThan(10000);
+    expect(r.low).toBe(10000);
+  });
+
+  it("always prices removal on a full replacement", () => {
+    expect(estimateProject({ ...base, demolition: "none" }).lineItems.demolition).toBe(3250);
+  });
+
+  it("flags townhouses and HOA properties for site review", () => {
+    expect(estimateProject({ ...base, townhouse: "yes" }).flags).toContain("Townhouse or attached home");
+    expect(estimateProject({ ...base, access: "townhouse" }).flags).toContain("Townhouse or attached home");
+    expect(estimateProject({ ...base, hoa: "yes" }).flags).toContain("HOA approval may be required");
+  });
+
   it("drops demolition when the homeowner removes the old deck", () => {
     expect(estimateProject({ ...base, demolition: "homeowner" }).lineItems.demolition).toBe(0);
   });
