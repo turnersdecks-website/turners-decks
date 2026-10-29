@@ -1,7 +1,8 @@
 /*
- * Good Cover CRM design tokens: Pine & Gable's Admin Kit token layout (its ADR 0006, kit src/app/globals.css) in Good
- * Cover's brand (site src/styles/global.css): Ink text, Paper surfaces (no pure white), Copper deep for actions,
- * Chalk blue focus rings, Copper light highlights; Public Sans with Domine headings. Light and dark.
+ * Turner's Decks CRM design tokens, in the website's brand (site src/styles/global.css): navy #1D3058 text and
+ * headings, stone gray #54595F for actions (as the site's buttons), the original site's light grays for surfaces,
+ * steel blue #37578C for focus rings, gold #D1A648 for highlights. Inter for text, Poppins for headings. Pine & Gable's
+ * Admin Kit token layout (its ADR 0006). Light and dark.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -15,111 +16,114 @@
  */
 
 :root {
-  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-  --font-display: "Domine", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 
-  /* Paper tint (site: Paper lifted 50% toward white) and Ink */
-  --background: oklch(0.978 0.007 84.58);
-  --foreground: oklch(0.2724 0.0249 251.15);
-  --card: oklch(0.99 0.004 84.58);
-  --card-foreground: oklch(0.2724 0.0249 251.15);
-  --popover: oklch(0.99 0.004 84.58);
-  --popover-foreground: oklch(0.2724 0.0249 251.15);
-  /* Copper deep #9A4F1F: the site's button colour */
-  --primary: oklch(0.5112 0.1165 49.66);
-  --primary-foreground: oklch(0.9563 0.0143 84.58);
-  /* Paper #F5F0E6 and Paper 2 */
-  --secondary: oklch(0.9563 0.0143 84.58);
-  --secondary-foreground: oklch(0.2724 0.0249 251.15);
-  --muted: oklch(0.945 0.0137 84.58);
-  /* Gray #4A5663 */
-  --muted-foreground: oklch(0.4477 0.0262 250.5);
-  --accent: oklch(0.945 0.0137 84.58);
-  --accent-foreground: oklch(0.2724 0.0249 251.15);
-  /* Copper light #E0935C: "Needs review", the Quoted stage */
-  --highlight: oklch(0.7298 0.1172 55.27);
-  --highlight-foreground: oklch(0.2724 0.0249 251.15);
+  /* White surfaces, navy text (site) */
+  --background: oklch(0.985 0.002 265);
+  --foreground: oklch(0.29 0.07 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.29 0.07 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.29 0.07 264);
+  /* Stone #54595F: the site's button colour, 7:1 with white */
+  --primary: oklch(0.45 0.012 250);
+  --primary-foreground: oklch(1 0 0);
+  /* Navy #1D3058: headings and the brand mark */
+  --brand: oklch(0.31 0.075 264);
+  --brand-foreground: oklch(1 0 0);
+  /* Section gray #F4F5F7 */
+  --secondary: oklch(0.966 0.003 265);
+  --secondary-foreground: oklch(0.31 0.075 264);
+  --muted: oklch(0.966 0.003 265);
+  --muted-foreground: oklch(0.5 0.03 265);
+  --accent: oklch(0.94 0.006 265);
+  --accent-foreground: oklch(0.31 0.075 264);
+  /* Gold #D1A648: "Needs review", the Quoted stage */
+  --highlight: oklch(0.75 0.12 83);
+  --highlight-foreground: oklch(0.29 0.07 264);
   --destructive: oklch(0.52 0.19 27);
   --destructive-foreground: oklch(0.985 0 0);
-  /* Kit semantic tokens, tuned to sit next to copper and chalk */
   --success: oklch(0.5 0.11 155);
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.75 0.15 80);
-  --warning-foreground: oklch(0.2724 0.0249 251.15);
+  --warning-foreground: oklch(0.29 0.07 264);
   --priority-1: oklch(0.52 0.19 27);
-  --priority-2: oklch(0.5112 0.1165 49.66);
+  --priority-2: oklch(0.31 0.075 264);
   --priority-3: oklch(0.75 0.15 80);
-  --priority-4: oklch(0.4477 0.0262 250.5);
-  /* Rule soft (site: Ink 18% into Paper) */
-  --border: oklch(0.86 0.012 84.58);
-  --input: oklch(0.82 0.012 84.58);
-  /* Chalk #2F5D8C */
-  --ring: oklch(0.4685 0.092 250.84);
-  /* Charts: copper deep, chalk, sky, copper light, gray */
-  --chart-1: oklch(0.5112 0.1165 49.66);
-  --chart-2: oklch(0.4685 0.092 250.84);
-  --chart-3: oklch(0.7555 0.0705 248.78);
-  --chart-4: oklch(0.7298 0.1172 55.27);
-  --chart-5: oklch(0.4477 0.0262 250.5);
-  --sidebar: oklch(0.9563 0.0143 84.58);
-  --sidebar-foreground: oklch(0.2724 0.0249 251.15);
-  --sidebar-primary: oklch(0.5112 0.1165 49.66);
-  --sidebar-primary-foreground: oklch(0.9563 0.0143 84.58);
-  --sidebar-accent: oklch(0.92 0.015 84.58);
-  --sidebar-accent-foreground: oklch(0.2724 0.0249 251.15);
-  --sidebar-border: oklch(0.86 0.012 84.58);
-  --sidebar-ring: oklch(0.4685 0.092 250.84);
+  --priority-4: oklch(0.5 0.03 265);
+  --border: oklch(0.91 0.005 265);
+  /* Form field borders: 3:1 or more on white */
+  --input: oklch(0.72 0.02 262);
+  /* Steel blue #37578C */
+  --ring: oklch(0.46 0.09 259);
+  /* Charts: navy, steel, gold, stone, slate */
+  --chart-1: oklch(0.31 0.075 264);
+  --chart-2: oklch(0.46 0.09 259);
+  --chart-3: oklch(0.75 0.12 83);
+  --chart-4: oklch(0.45 0.012 250);
+  --chart-5: oklch(0.54 0.035 270);
+  --sidebar: oklch(0.966 0.003 265);
+  --sidebar-foreground: oklch(0.29 0.07 264);
+  --sidebar-primary: oklch(0.31 0.075 264);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.93 0.008 265);
+  --sidebar-accent-foreground: oklch(0.29 0.07 264);
+  --sidebar-border: oklch(0.91 0.005 265);
+  --sidebar-ring: oklch(0.46 0.09 259);
   --sidebar-scrollbar-thumb: color-mix(in srgb, var(--sidebar-foreground) 15%, transparent);
   --sidebar-scrollbar-thumb-hover: color-mix(in srgb, var(--sidebar-foreground) 25%, transparent);
 }
 
-/* Ink surfaces (the site's dark bands), Paper text, Copper light actions, Sky focus rings. */
+/* Navy surfaces (the site's footer and CTA band), light text, light steel actions. */
 .dark {
-  --background: oklch(0.2 0.02 251.15);
-  --foreground: oklch(0.9563 0.0143 84.58);
-  --card: oklch(0.2724 0.0249 251.15);
-  --card-foreground: oklch(0.9563 0.0143 84.58);
-  --popover: oklch(0.2724 0.0249 251.15);
-  --popover-foreground: oklch(0.9563 0.0143 84.58);
-  --primary: oklch(0.7298 0.1172 55.27);
-  --primary-foreground: oklch(0.2 0.02 251.15);
-  --secondary: oklch(0.32 0.025 251.15);
-  --secondary-foreground: oklch(0.9563 0.0143 84.58);
-  --muted: oklch(0.32 0.025 251.15);
-  --muted-foreground: oklch(0.78 0.02 250.5);
-  --accent: oklch(0.32 0.025 251.15);
-  --accent-foreground: oklch(0.9563 0.0143 84.58);
-  --highlight: oklch(0.7298 0.1172 55.27);
-  --highlight-foreground: oklch(0.2 0.02 251.15);
+  --background: oklch(0.2 0.045 264);
+  --foreground: oklch(0.96 0.005 265);
+  --card: oklch(0.255 0.055 264);
+  --card-foreground: oklch(0.96 0.005 265);
+  --popover: oklch(0.255 0.055 264);
+  --popover-foreground: oklch(0.96 0.005 265);
+  --primary: oklch(0.82 0.04 259);
+  --primary-foreground: oklch(0.2 0.045 264);
+  --brand: oklch(0.82 0.04 259);
+  --brand-foreground: oklch(0.2 0.045 264);
+  --secondary: oklch(0.31 0.05 264);
+  --secondary-foreground: oklch(0.96 0.005 265);
+  --muted: oklch(0.31 0.05 264);
+  --muted-foreground: oklch(0.78 0.02 265);
+  --accent: oklch(0.31 0.05 264);
+  --accent-foreground: oklch(0.96 0.005 265);
+  --highlight: oklch(0.8 0.12 83);
+  --highlight-foreground: oklch(0.2 0.045 264);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.72 0.13 160);
-  --success-foreground: oklch(0.2 0.02 251.15);
+  --success-foreground: oklch(0.2 0.045 264);
   --warning: oklch(0.81 0.15 82);
-  --warning-foreground: oklch(0.2 0.02 251.15);
+  --warning-foreground: oklch(0.2 0.045 264);
   --priority-1: oklch(0.704 0.191 22.216);
-  --priority-2: oklch(0.7298 0.1172 55.27);
+  --priority-2: oklch(0.82 0.04 259);
   --priority-3: oklch(0.81 0.15 82);
-  --priority-4: oklch(0.78 0.02 250.5);
+  --priority-4: oklch(0.78 0.02 265);
   --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.7555 0.0705 248.78);
-  --chart-1: oklch(0.7298 0.1172 55.27);
-  --chart-2: oklch(0.7555 0.0705 248.78);
-  --chart-3: oklch(0.6 0.09 250.84);
-  --chart-4: oklch(0.85 0.06 55.27);
-  --chart-5: oklch(0.78 0.02 250.5);
-  --sidebar: oklch(0.23 0.022 251.15);
-  --sidebar-foreground: oklch(0.9563 0.0143 84.58);
-  --sidebar-primary: oklch(0.7298 0.1172 55.27);
-  --sidebar-primary-foreground: oklch(0.2 0.02 251.15);
-  --sidebar-accent: oklch(0.32 0.025 251.15);
-  --sidebar-accent-foreground: oklch(0.9563 0.0143 84.58);
+  --input: oklch(1 0 0 / 22%);
+  --ring: oklch(0.75 0.07 259);
+  --chart-1: oklch(0.82 0.04 259);
+  --chart-2: oklch(0.65 0.09 259);
+  --chart-3: oklch(0.8 0.12 83);
+  --chart-4: oklch(0.7 0.012 250);
+  --chart-5: oklch(0.78 0.02 265);
+  --sidebar: oklch(0.22 0.05 264);
+  --sidebar-foreground: oklch(0.96 0.005 265);
+  --sidebar-primary: oklch(0.82 0.04 259);
+  --sidebar-primary-foreground: oklch(0.2 0.045 264);
+  --sidebar-accent: oklch(0.31 0.05 264);
+  --sidebar-accent-foreground: oklch(0.96 0.005 265);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.7555 0.0705 248.78);
+  --sidebar-ring: oklch(0.75 0.07 259);
   --sidebar-scrollbar-thumb: color-mix(in srgb, var(--sidebar-foreground) 8%, transparent);
   --sidebar-scrollbar-thumb-hover: color-mix(in srgb, var(--sidebar-foreground) 12%, transparent);
 }
@@ -149,6 +153,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-destructive: var(--destructive);
@@ -195,9 +201,9 @@
     @apply bg-background text-foreground font-sans;
   }
 
-  /* Page titles in Domine, as the site's headings. */
+  /* Page titles in Poppins and navy, as the site's headings. */
   h1 {
-    @apply font-heading;
+    @apply font-heading text-brand;
   }
 
   /* Full-height screens (the Pipeline) opt in with data-layout="fixed". */

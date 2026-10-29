@@ -132,7 +132,7 @@ function JobDetail() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
           <JobCard key={job.updatedAt.toString()} job={job} timeZone={timeZone} refresh={refresh} />
-          <PhotosPanel key={job.id} target={{ jobId: job.id }} defaultStage="after" timeZone={timeZone} />
+          <PhotosPanel key={job.id} target={{ jobId: job.id }} timeZone={timeZone} />
         </div>
         <aside className="min-w-0 space-y-6 self-start xl:sticky xl:top-6">
           <section aria-label="Customer" className="space-y-2 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">

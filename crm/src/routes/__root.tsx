@@ -15,8 +15,8 @@ import { THEME_BOOT_SCRIPT } from '#/lib/theme'
 
 import appCss from '../styles.css?url'
 
-// Ported from Lovable src/routes/__root.tsx (Toaster, 404 and error pages), in Good Cover's fonts (Public Sans, Domine
-// for headings, as the site). No React Query and no
+// Ported from Lovable src/routes/__root.tsx (Toaster, 404 and error pages), in the website's fonts (Inter, Poppins
+// for headings). No React Query and no
 // Lovable error reporting here.
 export const Route = createRootRoute({
   head: () => ({
@@ -28,7 +28,7 @@ export const Route = createRootRoute({
     links: [
       { rel: 'stylesheet', href: appCss },
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Domine:wght@700&family=Public+Sans:wght@400;500;600;700&display=swap' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap' },
       { rel: 'icon', href: '/favicon.png', type: 'image/png' },
     ],
   }),

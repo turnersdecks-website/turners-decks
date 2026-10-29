@@ -21,6 +21,7 @@ import { Route as StaffLeadsRouteImport } from './routes/_staff/leads'
 import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
 import { Route as StaffSubmissionsRouteImport } from './routes/_staff/submissions'
 import { Route as ApiLeadFilesRouteImport } from './routes/api/lead-files'
+import { Route as ApiPhotosRouteImport } from './routes/api/photos'
 import { Route as HomeDeviceRouteImport } from './routes/home.$device'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as StaffCustomersIdRouteImport } from './routes/_staff/customers_.$id'
@@ -96,6 +97,11 @@ const ApiLeadFilesRoute = ApiLeadFilesRouteImport.update({
   path: '/api/lead-files',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPhotosRoute = ApiPhotosRouteImport.update({
+  id: '/api/photos',
+  path: '/api/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeDeviceRoute = HomeDeviceRouteImport.update({
   id: '/home/$device',
   path: '/home/$device',
@@ -137,9 +143,9 @@ const ApiLeadFilesIdRoute = ApiLeadFilesIdRouteImport.update({
   getParentRoute: () => ApiLeadFilesRoute,
 } as any)
 const ApiPhotosIdRoute = ApiPhotosIdRouteImport.update({
-  id: '/api/photos/$id',
-  path: '/api/photos/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiPhotosRoute,
 } as any)
 const ApiPublicEstimatorRoute = ApiPublicEstimatorRouteImport.update({
   id: '/api/public/estimator',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
+  '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
   '/p/$token': typeof PTokenRoute
   '/customers/$id': typeof StaffCustomersIdRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
+  '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
   '/p/$token': typeof PTokenRoute
   '/': typeof StaffIndexRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_staff/settings': typeof StaffSettingsRoute
   '/_staff/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
+  '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
   '/p/$token': typeof PTokenRoute
   '/_staff/': typeof StaffIndexRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/submissions'
     | '/api/lead-files'
+    | '/api/photos'
     | '/home/$device'
     | '/p/$token'
     | '/customers/$id'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/submissions'
     | '/api/lead-files'
+    | '/api/photos'
     | '/home/$device'
     | '/p/$token'
     | '/'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/_staff/settings'
     | '/_staff/submissions'
     | '/api/lead-files'
+    | '/api/photos'
     | '/home/$device'
     | '/p/$token'
     | '/_staff/'
@@ -352,10 +364,10 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   ApiLeadFilesRoute: typeof ApiLeadFilesRouteWithChildren
+  ApiPhotosRoute: typeof ApiPhotosRouteWithChildren
   HomeDeviceRoute: typeof HomeDeviceRoute
   PTokenRoute: typeof PTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiPhotosIdRoute: typeof ApiPhotosIdRoute
   ApiPublicEstimatorRoute: typeof ApiPublicEstimatorRoute
   ApiPublicIntakeRoute: typeof ApiPublicIntakeRoute
   ApiPublicPhotosRoute: typeof ApiPublicPhotosRouteWithChildren
@@ -448,6 +460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLeadFilesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/photos': {
+      id: '/api/photos'
+      path: '/api/photos'
+      fullPath: '/api/photos'
+      preLoaderRoute: typeof ApiPhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/home/$device': {
       id: '/home/$device'
       path: '/home/$device'
@@ -506,10 +525,10 @@ declare module '@tanstack/react-router' {
     }
     '/api/photos/$id': {
       id: '/api/photos/$id'
-      path: '/api/photos/$id'
+      path: '/$id'
       fullPath: '/api/photos/$id'
       preLoaderRoute: typeof ApiPhotosIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ApiPhotosRoute
     }
     '/api/public/estimator': {
       id: '/api/public/estimator'
@@ -598,6 +617,18 @@ const ApiLeadFilesRouteWithChildren = ApiLeadFilesRoute._addFileChildren(
   ApiLeadFilesRouteChildren,
 )
 
+interface ApiPhotosRouteChildren {
+  ApiPhotosIdRoute: typeof ApiPhotosIdRoute
+}
+
+const ApiPhotosRouteChildren: ApiPhotosRouteChildren = {
+  ApiPhotosIdRoute: ApiPhotosIdRoute,
+}
+
+const ApiPhotosRouteWithChildren = ApiPhotosRoute._addFileChildren(
+  ApiPhotosRouteChildren,
+)
+
 interface ApiPublicPhotosRouteChildren {
   ApiPublicPhotosIdRoute: typeof ApiPublicPhotosIdRoute
   ApiPublicPhotosDoneRoute: typeof ApiPublicPhotosDoneRoute
@@ -618,10 +649,10 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   ApiLeadFilesRoute: ApiLeadFilesRouteWithChildren,
+  ApiPhotosRoute: ApiPhotosRouteWithChildren,
   HomeDeviceRoute: HomeDeviceRoute,
   PTokenRoute: PTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiPhotosIdRoute: ApiPhotosIdRoute,
   ApiPublicEstimatorRoute: ApiPublicEstimatorRoute,
   ApiPublicIntakeRoute: ApiPublicIntakeRoute,
   ApiPublicPhotosRoute: ApiPublicPhotosRouteWithChildren,

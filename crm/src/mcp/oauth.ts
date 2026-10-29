@@ -55,14 +55,14 @@ function page(title: string, body: string, headers = new Headers(), status = 200
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)} - Turner’s Decks CRM</title>
 <style>
-:root{--bg:oklch(.978 .007 84.58);--fg:oklch(.2724 .0249 251.15);--muted:oklch(.4477 .0262 250.5);--border:oklch(.86 .012 84.58);--primary:oklch(.5112 .1165 49.66);--card:#fff}
-@media (prefers-color-scheme:dark){:root{--bg:oklch(.2 .02 251.15);--fg:oklch(.9563 .0143 84.58);--muted:oklch(.78 .02 250.5);--border:oklch(.35 .02 251.15);--primary:oklch(.7298 .1172 55.27);--card:oklch(.24 .02 251.15)}}
-*{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:16px;background:var(--bg);color:var(--fg);font:16px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+:root{--bg:oklch(.985 .002 265);--fg:oklch(.29 .07 264);--muted:oklch(.5 .03 265);--border:oklch(.91 .005 265);--primary:oklch(.45 .012 250);--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:oklch(.2 .045 264);--fg:oklch(.96 .005 265);--muted:oklch(.78 .02 265);--border:oklch(.35 .05 264);--primary:oklch(.82 .04 259);--card:oklch(.255 .055 264)}}
+*{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:16px;background:var(--bg);color:var(--fg);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
 main{width:100%;max-width:440px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px}
-h1{font:700 22px/1.3 Domine,Georgia,serif;margin:0 0 12px}p{margin:0 0 12px}.muted{color:var(--muted);font-size:14px}
+h1{font:600 22px/1.3 Poppins,system-ui,sans-serif;margin:0 0 12px}p{margin:0 0 12px}.muted{color:var(--muted);font-size:14px}
 ul{margin:0 0 16px;padding-left:20px}li{margin:4px 0}.warn{border-left:3px solid var(--primary);padding-left:10px}
 .actions{display:flex;gap:10px;margin-top:20px}button{flex:1;min-height:44px;border-radius:8px;font:600 15px/1 inherit;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--fg)}
-button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+button.primary{background:var(--primary);border-color:var(--primary);color:var(--bg)}
 </style></head><body><main>${body}</main></body></html>`,
     { status, headers },
   )
