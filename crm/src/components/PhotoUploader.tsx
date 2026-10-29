@@ -201,7 +201,7 @@ function Badge({ state }: { state: Status }) {
 export function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-md flex-col gap-5 bg-background px-4 pt-6 pb-10">
-      <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Turner’s Decks</p>
+      <img src="/td-logo.png" alt="Turner’s Decks" width={623} height={174} className="h-auto w-40" />
       <h1 className="text-2xl leading-tight font-bold">{title}</h1>
       {children}
     </main>

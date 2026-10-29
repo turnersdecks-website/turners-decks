@@ -58,8 +58,9 @@ export function AppSidebar({ staff }: { staff: SidebarStaff }) {
 function SidebarBrand() {
   return (
     <div className="flex h-12 w-full min-w-0 shrink-0 items-center gap-2 p-2 pr-11 pl-2.5 transition-[padding,gap] duration-200 ease-linear group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0">
-      {/* Turner's Decks has no badge mark; initials in the primary color stand in. */}
-      <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-primary font-heading text-xs font-bold text-primary-foreground">TD</span>
+      {/* The "T" square from the website logo (public/td-mark*.png, cut from src/assets/images/turners-decks-*-logo.png). */}
+      <img src="/td-mark.png" alt="" aria-hidden="true" className="size-8 shrink-0 dark:hidden" />
+      <img src="/td-mark-white.png" alt="" aria-hidden="true" className="hidden size-8 shrink-0 dark:block" />
       <div className="grid min-w-0 flex-1 overflow-hidden text-left text-xs leading-tight transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:opacity-0">
         <span className="truncate font-heading text-sm font-bold">Turner’s Decks</span>
         <span className="truncate text-muted-foreground">CRM</span>
