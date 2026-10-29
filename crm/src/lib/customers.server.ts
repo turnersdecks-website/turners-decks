@@ -382,6 +382,13 @@ export function wonWrites(d1: D1Database, leadId: string, stageChangeId: string,
            AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.lead_id = l.id AND j.status NOT IN (${closed}))`,
       )
       .bind(crypto.randomUUID(), now, now, leadId, stageChangeId),
+    // Photos taken before the Job existed (site-visit before photos) move to the Lead's open Job.
+    d1
+      .prepare(
+        `UPDATE photos SET job_id = (SELECT j.id FROM jobs j WHERE j.lead_id = ? AND j.status NOT IN (${closed}) ORDER BY j.created_at DESC LIMIT 1)
+         WHERE lead_id = ? AND job_id IS NULL`,
+      )
+      .bind(leadId, leadId),
   ]
 }
 
