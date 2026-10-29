@@ -182,6 +182,7 @@ function CustomerDetail() {
         </Breadcrumb>
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
+          {customer.clientType === 'commercial' && <Badge variant="secondary">Commercial</Badge>}
           {!customer.okToContact && <Badge variant="secondary">Do not contact</Badge>}
           {customer.reviewLeft && <Badge variant="success">Left a review</Badge>}
         </div>
@@ -244,7 +245,7 @@ function CustomerDetail() {
                   {customerName(referredBy)}
                 </Link>
               ) : (
-                'nobody on file'
+                (customer.referredByName ?? 'nobody on file')
               )}
             </p>
             {referred.length > 0 && (

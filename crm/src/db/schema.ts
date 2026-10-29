@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { JOB_STATUSES } from '#/lib/job-statuses'
+import { CLIENT_TYPES } from '#/lib/client-types'
 import { type AnySQLiteColumn, check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // Better Auth tables (email + password, admin plugin). Times are epoch ms.
@@ -162,6 +163,13 @@ export const leads = sqliteTable(
     preferredMaterial: text('preferred_material'),
     /** When they want it done (form "Estimated Timeline"), as given. */
     timeframe: text('timeframe'),
+    /** How they found us: one of HOW_FOUND (customer-vocab.ts), or other text. Copied to the Customer when won. */
+    howFound: text('how_found'),
+    /** Who referred them: a Customer, or just a name (e.g. a friend who is not a Customer). */
+    referredById: text('referred_by_id').references((): AnySQLiteColumn => customers.id, { onDelete: 'set null' }),
+    referredByName: text('referred_by_name'),
+    /** Residential or commercial (CLIENT_TYPES). Copied to the Customer when won. */
+    clientType: text('client_type', { enum: CLIENT_TYPES }).notNull().default('residential'),
     assignedTo: text('assigned_to').references(() => user.id, { onDelete: 'set null' }),
     leadScore: integer('lead_score'),
     attributionJson: text('attribution_json'),
@@ -181,6 +189,7 @@ export const leads = sqliteTable(
   (t) => [
     index('leads_address_key_idx').on(t.addressKey),
     index('leads_customer_idx').on(t.customerId),
+    index('leads_referred_by_idx').on(t.referredById),
     check(
       'leads_stage_check',
       sql`${t.stage} in ('new', 'contacted', 'appointment', 'quoted', 'won', 'lost')`,
@@ -484,6 +493,10 @@ export const customers = sqliteTable(
     /** One of HOW_FOUND (customer-vocab.ts), or other text from an import. */
     howFound: text('how_found'),
     referredById: text('referred_by_id').references((): AnySQLiteColumn => customers.id, { onDelete: 'set null' }),
+    /** Who referred them when it is not a Customer (e.g. "Kristin"). */
+    referredByName: text('referred_by_name'),
+    /** Residential or commercial (CLIENT_TYPES). */
+    clientType: text('client_type', { enum: CLIENT_TYPES }).notNull().default('residential'),
     reviewLeft: integer('review_left', { mode: 'boolean' }).notNull().default(false),
     okToContact: integer('ok_to_contact', { mode: 'boolean' }).notNull().default(true),
     notes: text('notes'),

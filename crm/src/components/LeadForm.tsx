@@ -3,6 +3,8 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
 import type { LeadEdits } from '#/lib/leads.functions'
+import { CLIENT_TYPES, CLIENT_TYPE_LABELS } from '#/lib/client-types'
+import { HOW_FOUND } from '#/lib/customer-vocab'
 import { SERVICE_TYPES } from '#/lib/pipeline'
 
 // Port of the Lovable LeadForm: the Lead fields Staff may edit (never Source or first-contact fields). Field styling
@@ -21,6 +23,10 @@ export const emptyLead: LeadEdits = {
   message: '',
   preferredMaterial: '',
   timeframe: '',
+  howFound: '',
+  referredById: '',
+  referredByName: '',
+  clientType: 'residential',
 }
 
 export function useLeadFields(init: Partial<Record<keyof LeadEdits, string | null>> = {}) {
@@ -70,7 +76,77 @@ export function FormField({ id, label, className = '', children }: { id: string;
 export const selectClass =
   'border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-hidden md:text-sm [&>option]:bg-popover [&>option]:text-popover-foreground'
 
-export function LeadFieldsForm({ value, onChange }: { value: LeadEdits; onChange: (v: LeadEdits) => void }) {
+/** A native select that keeps a stored value missing from the suggestions (imports may have their own wording). */
+export function SuggestSelect({ id, value, options, onChange }: { id: string; value: string; options: readonly string[]; onChange: (v: string) => void }) {
+  return (
+    <select id={id} name={id} value={value} onChange={(e) => onChange(e.target.value)} className={selectClass}>
+      <option value="">Select…</option>
+      {value && !options.includes(value) && <option>{value}</option>}
+      {options.map((o) => (
+        <option key={o}>{o}</option>
+      ))}
+    </select>
+  )
+}
+
+/** How they found us, Referred by (a Customer or just a name) and Residential / Commercial: on Leads and Customers. */
+export type SourceDraft = { howFound: string; referredById: string; referredByName: string; clientType: string }
+
+export function SourceFields<T extends SourceDraft>({
+  idPrefix,
+  value,
+  onChange,
+  referrers,
+}: {
+  idPrefix: string
+  value: T
+  onChange: (v: T) => void
+  /** Customers who may have referred them. */
+  referrers: { id: string; name: string }[]
+}) {
+  const set = (patch: Partial<SourceDraft>) => onChange({ ...value, ...patch })
+  return (
+    <>
+      <FormField id={`${idPrefix}howFound`} label="How they found us">
+        <SuggestSelect id={`${idPrefix}howFound`} value={value.howFound} options={HOW_FOUND} onChange={(howFound) => set({ howFound })} />
+      </FormField>
+      <FormField id={`${idPrefix}clientType`} label="Residential or commercial">
+        <select id={`${idPrefix}clientType`} name="clientType" value={value.clientType || 'residential'} onChange={(e) => set({ clientType: e.target.value })} className={selectClass}>
+          {CLIENT_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {CLIENT_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
+      </FormField>
+      <FormField id={`${idPrefix}referredById`} label="Referred by (Customer)">
+        <select id={`${idPrefix}referredById`} name="referredById" value={value.referredById} onChange={(e) => set({ referredById: e.target.value })} className={selectClass}>
+          <option value="">Nobody</option>
+          {/* Keep a referrer missing from the list (e.g. the list failed to load). */}
+          {value.referredById && !referrers.some((r) => r.id === value.referredById) && <option value={value.referredById}>A Customer</option>}
+          {referrers.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+      </FormField>
+      <FormField id={`${idPrefix}referredByName`} label="Referred by (someone else)">
+        <Input id={`${idPrefix}referredByName`} name="referredByName" autoComplete="off" placeholder="e.g. Kristin" value={value.referredByName} onChange={(e) => set({ referredByName: e.target.value })} />
+      </FormField>
+    </>
+  )
+}
+
+export function LeadFieldsForm({
+  value,
+  onChange,
+  referrers = [],
+}: {
+  value: LeadEdits
+  onChange: (v: LeadEdits) => void
+  referrers?: { id: string; name: string }[]
+}) {
   const f = (k: keyof LeadEdits) => ({
     id: k,
     name: k,
@@ -125,6 +201,7 @@ export function LeadFieldsForm({ value, onChange }: { value: LeadEdits; onChange
       <FormField id="message" label="Message" className="sm:col-span-2">
         <Textarea rows={3} {...f('message')} />
       </FormField>
+      <SourceFields idPrefix="" value={value} onChange={onChange} referrers={referrers} />
     </div>
   )
 }

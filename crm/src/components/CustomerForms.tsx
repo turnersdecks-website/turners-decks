@@ -1,26 +1,13 @@
 import type { ReactNode } from 'react'
-import { FormField, selectClass } from '#/components/LeadForm'
+import { FormField, SourceFields, SuggestSelect, selectClass } from '#/components/LeadForm'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
-import { HOW_FOUND, JOB_STATUSES, JOB_STATUS_LABELS, MATERIALS, PROJECT_TYPES, type JobStatus } from '#/lib/customer-vocab'
+import { JOB_STATUSES, JOB_STATUS_LABELS, MATERIALS, PROJECT_TYPES, type JobStatus } from '#/lib/customer-vocab'
 import { cn } from '#/lib/utils'
 
 // The Customer and Job edit forms (GLOSSARY Customer, Job), in the Lead form's style (LeadForm.tsx). Money fields
 // take dollars; the server stores whole cents.
-
-/** A native select that keeps a stored value missing from the suggestions (imports may have their own wording). */
-function SuggestSelect({ id, value, options, onChange }: { id: string; value: string; options: readonly string[]; onChange: (v: string) => void }) {
-  return (
-    <select id={id} name={id} value={value} onChange={(e) => onChange(e.target.value)} className={selectClass}>
-      <option value="">Select…</option>
-      {value && !options.includes(value) && <option>{value}</option>}
-      {options.map((o) => (
-        <option key={o}>{o}</option>
-      ))}
-    </select>
-  )
-}
 
 function Check({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -55,6 +42,8 @@ export type CustomerDraft = {
   howFound: string
   customerSince: string
   referredById: string
+  referredByName: string
+  clientType: string
   okToContact: boolean
   reviewLeft: boolean
   notes: string
@@ -72,6 +61,8 @@ type CustomerRow = {
   howFound: string | null
   customerSince: Date | null
   referredById: string | null
+  referredByName: string | null
+  clientType: string
   okToContact: boolean
   reviewLeft: boolean
   notes: string | null
@@ -93,6 +84,8 @@ export function customerDraftFrom(c: CustomerRow, timeZone: string): CustomerDra
     howFound: c.howFound ?? '',
     customerSince: isoDay(c.customerSince, timeZone),
     referredById: c.referredById ?? '',
+    referredByName: c.referredByName ?? '',
+    clientType: c.clientType,
     okToContact: c.okToContact,
     reviewLeft: c.reviewLeft,
     notes: c.notes ?? '',
@@ -147,27 +140,11 @@ export function CustomerFields({
           <Input inputMode="numeric" autoComplete="off" {...text('zip')} />
         </FormField>
       </div>
-      <FormField id="customer-howFound" label="How they found us">
-        <SuggestSelect id="customer-howFound" value={value.howFound} options={HOW_FOUND} onChange={(howFound) => onChange({ ...value, howFound })} />
-      </FormField>
       <FormField id="customer-customerSince" label="Customer since">
         <Input type="date" {...text('customerSince')} />
       </FormField>
-      <FormField id="customer-referredById" label="Referred by" className="sm:col-span-2">
-        <select
-          id="customer-referredById"
-          value={value.referredById}
-          onChange={(e) => onChange({ ...value, referredById: e.target.value })}
-          className={selectClass}
-        >
-          <option value="">Nobody</option>
-          {referrers.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </FormField>
+      <div className="hidden sm:block" />
+      <SourceFields idPrefix="customer-" value={value} onChange={onChange} referrers={referrers} />
       <div className="flex flex-wrap gap-x-6 sm:col-span-2">
         <Check id="customer-okToContact" label="OK to contact again" checked={value.okToContact} onChange={(okToContact) => onChange({ ...value, okToContact })} />
         <Check id="customer-reviewLeft" label="Left a review" checked={value.reviewLeft} onChange={(reviewLeft) => onChange({ ...value, reviewLeft })} />

@@ -18,6 +18,7 @@ import type { PipelineStage } from '#/db/schema'
 import { formatWhen } from '#/lib/dates'
 import { errorMessage } from '#/lib/errors'
 import { listEstimateSnapshots } from '#/lib/estimate-snapshots.functions'
+import { listCustomers } from '#/lib/customers.functions'
 import { listLeadFiles } from '#/lib/lead-files.functions'
 import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, updateLead } from '#/lib/leads.functions'
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
@@ -44,14 +45,16 @@ async function loadLeadPage(leadId: string) {
     throw error
   }
   const input = { data: { leadId } }
-  const [found, files, snapshots, staff, settings] = await Promise.all([
+  const [found, files, snapshots, staff, settings, customers] = await Promise.all([
     getLead(input).catch(notFoundAsNull),
     listLeadFiles(input),
     listEstimateSnapshots(input),
     listAssignableStaff(),
     getCompanySettings(),
+    listCustomers(),
   ])
-  return { found, files, snapshots, staff, timeZone: settings.timezone }
+  const referrers = customers.map((c) => ({ id: c.id, name: customerName(c) }))
+  return { found, files, snapshots, staff, referrers, timeZone: settings.timezone }
 }
 export const Route = createFileRoute('/_staff/leads_/$id')({
   head: () => ({ meta: [{ title: 'Lead - Turner’s Decks CRM' }] }),
@@ -95,7 +98,7 @@ type LeadRow = NonNullable<Awaited<ReturnType<typeof getLead>>>['lead']
  * The Homeowner card: a `div`, so the header (with the Stage dropdown) sits outside the `<form>`, which wraps only the
  * fields and the Save footer. Keyed by Lead id. While Save runs, the fields and Save are locked (decision 6).
  */
-function HomeownerCard({ lead, timeZone, busy, onStage, refresh }: { lead: LeadRow; timeZone: string; busy: boolean; onStage: (stage: PipelineStage) => void; refresh: () => Promise<void> }) {
+function HomeownerCard({ lead, referrers, timeZone, busy, onStage, refresh }: { lead: LeadRow; referrers: { id: string; name: string }[]; timeZone: string; busy: boolean; onStage: (stage: PipelineStage) => void; refresh: () => Promise<void> }) {
   const draft = useLeadDraft(lead)
   const [saving, setSaving] = useState(false)
 
@@ -155,7 +158,7 @@ function HomeownerCard({ lead, timeZone, busy, onStage, refresh }: { lead: LeadR
       <form onSubmit={save} data-dirty={draft.dirty}>
         <fieldset disabled={saving} className="min-w-0">
           <div className="p-4 sm:p-5">
-            <LeadFieldsForm value={draft.fields} onChange={draft.setFields} />
+            <LeadFieldsForm value={draft.fields} onChange={draft.setFields} referrers={referrers} />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-4 py-3">
             <p className="text-xs text-muted-foreground">Last updated {formatWhen(lead.updatedAt, timeZone)}</p>
@@ -172,7 +175,7 @@ function HomeownerCard({ lead, timeZone, busy, onStage, refresh }: { lead: LeadR
 const panelClass = 'mt-0 data-[state=inactive]:hidden'
 
 function LeadDetail() {
-  const { found, files, snapshots, staff, timeZone } = Route.useLoaderData()
+  const { found, files, snapshots, staff, referrers, timeZone } = Route.useLoaderData()
   const { staff: me } = Route.useRouteContext()
   const { tab } = Route.useSearch()
   const router = useRouter()
@@ -298,6 +301,7 @@ function LeadDetail() {
               <HomeownerCard
                 key={lead.id}
                 lead={lead}
+                referrers={referrers.filter((r) => r.id !== lead.customerId)}
                 timeZone={timeZone}
                 busy={busy}
                 onStage={(stage) =>

@@ -4,7 +4,8 @@ import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { getDb } from '#/db/client'
 import { PIPELINE_STAGES, estimateSnapshots, formSubmissions, leadFiles, submissionProcessing, user } from '#/db/schema'
-import { jobMetrics } from '#/lib/customer-vocab'
+import { CLIENT_TYPES } from '#/lib/client-types'
+import { HOW_FOUND, jobMetrics } from '#/lib/customer-vocab'
 import {
   createCustomer,
   createJob,
@@ -118,6 +119,8 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'a date like 2027-04-15'
 const dateTime = z.string().describe('ISO 8601 date and time, e.g. 2027-04-15T14:00:00-04:00')
 const money = z.union([z.number(), z.string()]).nullable().describe('Dollars, e.g. 28500 or "$28,500.50"; null clears it')
 
+const HOW_FOUND_HINT = `${HOW_FOUND.slice(0, -1).join(', ')} or ${HOW_FOUND.at(-1)}`
+
 const leadFieldsShape = {
   firstName: z.string().max(100).optional(),
   lastName: z.string().max(100).optional(),
@@ -131,6 +134,10 @@ const leadFieldsShape = {
   message: z.string().max(4000).optional().describe('What the Homeowner asked for, in their words (e.g. the website form\'s "Tell us about your project")'),
   preferredMaterial: z.string().max(100).optional().describe('As the Homeowner said it, e.g. "Composite or Vinyl"'),
   timeframe: z.string().max(100).optional().describe('As the Homeowner said it, e.g. "Ready to start soon"'),
+  howFound: z.string().max(100).nullable().optional().describe(`How they found us: ${HOW_FOUND_HINT}`),
+  referredById: id.nullable().optional().describe('The Customer id of whoever referred them (see list_customers)'),
+  referredByName: z.string().max(200).nullable().optional().describe('Who referred them when that person is not a Customer, e.g. "Kristin"'),
+  clientType: z.enum(CLIENT_TYPES).optional().describe('residential (default) or commercial'),
 }
 
 /** Import dates: admins only (history brought in from email and the project folders). */
@@ -150,9 +157,11 @@ const customerFieldsShape = {
     .max(100)
     .nullable()
     .optional()
-    .describe('Google search, Google Business Profile, Referral, Repeat customer, Facebook, Yard sign, Truck or Other'),
+    .describe(`How they found us: ${HOW_FOUND_HINT}`),
   customerSince: isoDate.nullable().optional().describe('When they became a Customer; defaults to today for a new one'),
   referredById: id.nullable().optional().describe('The Customer id of whoever referred them'),
+  referredByName: z.string().max(200).nullable().optional().describe('Who referred them when that person is not a Customer, e.g. "Kristin"'),
+  clientType: z.enum(CLIENT_TYPES).optional().describe('residential (default) or commercial'),
   reviewLeft: z.boolean().optional(),
   okToContact: z.boolean().optional().describe('OK to contact again (defaults to true)'),
   notes: z.string().max(8000).nullable().optional(),
@@ -290,7 +299,7 @@ function buildServer(env: Env, staff: Staff) {
     'update_lead',
     {
       title: 'Edit a Lead',
-      description: 'Changes the named contact fields on a Lead; fields left out keep their value. Stage, assignment and notes have their own tools.',
+      description: 'Changes the named fields on a Lead (contact, project, how they found us, referred by, residential or commercial); fields left out keep their value; null clears a referral field. Stage, assignment and notes have their own tools.',
       inputSchema: { leadId: id, ...leadFieldsShape },
       annotations: WRITE,
     },

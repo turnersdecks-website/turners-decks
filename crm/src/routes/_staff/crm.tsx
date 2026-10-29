@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import type { PipelineStage } from '#/db/schema'
 import { errorMessage } from '#/lib/errors'
 import { getCronHealth } from '#/lib/cron-health.functions'
+import { customerName } from '#/lib/customer-vocab'
+import { listCustomers } from '#/lib/customers.functions'
 import { createLead, listPipeline, moveLeadStage } from '#/lib/leads.functions'
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
 import { cn } from '#/lib/utils'
@@ -22,8 +24,9 @@ import { cn } from '#/lib/utils'
 export const Route = createFileRoute('/_staff/crm')({
   head: () => ({ meta: [{ title: 'Pipeline - Turner’s Decks CRM' }] }),
   loader: async () => {
-    const [leads, cron] = await Promise.all([listPipeline(), getCronHealth()])
-    return { leads, cronStale: cron.stale, stuckJobs: cron.stuckJobs, stuckSubmissions: cron.stuckSubmissions }
+    const [leads, cron, customers] = await Promise.all([listPipeline(), getCronHealth(), listCustomers()])
+    const referrers = customers.map((c) => ({ id: c.id, name: customerName(c) }))
+    return { leads, referrers, cronStale: cron.stale, stuckJobs: cron.stuckJobs, stuckSubmissions: cron.stuckSubmissions }
   },
   component: PipelineBoard,
 })
@@ -39,7 +42,7 @@ const initials = (name: string) =>
     .join('')
 
 function PipelineBoard() {
-  const { leads, cronStale, stuckJobs, stuckSubmissions } = Route.useLoaderData()
+  const { leads, referrers, cronStale, stuckJobs, stuckSubmissions } = Route.useLoaderData()
   const router = useRouter()
   const [moved, setMoved] = useState<Record<string, PipelineStage>>({})
   const [dragId, setDragId] = useState<string | null>(null)
@@ -250,7 +253,7 @@ function PipelineBoard() {
           </DialogHeader>
           <p className="text-xs text-muted-foreground">Source: manual entry</p>
           <form onSubmit={add} className="space-y-4">
-            <LeadFieldsForm value={fields} onChange={setFields} />
+            <LeadFieldsForm value={fields} onChange={setFields} referrers={referrers} />
             <Button className="w-full">Save Lead</Button>
           </form>
         </DialogContent>
