@@ -187,6 +187,7 @@ export type JobDraft = {
   city: string
   projectType: string
   material: string
+  scope: string
   status: JobStatus
   startDate: string
   finishDate: string
@@ -212,6 +213,7 @@ type JobRow = {
   city: string | null
   projectType: string | null
   material: string | null
+  scope: string | null
   status: JobStatus
   startDate: string | null
   finishDate: string | null
@@ -241,6 +243,7 @@ export function jobDraftFrom(j: JobRow): JobDraft {
     city: j.city ?? '',
     projectType: j.projectType ?? '',
     material: j.material ?? '',
+    scope: j.scope ?? '',
     status: j.status,
     startDate: j.startDate ?? '',
     finishDate: j.finishDate ?? '',
@@ -304,6 +307,9 @@ export function JobFields({ value, onChange }: { value: JobDraft; onChange: (v: 
           </FormField>
           <FormField id="job-material" label="Material">
             <SuggestSelect id="job-material" value={value.material} options={MATERIALS} onChange={(material) => onChange({ ...value, material })} />
+          </FormField>
+          <FormField id="job-scope" label="Scope of work" className="sm:col-span-2">
+            <Textarea rows={4} {...text('scope')} />
           </FormField>
           <FormField id="job-startDate" label="Start date">
             <Input type="date" {...text('startDate')} />

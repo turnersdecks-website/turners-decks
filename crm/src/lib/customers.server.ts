@@ -101,6 +101,7 @@ export function jobChanges(data: Record<string, unknown>) {
   if (has(data, 'city')) out.city = optionalText(data.city, 100)
   if (has(data, 'projectType')) out.projectType = optionalText(data.projectType, 100)
   if (has(data, 'material')) out.material = optionalText(data.material, 100)
+  if (has(data, 'scope')) out.scope = optionalText(data.scope, 8000)
   if (has(data, 'notes')) out.notes = optionalText(data.notes, 8000)
   if (has(data, 'status')) {
     if (!JOB_STATUSES.includes(data.status as JobStatus)) throw badRequest(`Status is one of: ${JOB_STATUSES.join(', ')}.`)
@@ -348,7 +349,11 @@ export function wonWrites(d1: D1Database, leadId: string, stageChangeId: string,
     d1
       .prepare(
         `INSERT INTO jobs (id, customer_id, lead_id, name, city, project_type, status, created_at, updated_at)
-         SELECT ?, l.customer_id, l.id, coalesce(l.service_type, 'Deck project'), l.city, l.service_type, 'not_scheduled', ?, ?
+         SELECT ?, l.customer_id, l.id,
+                -- Job name: the street and the project type ("235 Sunrise Road - New deck"), as the lumber yard refers to it.
+                CASE WHEN l.street IS NOT NULL THEN l.street || ' - ' || coalesce(l.service_type, 'Deck project')
+                     ELSE coalesce(l.service_type, 'Deck project') END,
+                l.city, l.service_type, 'not_scheduled', ?, ?
          FROM leads l
          WHERE l.id = ? AND l.stage = 'won' AND l.customer_id IS NOT NULL
            AND EXISTS (SELECT 1 FROM lead_stage_changes s WHERE s.id = ?)

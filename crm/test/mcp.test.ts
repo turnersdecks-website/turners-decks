@@ -270,3 +270,75 @@ describe('the CRM tools', () => {
     expect(after.value.draftDiffersFromLive).toBe(true)
   })
 })
+
+describe('importing history (build 1)', () => {
+  const MARCH_9 = '2026-03-09T20:55:48-04:00'
+
+  it('an admin imports a past website inquiry with its received date, material and timeframe', async () => {
+    const { cookie } = await signedInStaff('admin')
+    const token = await connect(cookie)
+
+    const { value } = await tool<{ id: string }>(token, 'create_lead', {
+      firstName: 'Tara',
+      lastName: 'Timeline',
+      phone: randomPhone(),
+      serviceType: 'Replace existing deck',
+      preferredMaterial: 'Composite or Vinyl',
+      timeframe: 'Ready to start soon',
+      message: 'Rot spots near the back door.',
+      receivedAt: MARCH_9,
+      source: 'website',
+    })
+
+    expect(await leadRow(value.id)).toMatchObject({
+      source: 'website',
+      first_source: 'website',
+      created_at: Date.parse(MARCH_9),
+      preferred_material: 'Composite or Vinyl',
+      timeframe: 'Ready to start soon',
+    })
+    const created = await env.DB.prepare('SELECT changed_at, reason FROM lead_stage_changes WHERE lead_id = ?').bind(value.id).first()
+    expect(created).toEqual({ changed_at: Date.parse(MARCH_9), reason: 'Imported' })
+  })
+
+  it('stage moves and activities keep the dates they happened, and a won import is a Customer since then', async () => {
+    const { cookie } = await signedInStaff('admin')
+    const token = await connect(cookie)
+    const { value: lead } = await tool<{ id: string }>(token, 'create_lead', { firstName: 'Mark', street: '235 Sunrise Road', serviceType: 'New deck', receivedAt: '2026-03-10T12:00:00Z' })
+
+    await tool(token, 'add_lead_activity', { leadId: lead.id, kind: 'email', body: 'Estimate sent', at: '2026-03-13T22:58:40Z' })
+    const won = await tool<{ customerId: string }>(token, 'move_lead_stage', { leadId: lead.id, stage: 'won', at: '2026-03-14T19:36:27Z', reason: 'Accepted by email' })
+
+    const history = await env.DB.prepare('SELECT to_stage, changed_at, reason FROM lead_stage_changes WHERE lead_id = ? ORDER BY changed_at').bind(lead.id).all()
+    expect(history.results.map((r) => [r.to_stage, r.changed_at, r.reason])).toEqual([
+      ['new', Date.parse('2026-03-10T12:00:00Z'), 'Imported'],
+      ['contacted', Date.parse('2026-03-13T22:58:40Z'), 'Email logged'],
+      ['won', Date.parse('2026-03-14T19:36:27Z'), 'Accepted by email'],
+    ])
+    const customer = await tool<{ customer: { customerSince: string }; jobs: { name: string }[] }>(token, 'get_customer', { customerId: won.value.customerId })
+    expect(customer.value.customer.customerSince).toBe('2026-03-14T19:36:27.000Z')
+    expect(customer.value.jobs.map((j) => j.name)).toEqual(['235 Sunrise Road - New deck'])
+  })
+
+  it('staff cannot backdate, and nobody can date something in the future', async () => {
+    const staffToken = await connect((await signedInStaff('staff')).cookie)
+    const adminToken = await connect((await signedInStaff('admin')).cookie)
+
+    expect((await tool(staffToken, 'create_lead', { firstName: 'Early', receivedAt: MARCH_9 })).text).toContain('Only an admin')
+    const future = await tool(adminToken, 'create_lead', { firstName: 'Later', receivedAt: '2099-01-01T00:00:00Z' })
+    expect(future.text).toContain('must be a past date')
+  })
+
+  it('update_lead keeps material and timeframe when they are not named, and a Job takes a scope', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const token = await connect(cookie)
+    const { value: lead } = await tool<{ id: string }>(token, 'create_lead', { firstName: 'Kept', preferredMaterial: 'Pressure-treated wood', timeframe: 'This year' })
+
+    await tool(token, 'update_lead', { leadId: lead.id, zip: '19518' })
+
+    expect(await leadRow(lead.id)).toMatchObject({ preferred_material: 'Pressure-treated wood', timeframe: 'This year', zip: '19518' })
+    const { value: c } = await tool<{ id: string }>(token, 'create_customer', { firstName: 'Scoped' })
+    const job = await tool<{ scope: string }>(token, 'create_job', { customerId: c.id, name: 'Deck', scope: '16x20 Trex Select, wrapped step' })
+    expect(job.value.scope).toBe('16x20 Trex Select, wrapped step')
+  })
+})

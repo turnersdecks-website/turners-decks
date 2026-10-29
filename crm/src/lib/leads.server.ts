@@ -62,7 +62,21 @@ export function leadFields(data: Record<string, unknown>) {
     addressKey: addressKey({ street, zip }),
     serviceType: optionalText(data.serviceType, 100),
     message: optionalText(data.message, 4000),
+    preferredMaterial: optionalText(data.preferredMaterial, 100),
+    timeframe: optionalText(data.timeframe, 100),
   }
+}
+
+// Import dates (build 1, 2026-10-28): history brought in from email and the project folders keeps when it happened.
+// Only admins may set them (the callers check); a date in the future, or before the business, is refused.
+const EARLIEST_IMPORT = Date.UTC(2015, 0, 1)
+
+/** An import date (epoch ms) or null; 400 when it is in the future or implausibly old. */
+export function importedAt(value: unknown, label: string): number | null {
+  const ms = optionalTime(value)
+  if (ms === null) return null
+  if (ms > Date.now() + 60_000 || ms < EARLIEST_IMPORT) throw badRequest(`${label} must be a past date (2015 or later).`)
+  return ms
 }
 
 /** First sweep of a deleted Lead's Quote files, about 5 minutes after the delete (plan 009 decision 15). */
@@ -104,15 +118,40 @@ export type LeadEdits = {
   zip: string
   serviceType: string
   message: string
+  preferredMaterial: string
+  timeframe: string
 }
-export const LEAD_EDIT_KEYS = ['firstName', 'lastName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'serviceType', 'message'] as const
+export const LEAD_EDIT_KEYS = [
+  'firstName',
+  'lastName',
+  'email',
+  'phone',
+  'street',
+  'city',
+  'state',
+  'zip',
+  'serviceType',
+  'message',
+  'preferredMaterial',
+  'timeframe',
+] as const
 
-/** A Lead added by hand: stage new, Source and first Source `manual`. Joins the Customer with its phone or email. */
-export async function createLeadRecord(db: Db, data: Record<string, unknown>, staffId: string) {
+/**
+ * A Lead added by hand: stage new, Source and first Source `manual`. Joins the Customer with its phone or email.
+ * An import (admin) may say when it was received and where it came from (`website` for a past website form).
+ */
+export async function createLeadRecord(
+  db: Db,
+  data: Record<string, unknown>,
+  staffId: string,
+  imported: { receivedAt?: number | null; source?: string | null } = {},
+) {
   const fields = leadFields(data)
   await refuseClash(db, fields)
   const customerId = await customerIdFor(db, fields)
   const now = new Date()
+  const createdAt = imported.receivedAt ? new Date(imported.receivedAt) : now
+  const source = imported.source ?? LEAD_SOURCE_MANUAL
   const id = crypto.randomUUID()
   await db.batch([
     db.insert(leads).values({
@@ -120,12 +159,12 @@ export async function createLeadRecord(db: Db, data: Record<string, unknown>, st
       ...fields,
       customerId,
       stage: 'new',
-      source: LEAD_SOURCE_MANUAL,
-      firstSource: LEAD_SOURCE_MANUAL,
-      createdAt: now,
+      source,
+      firstSource: source,
+      createdAt,
       updatedAt: now,
     }),
-    leadCreated(db, id, { by: staffId, reason: 'Added by hand' }),
+    leadCreated(db, id, { by: staffId, reason: imported.receivedAt ? 'Imported' : 'Added by hand' }),
   ])
   return { id }
 }
@@ -134,14 +173,22 @@ export async function createLeadRecord(db: Db, data: Record<string, unknown>, st
  * Moves a Lead to another Pipeline stage. Last write wins. Moving to won also gives the Lead its Customer and a Job
  * (customers.server.ts wonWrites), in the same batch.
  */
-export async function moveLeadToStage(d1: D1Database, leadId: string, stage: PipelineStage, staffId: string | null) {
+export async function moveLeadToStage(
+  d1: D1Database,
+  leadId: string,
+  stage: PipelineStage,
+  staffId: string | null,
+  imported: { at?: number | null; reason?: string | null } = {},
+) {
   if (!PIPELINE_STAGES.includes(stage)) throw badRequest('Unknown Pipeline stage.')
   const now = Date.now()
+  // An import records when the move happened (stage history, and a won Lead's Customer since); updated_at is now.
+  const at = imported.at ?? now
   const stageChangeId = crypto.randomUUID()
   const results = await d1.batch([
-    stageMoveD1(d1, stage, 'id = ?', [leadId], { at: now, by: staffId, id: stageChangeId }),
+    stageMoveD1(d1, stage, 'id = ?', [leadId], { at, by: staffId, id: stageChangeId, reason: imported.reason ?? null }),
     d1.prepare('UPDATE leads SET stage = ?, updated_at = ? WHERE id = ? RETURNING id, stage, updated_at, customer_id').bind(stage, now, leadId),
-    ...(stage === 'won' ? wonWrites(d1, leadId, stageChangeId, now) : []),
+    ...(stage === 'won' ? wonWrites(d1, leadId, stageChangeId, at) : []),
   ])
   const moved = results[1].results[0] as { id: string; stage: PipelineStage; updated_at: number } | undefined
   if (!moved) throw leadNotFound()
@@ -235,8 +282,11 @@ export async function getLeadDetail(db: Db, leadId: string) {
   return { lead, activity, stageHistory, customer }
 }
 
-/** Adds a note (or a logged call/email/text) to a Lead, optionally with a Follow-up date. */
-export async function addActivity(db: Db, data: Record<string, unknown>, staffId: string) {
+/**
+ * Adds a note (or a logged call/email/text) to a Lead, optionally with a Follow-up date. An import (admin) may say
+ * when it happened (`imported.at`); a logged contact then moves a new Lead to contacted as of that time.
+ */
+export async function addActivity(db: Db, data: Record<string, unknown>, staffId: string, imported: { at?: number | null } = {}) {
   const leadId = requiredId(data.leadId)
   const kind = data.kind as ManualActivityKind
   if (!MANUAL_ACTIVITY_KINDS.includes(kind)) throw badRequest('Staff can log a note, call, email or text.')
@@ -252,7 +302,7 @@ export async function addActivity(db: Db, data: Record<string, unknown>, staffId
   const lead = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId)).get()
   if (!lead) throw leadNotFound()
   const id = crypto.randomUUID()
-  const now = new Date()
+  const now = imported.at ? new Date(imported.at) : new Date()
   const insert = db.insert(leadActivity).values({
     id,
     leadId,
@@ -275,7 +325,7 @@ export async function addActivity(db: Db, data: Record<string, unknown>, staffId
     await db.batch([
       insert,
       stageMove(db, 'contacted', isNew, { at: now, by: staffId, reason }),
-      db.update(leads).set({ stage: 'contacted', updatedAt: now }).where(isNew),
+      db.update(leads).set({ stage: 'contacted', updatedAt: new Date() }).where(isNew),
     ])
   }
   return { id }
