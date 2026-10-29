@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { JOB_STATUSES } from '#/lib/job-statuses'
+import { type AnySQLiteColumn, check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // Better Auth tables (email + password, admin plugin). Times are epoch ms.
 // App tables are Pine & Gable's (its PLAN.md > Data model), cut to v1: Leads, activity, stage history, Quote files,
@@ -168,11 +169,14 @@ export const leads = sqliteTable(
     activeLeak: integer('active_leak', { mode: 'boolean' }).notNull().default(false),
     /** Bumped on every write to the leak flag or Roof complexity counts (plan 008): the fence for stale tabs and Save. */
     roofAnswersVersion: integer('roof_answers_version').notNull().default(0),
+    /** The Customer this Lead became (set when it is won) or belongs to (a new Lead from a past Customer). */
+    customerId: text('customer_id').references((): AnySQLiteColumn => customers.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     index('leads_address_key_idx').on(t.addressKey),
+    index('leads_customer_idx').on(t.customerId),
     check(
       'leads_stage_check',
       sql`${t.stage} in ('new', 'contacted', 'appointment', 'quoted', 'won', 'lost')`,
@@ -449,4 +453,84 @@ export const estimateSnapshots = sqliteTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('estimate_snapshots_submission').on(t.submissionId), index('estimate_snapshots_lead').on(t.leadId, t.createdAt)],
+)
+
+// ---------------------------------------------------------------------------
+// Customers and Jobs (GLOSSARY). Carried over from the Turner's Decks Airtable tracker (claude/lead-tracker-spec.md,
+// 2026-09-19): a Customer is a Homeowner we have done (or are doing) work for; a Job is one project for a Customer.
+// A Lead that is won creates both (src/lib/customers.server.ts wonWrites). Money is whole cents; dates without a time
+// (start, finish) are 'YYYY-MM-DD' text so a job day never shifts with a time zone.
+
+export const customers = sqliteTable(
+  'customers',
+  {
+    id: text('id').primaryKey(),
+    firstName: text('first_name'),
+    lastName: text('last_name'),
+    email: text('email'),
+    emailLower: text('email_lower'),
+    phone: text('phone'),
+    phoneE164: text('phone_e164'),
+    street: text('street'),
+    city: text('city'),
+    state: text('state'),
+    zip: text('zip'),
+    /** When they became a Customer (the won date, or what an import says). */
+    customerSince: integer('customer_since', { mode: 'timestamp_ms' }),
+    /** One of HOW_FOUND (customer-vocab.ts), or other text from an import. */
+    howFound: text('how_found'),
+    referredById: text('referred_by_id').references((): AnySQLiteColumn => customers.id, { onDelete: 'set null' }),
+    reviewLeft: integer('review_left', { mode: 'boolean' }).notNull().default(false),
+    okToContact: integer('ok_to_contact', { mode: 'boolean' }).notNull().default(true),
+    notes: text('notes'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // Same dedupe keys as Leads: a won Lead joins the Customer with its phone or email.
+    uniqueIndex('customers_phone_e164_unique').on(t.phoneE164).where(sql`${t.phoneE164} is not null`),
+    uniqueIndex('customers_email_lower_unique').on(t.emailLower).where(sql`${t.emailLower} is not null`),
+    index('customers_referred_by_idx').on(t.referredById),
+  ],
+)
+
+export const jobs = sqliteTable(
+  'jobs',
+  {
+    id: text('id').primaryKey(),
+    customerId: text('customer_id')
+      .notNull()
+      .references(() => customers.id),
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+    name: text('name').notNull(),
+    city: text('city'),
+    projectType: text('project_type'),
+    material: text('material'),
+    status: text('status', { enum: JOB_STATUSES }).notNull().default('not_scheduled'),
+    startDate: text('start_date'),
+    finishDate: text('finish_date'),
+    squareFootage: real('square_footage'),
+    quotedPriceCents: integer('quoted_price_cents'),
+    quotedMaterialCostCents: integer('quoted_material_cost_cents'),
+    actualMaterialCostCents: integer('actual_material_cost_cents'),
+    laborCostCents: integer('labor_cost_cents'),
+    actualLaborHours: real('actual_labor_hours'),
+    permitNeeded: integer('permit_needed', { mode: 'boolean' }).notNull().default(false),
+    permitPulled: integer('permit_pulled', { mode: 'boolean' }).notNull().default(false),
+    hoaNeeded: integer('hoa_needed', { mode: 'boolean' }).notNull().default(false),
+    hoaApproved: integer('hoa_approved', { mode: 'boolean' }).notNull().default(false),
+    okToShowPhotos: integer('ok_to_show_photos', { mode: 'boolean' }).notNull().default(false),
+    onWebsite: integer('on_website', { mode: 'boolean' }).notNull().default(false),
+    reviewAsked: integer('review_asked', { mode: 'boolean' }).notNull().default(false),
+    reviewReceived: integer('review_received', { mode: 'boolean' }).notNull().default(false),
+    notes: text('notes'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('jobs_status_check', sql`${t.status} in ('not_scheduled', 'scheduled', 'in_progress', 'done', 'on_hold', 'cancelled')`),
+    index('jobs_customer_idx').on(t.customerId, t.createdAt),
+    index('jobs_lead_idx').on(t.leadId),
+    index('jobs_status_idx').on(t.status),
+  ],
 )

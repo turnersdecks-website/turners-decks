@@ -53,6 +53,7 @@ function PipelineBoard() {
     setMoved((m) => ({ ...m, [id]: stage }))
     try {
       await moveLeadStage({ data: { leadId: id, stage } })
+      if (stage === 'won') toast.success('Won. Added to Customers with a new Job.')
       await router.invalidate()
     } catch (error) {
       toast.error(await errorMessage(error))

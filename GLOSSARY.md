@@ -18,6 +18,12 @@ _Avoid_: User, rep, team member
 The person a Lead is about: the one who asked about a deck. Becomes a Lead the moment they contact us.
 _Avoid_: Contact, customer (only after a Lead is won), client, prospect, user
 
+**Customer**:
+A Homeowner we have done, or are doing, work for. A Lead that is moved to `won` becomes a Customer (or joins the
+Customer with the same phone, else email). Past Customers can be added by hand or imported. A new Form submission
+from a past Customer starts a Lead tied to their Customer record. Customers are never deleted.
+_Avoid_: Client, account, contact
+
 ## Leads
 
 **Lead**:
@@ -50,6 +56,17 @@ A formal priced proposal sent after the free on-site estimate. Staff move the Le
 A file Staff upload on a Lead's Quote tab, one slot per kind. Replacing or removing a file keeps the old one in
 storage.
 _Avoid_: attachment, document, upload
+
+## Customers and Jobs
+
+**Job**:
+One project for a Customer: what was built, when, and what it cost (quoted price, material and labor). Winning a
+Lead adds a Job unless that Lead already has an open one (not done or cancelled). Its status is `not_scheduled`,
+`scheduled`, `in_progress`, `done`, `on_hold` or `cancelled`.
+_Avoid_: Project (fine in conversation), work order, deal
+
+**Gross margin**:
+A Job's quoted price minus its actual material cost and labor cost. Blank until all three are filled in.
 
 ## Intake and email
 

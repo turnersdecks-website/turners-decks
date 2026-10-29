@@ -15,10 +15,14 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as StaffIndexRouteImport } from './routes/_staff/index'
 import { Route as StaffCrmRouteImport } from './routes/_staff/crm'
+import { Route as StaffCustomersRouteImport } from './routes/_staff/customers'
+import { Route as StaffJobsRouteImport } from './routes/_staff/jobs'
 import { Route as StaffLeadsRouteImport } from './routes/_staff/leads'
 import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
 import { Route as StaffSubmissionsRouteImport } from './routes/_staff/submissions'
 import { Route as ApiLeadFilesRouteImport } from './routes/api/lead-files'
+import { Route as StaffCustomersIdRouteImport } from './routes/_staff/customers_.$id'
+import { Route as StaffJobsIdRouteImport } from './routes/_staff/jobs_.$id'
 import { Route as StaffLeadsIdRouteImport } from './routes/_staff/leads_.$id'
 import { Route as StaffSettingsEstimatorRouteImport } from './routes/_staff/settings_.estimator'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -55,6 +59,16 @@ const StaffCrmRoute = StaffCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => StaffRoute,
 } as any)
+const StaffCustomersRoute = StaffCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffJobsRoute = StaffJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => StaffRoute,
+} as any)
 const StaffLeadsRoute = StaffLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -74,6 +88,16 @@ const ApiLeadFilesRoute = ApiLeadFilesRouteImport.update({
   id: '/api/lead-files',
   path: '/api/lead-files',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StaffCustomersIdRoute = StaffCustomersIdRouteImport.update({
+  id: '/customers_/$id',
+  path: '/customers/$id',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffJobsIdRoute = StaffJobsIdRouteImport.update({
+  id: '/jobs_/$id',
+  path: '/jobs/$id',
+  getParentRoute: () => StaffRoute,
 } as any)
 const StaffLeadsIdRoute = StaffLeadsIdRouteImport.update({
   id: '/leads_/$id',
@@ -112,10 +136,14 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/crm': typeof StaffCrmRoute
+  '/customers': typeof StaffCustomersRoute
+  '/jobs': typeof StaffJobsRoute
   '/leads': typeof StaffLeadsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
+  '/customers/$id': typeof StaffCustomersIdRoute
+  '/jobs/$id': typeof StaffJobsIdRoute
   '/leads/$id': typeof StaffLeadsIdRoute
   '/settings/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -128,11 +156,15 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/crm': typeof StaffCrmRoute
+  '/customers': typeof StaffCustomersRoute
+  '/jobs': typeof StaffJobsRoute
   '/leads': typeof StaffLeadsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/': typeof StaffIndexRoute
+  '/customers/$id': typeof StaffCustomersIdRoute
+  '/jobs/$id': typeof StaffJobsIdRoute
   '/leads/$id': typeof StaffLeadsIdRoute
   '/settings/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -147,11 +179,15 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/_staff/crm': typeof StaffCrmRoute
+  '/_staff/customers': typeof StaffCustomersRoute
+  '/_staff/jobs': typeof StaffJobsRoute
   '/_staff/leads': typeof StaffLeadsRoute
   '/_staff/settings': typeof StaffSettingsRoute
   '/_staff/submissions': typeof StaffSubmissionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/_staff/': typeof StaffIndexRoute
+  '/_staff/customers_/$id': typeof StaffCustomersIdRoute
+  '/_staff/jobs_/$id': typeof StaffJobsIdRoute
   '/_staff/leads_/$id': typeof StaffLeadsIdRoute
   '/_staff/settings_/estimator': typeof StaffSettingsEstimatorRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -167,10 +203,14 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/crm'
+    | '/customers'
+    | '/jobs'
     | '/leads'
     | '/settings'
     | '/submissions'
     | '/api/lead-files'
+    | '/customers/$id'
+    | '/jobs/$id'
     | '/leads/$id'
     | '/settings/estimator'
     | '/api/auth/$'
@@ -183,11 +223,15 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/crm'
+    | '/customers'
+    | '/jobs'
     | '/leads'
     | '/settings'
     | '/submissions'
     | '/api/lead-files'
     | '/'
+    | '/customers/$id'
+    | '/jobs/$id'
     | '/leads/$id'
     | '/settings/estimator'
     | '/api/auth/$'
@@ -201,11 +245,15 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/_staff/crm'
+    | '/_staff/customers'
+    | '/_staff/jobs'
     | '/_staff/leads'
     | '/_staff/settings'
     | '/_staff/submissions'
     | '/api/lead-files'
     | '/_staff/'
+    | '/_staff/customers_/$id'
+    | '/_staff/jobs_/$id'
     | '/_staff/leads_/$id'
     | '/_staff/settings_/estimator'
     | '/api/auth/$'
@@ -269,6 +317,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffCrmRouteImport
       parentRoute: typeof StaffRoute
     }
+    '/_staff/customers': {
+      id: '/_staff/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof StaffCustomersRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/jobs': {
+      id: '/_staff/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof StaffJobsRouteImport
+      parentRoute: typeof StaffRoute
+    }
     '/_staff/leads': {
       id: '/_staff/leads'
       path: '/leads'
@@ -296,6 +358,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/lead-files'
       preLoaderRoute: typeof ApiLeadFilesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_staff/customers_/$id': {
+      id: '/_staff/customers_/$id'
+      path: '/customers/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof StaffCustomersIdRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/jobs_/$id': {
+      id: '/_staff/jobs_/$id'
+      path: '/jobs/$id'
+      fullPath: '/jobs/$id'
+      preLoaderRoute: typeof StaffJobsIdRouteImport
+      parentRoute: typeof StaffRoute
     }
     '/_staff/leads_/$id': {
       id: '/_staff/leads_/$id'
@@ -344,20 +420,28 @@ declare module '@tanstack/react-router' {
 
 interface StaffRouteChildren {
   StaffCrmRoute: typeof StaffCrmRoute
+  StaffCustomersRoute: typeof StaffCustomersRoute
+  StaffJobsRoute: typeof StaffJobsRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
   StaffSubmissionsRoute: typeof StaffSubmissionsRoute
   StaffIndexRoute: typeof StaffIndexRoute
+  StaffCustomersIdRoute: typeof StaffCustomersIdRoute
+  StaffJobsIdRoute: typeof StaffJobsIdRoute
   StaffLeadsIdRoute: typeof StaffLeadsIdRoute
   StaffSettingsEstimatorRoute: typeof StaffSettingsEstimatorRoute
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
   StaffCrmRoute: StaffCrmRoute,
+  StaffCustomersRoute: StaffCustomersRoute,
+  StaffJobsRoute: StaffJobsRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffSettingsRoute: StaffSettingsRoute,
   StaffSubmissionsRoute: StaffSubmissionsRoute,
   StaffIndexRoute: StaffIndexRoute,
+  StaffCustomersIdRoute: StaffCustomersIdRoute,
+  StaffJobsIdRoute: StaffJobsIdRoute,
   StaffLeadsIdRoute: StaffLeadsIdRoute,
   StaffSettingsEstimatorRoute: StaffSettingsEstimatorRoute,
 }

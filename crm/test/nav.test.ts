@@ -4,9 +4,9 @@ import { headerTrail, isFullBleed, isNavItemActive, visibleNavGroups } from '#/l
 const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.title))
 
 describe('sidebar navigation', () => {
-  it('shows Staff the Pipeline, All Leads and Estimator settings, without admin-only items', () => {
-    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads', 'Company'])
-    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Estimator settings'])
+  it('shows Staff the Pipeline, All Leads, Customers, Jobs and Estimator settings, without admin-only items', () => {
+    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads', 'Customers', 'Company'])
+    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Customers', 'Jobs', 'Estimator settings'])
   })
 
   it('shows an admin Company settings and Submissions as well', () => {
@@ -15,14 +15,14 @@ describe('sidebar navigation', () => {
   })
 
   it('has none of the screens that are not in v1', () => {
-    for (const title of ['Home', 'Follow-ups', 'Messages', 'Appointments', 'Calls', 'Team', 'Statistics', 'Jobs', 'Mail queue']) {
+    for (const title of ['Home', 'Follow-ups', 'Messages', 'Appointments', 'Calls', 'Team', 'Statistics', 'Mail queue']) {
       expect(titles('admin')).not.toContain(title)
     }
   })
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/crm', '/leads', '/settings', '/settings/estimator', '/submissions'])
+    expect(urls).toEqual(['/crm', '/leads', '/customers', '/jobs', '/settings', '/settings/estimator', '/submissions'])
   })
 
   it('marks an item active on its path and sub-paths, and Pipeline (not All Leads) on a Lead page', () => {
@@ -52,6 +52,11 @@ describe('header title and breadcrumbs', () => {
 
   it('puts a Lead page under the Pipeline', () => {
     expect(headerTrail('/leads/abc', 'staff')).toEqual({ title: 'Lead', parent: { title: 'Pipeline', url: '/crm' } })
+  })
+
+  it('puts a Customer page under Customers and a Job page under Jobs', () => {
+    expect(headerTrail('/customers/abc', 'staff')).toEqual({ title: 'Customer', parent: { title: 'Customers', url: '/customers' } })
+    expect(headerTrail('/jobs/abc', 'staff')).toEqual({ title: 'Job', parent: { title: 'Jobs', url: '/jobs' } })
   })
 
   it('titles /settings Your profile for Staff and Company settings for an admin', () => {
