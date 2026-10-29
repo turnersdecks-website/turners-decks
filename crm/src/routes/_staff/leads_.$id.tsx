@@ -366,7 +366,7 @@ function LeadDetail() {
         </TabsContent>
 
         <TabsContent value="photos" forceMount className={panelClass}>
-          <PhotosPanel key={lead.id} target={{ leadId: lead.id }} defaultStage={lead.stage === 'won' ? 'after' : 'before'} timeZone={timeZone} />
+          <PhotosPanel key={lead.id} target={{ leadId: lead.id }} timeZone={timeZone} />
         </TabsContent>
       </Tabs>
     </div>

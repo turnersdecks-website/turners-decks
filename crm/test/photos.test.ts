@@ -114,7 +114,7 @@ describe('photo links', () => {
 
     const page = await SELF.fetch(`${BASE}/p/${tokenOf(link.url)}`)
     expect(page.status).toBe(200)
-    expect(await page.text()).toContain('Take or add photos')
+    expect(await page.text()).toContain('Take a photo')
   })
 
   it('refuses a turned-off link, a non-JPEG and an unknown token', async () => {
@@ -179,6 +179,34 @@ describe('photo links', () => {
     const { cookie } = await signedInStaff('staff')
     const res = await callServerFn(createPhotoLink, cookie, { leadId: await insertLead({ phoneE164: `+1${randomPhone()}` }), stage: 'mock' })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('Staff uploads', () => {
+  it('Staff add an AI mock to a Lead from the CRM; metadata is stripped and it is marked as a mock', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const leadId = await insertLead({ phoneE164: `+1${randomPhone()}` })
+    const form = new FormData()
+    form.append('photo', new Blob([jpeg()], { type: 'image/jpeg' }), 'mock.jpg')
+    const res = await SELF.fetch(`${BASE}/api/photos?lead=${leadId}&stage=mock`, { method: 'POST', body: form, headers: { cookie, origin: BASE } })
+    expect(res.status).toBe(201)
+    const { id } = await res.json<{ id: string }>()
+    expect(await photoRow(id)).toMatchObject({ lead_id: leadId, stage: 'mock', photo_link_id: null })
+    expect((await photoRow(id))?.uploaded_by).toBeTruthy()
+    const bytes = new Uint8Array(await (await env.LEAD_FILES.get(`photos/${id}.jpg`))!.arrayBuffer())
+    expect(hasJpegMetadata(bytes)).toBe(false)
+  })
+
+  it('refuses a cross-site upload and an unknown stage', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const leadId = await insertLead({ phoneE164: `+1${randomPhone()}` })
+    const form = () => {
+      const f = new FormData()
+      f.append('photo', new Blob([jpeg()], { type: 'image/jpeg' }), 'mock.jpg')
+      return f
+    }
+    expect((await SELF.fetch(`${BASE}/api/photos?lead=${leadId}&stage=mock`, { method: 'POST', body: form(), headers: { cookie, origin: 'https://evil.example' } })).status).toBe(403)
+    expect((await SELF.fetch(`${BASE}/api/photos?lead=${leadId}&stage=other`, { method: 'POST', body: form(), headers: { cookie, origin: BASE } })).status).toBe(400)
   })
 })
 

@@ -1,7 +1,8 @@
 import { type AuthEnv, createAuth } from '#/lib/auth'
 import { isJpeg, stripJpegMetadata } from '#/lib/jpeg'
 import { CLOSED_JOB_STATUSES } from '#/lib/job-statuses'
-import { PHOTO_LINK_MS, PHOTO_MAX_BYTES, PHOTO_STAGE_LABELS, PHOTO_THUMB_MAX_BYTES, type LinkStage, isLinkStage } from '#/lib/photo-vocab'
+import { PHOTO_LINK_MS, PHOTO_MAX_BYTES, PHOTO_STAGE_LABELS, PHOTO_THUMB_MAX_BYTES, type LinkStage, isLinkStage, isPhotoStage } from '#/lib/photo-vocab'
+import { isSameOrigin } from '#/lib/same-origin'
 
 // Photos (GLOSSARY Photo, Photo link, Photo home screen): links for Pat, his upload page's server side, and the image
 // routes. Pat's page needs no sign-in: a link is a long random token that can only add photos to its one Lead or Job.
@@ -151,12 +152,51 @@ export async function photoHomeView(d1: D1, now = Date.now()) {
 export type PhotoDeps = { bucket?: Pick<R2Bucket, 'put' | 'get'>; now?: () => number }
 
 export async function handlePhotoUpload(request: Request, env: PhotosEnv, deps: PhotoDeps = {}): Promise<Response> {
+  const now = (deps.now ?? Date.now)()
+  const link = await linkForCredentials(env.DB, credentialsFrom(new URL(request.url)), now)
+  if (!link) return text(PHOTO_MESSAGES.expired, 410)
+  const res = await storePhoto(request, env, deps, now, { leadId: link.lead_id, jobId: link.job_id, stage: link.stage, linkId: link.id, uploadedBy: null })
+  if (res.status === 201) await env.DB.prepare('UPDATE photo_links SET last_used_at = ? WHERE id = ?').bind(now, link.id).run()
+  return res
+}
+
+/**
+ * `POST /api/photos?lead=<id>` or `?job=<id>`, `&stage=<stage>`: a signed-in Staff member adds photos from the CRM
+ * (AI mocks, or real photos they have). Same body and checks as Pat's upload.
+ */
+export async function handleStaffPhotoUpload(request: Request, env: PhotosEnv, deps: PhotoDeps = {}): Promise<Response> {
+  const session = await createAuth(env).api.getSession({ headers: request.headers })
+  if (!session) return text('Unauthorized', 401)
+  if (!isSameOrigin(request)) return text('Cross-site request refused.', 403)
+  const q = new URL(request.url).searchParams
+  const stage = q.get('stage')
+  if (!isPhotoStage(stage)) return text('Stage must be before, during, after or mock.', 400)
+  const jobParam = q.get('job')
+  const leadParam = q.get('lead')
+  let leadId: string | null = null
+  let jobId: string | null = null
+  if (jobParam) {
+    const job = await env.DB.prepare('SELECT id, lead_id FROM jobs WHERE id = ?').bind(jobParam.slice(0, 100)).first<{ id: string; lead_id: string | null }>()
+    if (!job) return text('Job not found', 404)
+    jobId = job.id
+    leadId = job.lead_id
+  } else if (leadParam) {
+    leadId = await env.DB.prepare('SELECT id FROM leads WHERE id = ?').bind(leadParam.slice(0, 100)).first<string>('id')
+    if (!leadId) return text('Lead not found', 404)
+  } else return text('A Lead or a Job is required.', 400)
+  return storePhoto(request, env, deps, (deps.now ?? Date.now)(), { leadId, jobId, stage, linkId: null, uploadedBy: session.user.id })
+}
+
+/** The shared upload: multipart `photo` (JPEG), `thumb` (JPEG, optional), `takenAt` (epoch ms, optional). */
+async function storePhoto(
+  request: Request,
+  env: PhotosEnv,
+  deps: PhotoDeps,
+  now: number,
+  to: { leadId: string | null; jobId: string | null; stage: string; linkId: string | null; uploadedBy: string | null },
+): Promise<Response> {
   const d1 = env.DB
   const bucket = deps.bucket ?? env.LEAD_FILES
-  const now = (deps.now ?? Date.now)()
-  const link = await linkForCredentials(d1, credentialsFrom(new URL(request.url)), now)
-  if (!link) return text(PHOTO_MESSAGES.expired, 410)
-
   const declared = Number(request.headers.get('content-length') ?? 'NaN')
   if (Number.isFinite(declared) && declared > PHOTO_MAX_BYTES + PHOTO_THUMB_MAX_BYTES + 64 * 1024) return text(PHOTO_MESSAGES.tooBig, 413)
 
@@ -185,13 +225,15 @@ export async function handlePhotoUpload(request: Request, env: PhotosEnv, deps: 
   // A capture time in the future or before 2015 is dropped rather than refused.
   const takenAt = Number.isSafeInteger(takenRaw) && takenRaw > Date.UTC(2015, 0, 1) && takenRaw < now + 86_400_000 ? takenRaw : null
 
-  // A link sent from a Lead files photos on the Lead's open Job once it has one (it was won after the link went out).
+  // Photos for a Lead go on the Lead's open Job once it has one (it was won after the link went out).
   const jobId =
-    link.job_id ??
-    (await d1
-      .prepare(`SELECT id FROM jobs WHERE lead_id = ? AND status NOT IN (${closed}) ORDER BY created_at DESC LIMIT 1`)
-      .bind(link.lead_id)
-      .first<string>('id'))
+    to.jobId ??
+    (to.leadId
+      ? await d1
+          .prepare(`SELECT id FROM jobs WHERE lead_id = ? AND status NOT IN (${closed}) ORDER BY created_at DESC LIMIT 1`)
+          .bind(to.leadId)
+          .first<string>('id')
+      : null)
 
   const id = crypto.randomUUID()
   const key = `photos/${id}.jpg`
@@ -202,15 +244,13 @@ export async function handlePhotoUpload(request: Request, env: PhotosEnv, deps: 
   } catch {
     return text(PHOTO_MESSAGES.storeFailed, 503)
   }
-  await d1.batch([
-    d1
-      .prepare(
-        `INSERT INTO photos (id, lead_id, job_id, stage, r2_key, thumb_r2_key, size_bytes, width, height, taken_at, uploaded_at, photo_link_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(id, link.lead_id, jobId ?? null, link.stage, key, thumbKey, clean.bytes.byteLength, clean.width, clean.height, takenAt, now, link.id),
-    d1.prepare('UPDATE photo_links SET last_used_at = ? WHERE id = ?').bind(now, link.id),
-  ])
+  await d1
+    .prepare(
+      `INSERT INTO photos (id, lead_id, job_id, stage, r2_key, thumb_r2_key, size_bytes, width, height, taken_at, uploaded_at, photo_link_id, uploaded_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(id, to.leadId, jobId ?? null, to.stage, key, thumbKey, clean.bytes.byteLength, clean.width, clean.height, takenAt, now, to.linkId, to.uploadedBy)
+    .run()
   return Response.json({ id }, { status: 201 })
 }
 

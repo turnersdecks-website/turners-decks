@@ -1,4 +1,4 @@
-import { Camera, Check, CircleAlert, Loader2, RotateCw } from 'lucide-react'
+import { Camera, Check, CircleAlert, Images, Loader2, RotateCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { preparePhoto } from '#/lib/photo-prepare'
 
@@ -27,7 +27,6 @@ export function PhotoUploader({
   const [expired, setExpired] = useState(false)
   const [done, setDone] = useState(initiallyDone)
   const [finishing, setFinishing] = useState(false)
-  const input = useRef<HTMLInputElement>(null)
   const running = useRef(new Set<string>())
   const prepared = useRef(new Map<string, Awaited<ReturnType<typeof preparePhoto>>>())
 
@@ -85,12 +84,13 @@ export function PhotoUploader({
     return () => window.removeEventListener('beforeunload', warn)
   }, [items])
 
-  function add(files: FileList | null) {
+  function add(picker: HTMLInputElement) {
+    const files = picker.files
     if (!files?.length) return
     const added = [...files].map((file) => ({ key: crypto.randomUUID(), file, status: 'preparing' as Status, preview: null, tries: 0 }))
     setItems((list) => [...list, ...added])
     setDone(false)
-    if (input.current) input.current.value = ''
+    picker.value = ''
   }
 
   async function finish() {
@@ -117,14 +117,22 @@ export function PhotoUploader({
 
   return (
     <Shell title={title}>
-      <label className="flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl bg-primary px-6 py-8 text-2xl font-semibold text-primary-foreground shadow-lg active:scale-[0.99]">
-        <Camera className="size-12" aria-hidden />
-        Take or add photos
-        <input ref={input} type="file" accept="image/*" multiple className="sr-only" onChange={(e) => add(e.target.files)} />
+      {/* Two buttons because a web page cannot open the phone's full Camera app: "Take a photo" goes straight to the
+          camera (one shot, then back here); "Choose from camera roll" picks many at once, e.g. shots taken in the
+          Camera app. */}
+      <label className="flex min-h-32 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl bg-brand px-6 py-6 text-2xl font-semibold text-brand-foreground shadow-lg active:scale-[0.99]">
+        <Camera className="size-11" aria-hidden />
+        Take a photo
+        <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => add(e.target)} />
+      </label>
+      <label className="flex min-h-20 w-full cursor-pointer items-center justify-center gap-3 rounded-3xl border-2 border-brand bg-card px-6 text-xl font-semibold text-brand active:scale-[0.99]">
+        <Images className="size-7" aria-hidden />
+        Choose from camera roll
+        <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => add(e.target)} />
       </label>
 
       <p className="text-center text-base text-muted-foreground" aria-live="polite">
-        {sent === 0 && pending === 0 ? 'Photos upload as soon as you take them.' : `${sent} uploaded${pending ? `, ${pending} on the way` : ''}`}
+        {sent === 0 && pending === 0 ? 'Photos upload as soon as you take them. Taking a lot? Shoot them in your Camera app, then choose them all from your camera roll.' : `${sent} uploaded${pending ? `, ${pending} on the way` : ''}`}
       </p>
 
       {(items.length > 0 || existingIds.length > 0) && (
