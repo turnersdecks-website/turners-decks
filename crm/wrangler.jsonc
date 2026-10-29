@@ -88,10 +88,8 @@
 			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-dev" }]
 		},
 		"staging": {
-			// TEMPORARY (2026-10-28): empty so the first staging deploy can replace the static-assets Worker; the
-			// dashboard refuses secrets on an assets-only Worker. Restore the five names once the secrets are set.
 			"secrets": {
-				"required": []
+				"required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "SEED_ADMIN_EMAIL", "SEED_ADMIN_PASSWORD", "TURNSTILE_SECRET_KEY"]
 			},
 			// Placeholder origin until the staging Pages project exists (FLW-204).
 			"vars": {
