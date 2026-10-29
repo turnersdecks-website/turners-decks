@@ -48,6 +48,8 @@ type LeadFields = {
   zip: string | null
   serviceType: string | null
   message: string | null
+  preferredMaterial: string | null
+  timeframe: string | null
 }
 
 export type IntakeEnv = Pick<
@@ -556,6 +558,8 @@ function fillEmptyFields(db: Db, leadId: string, f: LeadFields, o: { existing: L
       addressKey: sql`case when ${unchanged} then ${mergedKey(e, f)} else ${leads.addressKey} end`,
       serviceType: fill(leads.serviceType, f.serviceType),
       message: fill(leads.message, f.message),
+      preferredMaterial: fill(leads.preferredMaterial, f.preferredMaterial),
+      timeframe: fill(leads.timeframe, f.timeframe),
       ...(o.needsReview ? { needsReview: true } : {}),
       updatedAt: new Date(),
     })
@@ -597,6 +601,9 @@ export function mapSitePayload(p: Record<string, unknown>): LeadFields | null {
     zip: address.zip ?? (zip && /^\d{5}$/.test(zip) ? zip : null),
     serviceType: trimmedNonEmptyString(p.projectType) ?? trimmedNonEmptyString(p.project_type),
     message: trimmedNonEmptyString(p.message) ?? trimmedNonEmptyString(p.notes),
+    // The quote form's material (site src/lib/crm-intake.ts); timeframe for a form that asks it.
+    preferredMaterial: trimmedNonEmptyString(p.material)?.slice(0, 100) ?? null,
+    timeframe: (trimmedNonEmptyString(p.timeframe) ?? trimmedNonEmptyString(p.timeline))?.slice(0, 100) ?? null,
   }
 }
 

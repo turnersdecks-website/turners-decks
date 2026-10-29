@@ -44,7 +44,7 @@ describe('winning a Lead', () => {
     expect(moved.customerId).toBe(customer?.id)
     const jobs = await jobsOf(leadId)
     expect(jobs).toHaveLength(1)
-    expect(jobs[0]).toMatchObject({ customer_id: customer?.id, name: 'Pool deck', project_type: 'Pool deck', city: 'Douglassville', status: 'not_scheduled' })
+    expect(jobs[0]).toMatchObject({ customer_id: customer?.id, name: '12 Main St - Pool deck', project_type: 'Pool deck', city: 'Douglassville', status: 'not_scheduled' })
   })
 
   it('joins the past Customer with the same phone instead of making a second one', async () => {
@@ -132,5 +132,19 @@ describe('a past Customer contacting us again', () => {
     expect(res.status).toBe(200)
     const { lead_id } = await res.json<{ lead_id: string }>()
     expect((await leadRow(lead_id))?.customer_id).toBe(pastId)
+  })
+})
+
+describe('website form material', () => {
+  beforeEach(() => {
+    mockSiteverify()
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('the quote form’s material and a timeline are kept on the new Lead', async () => {
+    const res = await postIntake(inspectionFormPayload({ submission_key: crypto.randomUUID(), phone: randomPhone(), email: uniqueEmail(), material: 'Composite', timeline: 'This season' }))
+
+    const { lead_id } = await res.json<{ lead_id: string }>()
+    expect(await leadRow(lead_id)).toMatchObject({ preferred_material: 'Composite', timeframe: 'This season' })
   })
 })

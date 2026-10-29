@@ -25,6 +25,7 @@ import {
   assignLeadTo,
   createLeadRecord,
   getLeadDetail,
+  importedAt,
   listOpenFollowUps,
   moveLeadToStage,
   searchLeads,
@@ -127,8 +128,13 @@ const leadFieldsShape = {
   state: z.string().max(50).optional(),
   zip: z.string().max(20).optional(),
   serviceType: z.string().max(100).optional().describe('New deck, Deck replacement, Redeck, Deck expansion, Pool deck, Question or Other'),
-  message: z.string().max(4000).optional(),
+  message: z.string().max(4000).optional().describe('What the Homeowner asked for, in their words (e.g. the website form\'s "Tell us about your project")'),
+  preferredMaterial: z.string().max(100).optional().describe('As the Homeowner said it, e.g. "Composite or Vinyl"'),
+  timeframe: z.string().max(100).optional().describe('As the Homeowner said it, e.g. "Ready to start soon"'),
 }
+
+/** Import dates: admins only (history brought in from email and the project folders). */
+const importAt = (what: string) => dateTime.optional().describe(`Admins importing history only: when ${what} actually happened. Leave out for anything happening now.`)
 
 const customerFieldsShape = {
   firstName: z.string().max(100).optional(),
@@ -153,10 +159,11 @@ const customerFieldsShape = {
 }
 
 const jobFieldsShape = {
-  name: z.string().max(200).optional().describe('Short name, e.g. "Back deck, composite"'),
+  name: z.string().max(200).optional().describe('Street and project type, e.g. "235 Sunrise Road - New deck"'),
   city: z.string().max(100).nullable().optional().describe('Town (defaults to the Customer’s)'),
   projectType: z.string().max(100).nullable().optional().describe('New deck, Deck replacement, Redeck, Deck expansion, Pool deck, Repair, Railing only, Stairs, Pergola or roof, Other'),
   material: z.string().max(100).nullable().optional().describe('Composite, Pressure-treated wood, PVC, Cedar, Specialty wood, Not sure yet'),
+  scope: z.string().max(8000).nullable().optional().describe('The scope of work, usually from the accepted estimate'),
   status: z.enum(JOB_STATUSES).optional(),
   startDate: isoDate.nullable().optional(),
   finishDate: isoDate.nullable().optional(),
@@ -260,11 +267,23 @@ function buildServer(env: Env, staff: Staff) {
     'create_lead',
     {
       title: 'Add a Lead',
-      description: 'Adds a Lead by hand (stage new, source manual). Needs a first name. Refused if another Lead has the same phone or email.',
-      inputSchema: { ...leadFieldsShape, firstName: z.string().min(1).max(100) },
+      description:
+        'Adds a Lead by hand (stage new, source manual). Needs a first name. Refused if another Lead has the same phone or email. ' +
+        'When importing past inquiries, an admin sets receivedAt and source (website for a past website form).',
+      inputSchema: {
+        ...leadFieldsShape,
+        firstName: z.string().min(1).max(100),
+        receivedAt: importAt('the inquiry came in'),
+        source: z.enum(['website', 'manual', 'phone', 'referral', 'email']).optional().describe('Admins importing only. Defaults to manual.'),
+      },
       annotations: WRITE,
     },
-    (a) => run(() => createLeadRecord(db, a, staff.id)),
+    (a) =>
+      run(() => {
+        const { receivedAt, source, ...fields } = a
+        if ((receivedAt || source) && staff.role !== 'admin') throw forbidden()
+        return createLeadRecord(db, fields, staff.id, { receivedAt: importedAt(toMs(receivedAt, 'receivedAt'), 'receivedAt'), source })
+      }),
   )
 
   server.registerTool(
@@ -289,10 +308,14 @@ function buildServer(env: Env, staff: Staff) {
     {
       title: 'Move a Lead to a stage',
       description: 'Moves a Lead to new, contacted, appointment, quoted, won or lost. Won also makes or joins the Customer and adds a Job.',
-      inputSchema: { leadId: id, stage },
+      inputSchema: { leadId: id, stage, at: importAt('the move'), reason: z.string().max(200).optional().describe('Why, e.g. "Went with a cheaper estimate" for lost') },
       annotations: WRITE,
     },
-    (a) => run(() => moveLeadToStage(env.DB, a.leadId, a.stage, staff.id)),
+    (a) =>
+      run(() => {
+        if (a.at && staff.role !== 'admin') throw forbidden()
+        return moveLeadToStage(env.DB, a.leadId, a.stage, staff.id, { at: importedAt(toMs(a.at, 'at'), 'at'), reason: a.reason })
+      }),
   )
 
   server.registerTool(
@@ -320,10 +343,16 @@ function buildServer(env: Env, staff: Staff) {
         outcome: z.string().max(100).optional().describe('Calls only, e.g. Connected, Left voicemail, No answer, Booked appointment'),
         durationMin: z.number().int().min(0).max(1440).optional().describe('Calls only'),
         followUpAt: dateTime.optional().describe('When to follow up'),
+        at: importAt('this note, call, email or text'),
       },
       annotations: WRITE,
     },
-    (a) => run(() => addActivity(db, { ...a, followUpAt: toMs(a.followUpAt, 'Follow-up') }, staff.id)),
+    (a) =>
+      run(() => {
+        const { at, ...rest } = a
+        if (at && staff.role !== 'admin') throw forbidden()
+        return addActivity(db, { ...rest, followUpAt: toMs(rest.followUpAt, 'Follow-up') }, staff.id, { at: importedAt(toMs(at, 'at'), 'at') })
+      }),
   )
 
   server.registerTool(

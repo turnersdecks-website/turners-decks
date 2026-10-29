@@ -19,6 +19,8 @@ export const emptyLead: LeadEdits = {
   zip: '',
   serviceType: '',
   message: '',
+  preferredMaterial: '',
+  timeframe: '',
 }
 
 export function useLeadFields(init: Partial<Record<keyof LeadEdits, string | null>> = {}) {
@@ -113,6 +115,12 @@ export function LeadFieldsForm({ value, onChange }: { value: LeadEdits; onChange
             <option key={s}>{s}</option>
           ))}
         </select>
+      </FormField>
+      <FormField id="preferredMaterial" label="Preferred material">
+        <Input autoComplete="off" placeholder="e.g. Composite" {...f('preferredMaterial')} />
+      </FormField>
+      <FormField id="timeframe" label="Timeframe">
+        <Input autoComplete="off" placeholder="e.g. Ready to start soon" {...f('timeframe')} />
       </FormField>
       <FormField id="message" label="Message" className="sm:col-span-2">
         <Textarea rows={3} {...f('message')} />

@@ -130,7 +130,7 @@ function AddJob({ customerId, city }: { customerId: string; city: string | null 
             <DialogTitle>Add a Job</DialogTitle>
           </DialogHeader>
           <FormField id="new-job-name" label="Job name">
-            <Input id="new-job-name" required placeholder="Back deck, composite" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input id="new-job-name" required placeholder="235 Sunrise Road - New deck" value={name} onChange={(e) => setName(e.target.value)} />
           </FormField>
           <DialogFooter className="mt-6">
             <Button disabled={saving}>Add Job</Button>

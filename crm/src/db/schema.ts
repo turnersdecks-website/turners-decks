@@ -158,6 +158,10 @@ export const leads = sqliteTable(
     firstSource: text('first_source').notNull(),
     serviceType: text('service_type'),
     message: text('message'),
+    /** What the Homeowner said they want built with (form "Preferred material"), as given. */
+    preferredMaterial: text('preferred_material'),
+    /** When they want it done (form "Estimated Timeline"), as given. */
+    timeframe: text('timeframe'),
     assignedTo: text('assigned_to').references(() => user.id, { onDelete: 'set null' }),
     leadScore: integer('lead_score'),
     attributionJson: text('attribution_json'),
@@ -506,6 +510,8 @@ export const jobs = sqliteTable(
     city: text('city'),
     projectType: text('project_type'),
     material: text('material'),
+    /** The scope of work, usually from the accepted estimate. */
+    scope: text('scope'),
     status: text('status', { enum: JOB_STATUSES }).notNull().default('not_scheduled'),
     startDate: text('start_date'),
     finishDate: text('finish_date'),
