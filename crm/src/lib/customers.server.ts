@@ -4,6 +4,7 @@ import { customers, jobs, leads } from '#/db/schema'
 import { badRequest, optionalText } from '#/lib/input'
 import { validEmail } from '#/lib/intake'
 import { toE164 } from '#/lib/phone'
+import { CLIENT_TYPES, type ClientType } from '#/lib/client-types'
 import { CLOSED_JOB_STATUSES, JOB_STATUSES, type JobStatus } from '#/lib/job-statuses'
 
 // Customers and Jobs (GLOSSARY), shared by the CRM pages (customers.functions.ts) and the MCP tools (src/mcp/).
@@ -58,6 +59,13 @@ function optionalInstant(value: unknown, label: string): Date | null {
   throw badRequest(`${label} must be a date like 2024-06-01.`)
 }
 
+/** residential (the default) or commercial; 400 on anything else. */
+export function clientTypeOf(value: unknown): ClientType {
+  if (value === null || value === undefined || value === '') return 'residential'
+  if (typeof value !== 'string' || !CLIENT_TYPES.includes(value as ClientType)) throw badRequest('Client type must be residential or commercial.')
+  return value as ClientType
+}
+
 /** The Customer fields present in `data`, validated and normalised. */
 export function customerChanges(data: Record<string, unknown>) {
   const out: Partial<typeof customers.$inferInsert> = {}
@@ -71,7 +79,9 @@ export function customerChanges(data: Record<string, unknown>) {
   text('state', 50)
   text('zip', 20)
   text('howFound', 100)
+  text('referredByName', 200)
   text('notes', 8000)
+  if (has(data, 'clientType')) out.clientType = clientTypeOf(data.clientType)
   if (has(data, 'email')) {
     const email = optionalText(data.email, 200)
     if (email && !validEmail(email)) throw badRequest('Email looks wrong.')
@@ -176,6 +186,7 @@ export async function listCustomers(db: Db, opts: { search?: string | null; limi
       city: customers.city,
       customerSince: customers.customerSince,
       howFound: customers.howFound,
+      clientType: customers.clientType,
       reviewLeft: customers.reviewLeft,
       jobsDone: sql<number>`(SELECT count(*) FROM ${jobs} WHERE ${jobs.customerId} = ${customers.id} AND ${jobs.status} = 'done')`,
       lastJobFinished: sql<string | null>`(SELECT max(${jobs.finishDate}) FROM ${jobs} WHERE ${jobs.customerId} = ${customers.id})`,
@@ -329,8 +340,9 @@ export function wonWrites(d1: D1Database, leadId: string, stageChangeId: string,
     d1
       .prepare(
         `INSERT INTO customers (id, first_name, last_name, email, email_lower, phone, phone_e164, street, city, state, zip,
-           customer_since, created_at, updated_at)
-         SELECT ?, first_name, last_name, email, email_lower, phone, phone_e164, street, city, state, zip, ?, ?, ?
+           how_found, referred_by_id, referred_by_name, client_type, customer_since, created_at, updated_at)
+         SELECT ?, first_name, last_name, email, email_lower, phone, phone_e164, street, city, state, zip,
+           how_found, referred_by_id, referred_by_name, client_type, ?, ?, ?
          FROM leads l
          WHERE l.id = ? AND l.stage = 'won' AND l.customer_id IS NULL
            AND NOT EXISTS (SELECT 1 FROM customers c WHERE (l.phone_e164 IS NOT NULL AND c.phone_e164 = l.phone_e164)
@@ -346,6 +358,16 @@ export function wonWrites(d1: D1Database, leadId: string, stageChangeId: string,
          WHERE id = ? AND stage = 'won' AND customer_id IS NULL`,
       )
       .bind(customerId, leadId),
+    // A past Customer won again keeps what is on file; only blanks are filled from the Lead.
+    d1
+      .prepare(
+        `UPDATE customers SET
+           how_found = coalesce(how_found, (SELECT l.how_found FROM leads l WHERE l.id = ?)),
+           referred_by_id = coalesce(referred_by_id, (SELECT l.referred_by_id FROM leads l WHERE l.id = ? AND l.referred_by_id <> customers.id)),
+           referred_by_name = coalesce(referred_by_name, (SELECT l.referred_by_name FROM leads l WHERE l.id = ?))
+         WHERE id = (SELECT customer_id FROM leads WHERE id = ? AND stage = 'won')`,
+      )
+      .bind(leadId, leadId, leadId, leadId),
     d1
       .prepare(
         `INSERT INTO jobs (id, customer_id, lead_id, name, city, project_type, status, created_at, updated_at)

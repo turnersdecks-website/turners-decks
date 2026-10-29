@@ -4,7 +4,7 @@ import type { JobStatus } from '#/lib/job-statuses'
 
 export { CLOSED_JOB_STATUSES, JOB_STATUSES, type JobStatus } from '#/lib/job-statuses'
 
-export const HOW_FOUND = ['Google search', 'Google Business Profile', 'Referral', 'Repeat customer', 'Facebook', 'Yard sign', 'Truck', 'Other']
+export const HOW_FOUND = ['Google search', 'Google Business Profile', 'Referral', 'Repeat customer', 'Facebook', 'Saw a job nearby', 'Yard sign', 'Truck', 'Other']
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   not_scheduled: 'Not scheduled',

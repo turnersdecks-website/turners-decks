@@ -1,3 +1,4 @@
+import { CLIENT_TYPES, CLIENT_TYPE_LABELS } from '#/lib/client-types'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Plus, UserRoundCheck } from 'lucide-react'
@@ -43,6 +44,8 @@ const EMPTY: CustomerDraft = {
   howFound: '',
   customerSince: '',
   referredById: '',
+  referredByName: '',
+  clientType: 'residential',
   okToContact: true,
   reviewLeft: false,
   notes: '',
@@ -117,6 +120,7 @@ function CustomersPage() {
     { id: 'email', accessorFn: (c) => c.email ?? '', header: 'Email', cell: ({ row }) => <span className="break-all">{row.original.email}</span> },
     { id: 'city', accessorFn: (c) => c.city ?? '', header: 'Town' },
     { id: 'howFound', accessorFn: (c) => c.howFound ?? '', header: 'How they found us', enableGlobalFilter: false },
+    { id: 'clientType', accessorFn: (c) => c.clientType, header: 'Type', cell: ({ row }) => CLIENT_TYPE_LABELS[row.original.clientType], enableGlobalFilter: false },
     {
       accessorKey: 'jobsDone',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Jobs done" />,
@@ -146,7 +150,10 @@ function CustomersPage() {
           data={rows}
           getRowId={(c) => c.id}
           search={{ placeholder: 'Search name, phone, email or town' }}
-          facets={howFound.length ? [{ columnId: 'howFound', title: 'How they found us', options: howFound.map((v) => ({ value: v, label: v })) }] : []}
+          facets={[
+            ...(howFound.length ? [{ columnId: 'howFound', title: 'How they found us', options: howFound.map((v) => ({ value: v, label: v })) }] : []),
+            { columnId: 'clientType', title: 'Type', options: CLIENT_TYPES.map((t) => ({ value: t, label: CLIENT_TYPE_LABELS[t] })) },
+          ]}
           cap={CUSTOMERS_CAP}
         />
       )}

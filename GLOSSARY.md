@@ -41,6 +41,20 @@ _Avoid_: Status, phase
 Where a Lead first came from: `website` for the site's forms, `manual` for a Lead added by hand.
 _Avoid_: Channel, origin
 
+**How they found us**:
+What the Homeowner says led them to us: Google search, Google Business Profile, Referral, Repeat customer, Facebook,
+Saw a job nearby, Yard sign, Truck or Other. Kept on the Lead and copied to the Customer when it is won. Not the same
+as Source (how the inquiry reached the CRM).
+_Avoid_: Lead source, channel
+
+**Referred by**:
+Who sent them to us: a Customer, or just a name when the person is not a Customer (for example "Kristin").
+
+**Client type**:
+`residential` (the default) or `commercial` (a business or property manager, such as an apartment community). Kept
+on the Lead and copied to the Customer when it is won.
+_Avoid_: Segment, property type
+
 **Attribution**:
 The campaign and page details captured with a Lead: UTM tags, click ids, landing page and referrer.
 _Avoid_: Tracking data

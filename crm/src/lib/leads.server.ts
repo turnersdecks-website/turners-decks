@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, isNotNull, isNull, like, ne, or, sql } from 'dr
 import type { getDb } from '#/db/client'
 import { PIPELINE_STAGES, type PipelineStage, customers, leadActivity, leadStageChanges, leads, user } from '#/db/schema'
 import { addressKey } from '#/lib/address-key'
-import { customerIdFor, wonWrites } from '#/lib/customers.server'
+import { clientTypeOf, customerIdFor, wonWrites } from '#/lib/customers.server'
 import { badRequest, optionalText, optionalTime, requiredId } from '#/lib/input'
 import { toE164, validEmail } from '#/lib/intake'
 import { CALL_DIRECTIONS, MANUAL_ACTIVITY_KINDS, type ManualActivityKind } from '#/lib/pipeline'
@@ -64,7 +64,18 @@ export function leadFields(data: Record<string, unknown>) {
     message: optionalText(data.message, 4000),
     preferredMaterial: optionalText(data.preferredMaterial, 100),
     timeframe: optionalText(data.timeframe, 100),
+    howFound: optionalText(data.howFound, 100),
+    referredById: optionalText(data.referredById, 100),
+    referredByName: optionalText(data.referredByName, 200),
+    clientType: clientTypeOf(data.clientType),
   }
+}
+
+/** 400 when a Referred by Customer id does not name a Customer (rather than a foreign key error). */
+export async function refuseUnknownReferrer(db: Db, referredById: string | null) {
+  if (!referredById) return
+  const found = await db.select({ id: customers.id }).from(customers).where(eq(customers.id, referredById)).get()
+  if (!found) throw badRequest('Referred by must be an existing Customer.')
 }
 
 // Import dates (build 1, 2026-10-28): history brought in from email and the project folders keeps when it happened.
@@ -120,6 +131,10 @@ export type LeadEdits = {
   message: string
   preferredMaterial: string
   timeframe: string
+  howFound: string
+  referredById: string
+  referredByName: string
+  clientType: string
 }
 export const LEAD_EDIT_KEYS = [
   'firstName',
@@ -134,6 +149,10 @@ export const LEAD_EDIT_KEYS = [
   'message',
   'preferredMaterial',
   'timeframe',
+  'howFound',
+  'referredById',
+  'referredByName',
+  'clientType',
 ] as const
 
 /**
@@ -148,6 +167,7 @@ export async function createLeadRecord(
 ) {
   const fields = leadFields(data)
   await refuseClash(db, fields)
+  await refuseUnknownReferrer(db, fields.referredById)
   const customerId = await customerIdFor(db, fields)
   const now = new Date()
   const createdAt = imported.receivedAt ? new Date(imported.receivedAt) : now
@@ -206,6 +226,7 @@ export async function updateLeadRecord(db: Db, leadId: string, data: Record<stri
   }
   const fields = leadFields(data)
   await refuseClash(db, fields, leadId)
+  await refuseUnknownReferrer(db, fields.referredById)
   // The write is fenced on the address read here, so "did the address change" is decided against what it
   // overwrites: when a concurrent edit changed the address in between, read again and decide again.
   for (let tries = 0; tries < 3; tries++) {
@@ -302,7 +323,8 @@ export async function addActivity(db: Db, data: Record<string, unknown>, staffId
   const lead = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId)).get()
   if (!lead) throw leadNotFound()
   const id = crypto.randomUUID()
-  const now = imported.at ? new Date(imported.at) : new Date()
+  const writtenAt = new Date()
+  const now = imported.at ? new Date(imported.at) : writtenAt
   const insert = db.insert(leadActivity).values({
     id,
     leadId,
@@ -325,7 +347,7 @@ export async function addActivity(db: Db, data: Record<string, unknown>, staffId
     await db.batch([
       insert,
       stageMove(db, 'contacted', isNew, { at: now, by: staffId, reason }),
-      db.update(leads).set({ stage: 'contacted', updatedAt: new Date() }).where(isNew),
+      db.update(leads).set({ stage: 'contacted', updatedAt: writtenAt }).where(isNew),
     ])
   }
   return { id }
