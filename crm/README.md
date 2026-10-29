@@ -29,6 +29,19 @@ Local secrets go in `.dev.vars` (copy `.dev.vars.example`). Code follows `CODING
 - **Company settings** `/settings` and **Submissions** `/submissions` (admins).
 - **Email outbox** (`src/lib/outbox.ts`, Resend) with a 5-minute cron for retries, backlog alarms and Quote file
   cleanup.
+- **Customers and Jobs** `/customers`, `/jobs` (`src/lib/customers.server.ts`). Moving a Lead to won joins or makes
+  its Customer and adds a Job (same D1 batch as the stage move). A past Customer's new website Lead is tied to them.
+- **MCP for Claude** `/mcp` (`src/mcp/`). The Worker is its own OAuth server (`@cloudflare/workers-oauth-provider`,
+  KV binding `OAUTH_KV`): Claude registers itself, the Staff member signs in with their CRM login and approves on
+  `/oauth/authorize`, and every tool call runs as them (re-read each call, so a banned login stops at once). Tools read
+  and write Leads, Follow-ups, Customers, Jobs, company settings (admin) and the estimator draft (admin, never
+  publish). Nothing deletes.
+
+## Connect Claude
+
+In Claude: Settings > Connectors > Add custom connector, URL `<CRM address>/mcp` (for staging,
+`https://turners-decks-crm-staging.<account>.workers.dev/mcp`). Claude opens the CRM sign-in, then the consent
+page; Allow finishes it.
 
 ## Local end to end
 

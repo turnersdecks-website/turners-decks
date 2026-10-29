@@ -26,6 +26,10 @@ function SignIn() {
     })
     setBusy(false)
     if (error) return setError(error.message ?? 'Sign in failed.')
+    // Connecting Claude (src/mcp/oauth.ts) sends Staff here with ?next=/oauth/authorize?...; only that path is
+    // followed, so the link cannot send anyone elsewhere after signing in.
+    const next = new URLSearchParams(window.location.search).get('next')
+    if (next?.startsWith('/oauth/authorize?')) return window.location.assign(next)
     navigate({ to: '/crm' })
   }
 

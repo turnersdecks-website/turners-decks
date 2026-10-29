@@ -55,6 +55,8 @@
 		}
 	],
 	"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files" }],
+	// MCP sign-in (src/mcp/oauth.ts): the OAuth provider's clients, grants and token hashes. One namespace per env.
+	"kv_namespaces": [{ "binding": "OAUTH_KV", "id": "db1680710b664aa4b446641db6bcb6e2" }],
 	"env": {
 		// Local only (`npm run dev` / `npm run preview` set CLOUDFLARE_ENV=development). Declared secrets limit what
 		// `.dev.vars` may set, so the non-secret local values live here. Its D1 is a separate local file (own database_id):
@@ -85,7 +87,8 @@
 					"migrations_dir": "drizzle"
 				}
 			],
-			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-dev" }]
+			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-dev" }],
+			"kv_namespaces": [{ "binding": "OAUTH_KV", "id": "00000000000000000000000000000000" }]
 		},
 		"staging": {
 			"secrets": {
@@ -108,7 +111,8 @@
 					"migrations_dir": "drizzle"
 				}
 			],
-			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-staging" }]
+			"r2_buckets": [{ "binding": "LEAD_FILES", "bucket_name": "turners-decks-crm-files-staging" }],
+			"kv_namespaces": [{ "binding": "OAUTH_KV", "id": "7b726c3bad564848bc9f4e813cd48785" }]
 		}
 	}
 }
