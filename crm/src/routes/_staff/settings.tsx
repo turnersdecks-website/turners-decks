@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Mail, Save, UserRound } from 'lucide-react'
+import { Building2, Camera, Mail, Save, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -14,6 +14,7 @@ import { errorMessage } from '#/lib/errors'
 import { updateEstimateEmailTemplate } from '#/lib/estimator-settings.functions'
 import { ESTIMATE_EMAIL_PLACEHOLDERS } from '#/lib/estimator/email-template'
 import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, updateProfileName } from '#/lib/settings.functions'
+import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { cn } from '#/lib/utils'
 
 // Company settings, ported from Pine & Gable's /settings and cut to v1: Your profile and Company (name, contact,
@@ -35,6 +36,7 @@ const SECTIONS = [
   { id: 'profile', title: 'Your profile', icon: UserRound },
   { id: 'company', title: 'Company', icon: Building2 },
   { id: 'estimate-email', title: 'Estimate email', icon: Mail },
+  { id: 'photo-home', title: 'Photo home screen', icon: Camera },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id']
 
@@ -274,6 +276,7 @@ function AdminSettings() {
       </div>
 
       <EstimateEmailSection template={settings.estimateEmailTemplate} />
+      <PhotoHomeSection />
     </>
   )
 }
@@ -337,6 +340,103 @@ function EstimateEmailSection({ template: saved }: { template: string }) {
           </CardContent>
         </Card>
       </form>
+    </ContentSection>
+  )
+}
+
+type PhotoDevice = Awaited<ReturnType<typeof listPhotoDevices>>[number]
+
+/** GLOSSARY Photo home screen: a saved link on Pat's phone listing every photo request. The link is shown once. */
+function PhotoHomeSection() {
+  const [devices, setDevices] = useState<PhotoDevice[]>([])
+  const [name, setName] = useState("Pat's phone")
+  const [made, setMade] = useState<{ name: string; url: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const load = async () => {
+    try {
+      setDevices(await listPhotoDevices())
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    }
+  }
+  useEffect(() => {
+    void load()
+  }, [])
+
+  async function make(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      setMade(await createPhotoDevice({ data: { name } }))
+      await load()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ContentSection
+      id="photo-home"
+      title="Photo home screen"
+      description="One link saved on Pat's phone that lists every photo request still open. Anyone with it can add photos, so turn it off if the phone is lost."
+    >
+      <div className="space-y-4">
+        {made && (
+          <div className="space-y-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+            <p className="font-medium">Link for {made.name} (shown once):</p>
+            <p className="font-mono text-xs break-all select-all">{made.url}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <a href={`sms:?&body=${encodeURIComponent(`Your Turner's Decks photo list. Open it, then Share > Add to Home Screen: ${made.url}`)}`}>Text it</a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(made.url).then(() => toast.success('Link copied'), () => toast.error('Could not copy.'))}
+              >
+                Copy link
+              </Button>
+            </div>
+          </div>
+        )}
+        {devices.length > 0 && (
+          <ul className="space-y-1.5 text-sm">
+            {devices.map((d) => (
+              <li key={d.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2">
+                <span>
+                  {d.name}
+                  <span className="text-muted-foreground"> · {d.lastUsedAt ? `last opened ${new Date(d.lastUsedAt).toLocaleDateString()}` : 'not opened yet'}</span>
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  onClick={async () => {
+                    try {
+                      await revokePhotoDevice({ data: { id: d.id } })
+                      toast.success('Turned off')
+                      await load()
+                    } catch (error) {
+                      toast.error(await errorMessage(error))
+                    }
+                  }}
+                >
+                  Turn off
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form onSubmit={make} className="flex flex-col gap-2 sm:flex-row">
+          <Input aria-label="Phone name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Button variant="outline" disabled={busy}>
+            Make a link
+          </Button>
+        </form>
+      </div>
     </ContentSection>
   )
 }

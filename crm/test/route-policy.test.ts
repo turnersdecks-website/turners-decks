@@ -5,15 +5,20 @@ import { type AnyRoute, leafRoutes, serverHandlersOf } from './route-enumeration
 import { BASE } from './staff'
 
 // PLAN.md > Architecture > Route policy. Everything not listed here is private.
-const PUBLIC_PAGES = ['/sign-in', '/forgot-password', '/reset-password']
+// Pat's photo pages (GLOSSARY Photo link, Photo home screen): the token in the URL is the credential.
+const PUBLIC_PAGES = ['/sign-in', '/forgot-password', '/reset-password', '/p/$token', '/home/$device', '/hp/$device/$linkId']
 const PUBLIC_SERVER_ROUTES: Record<string, string[] | '*'> = {
   '/api/auth/$': '*', // Better Auth authorizes its own endpoints
   '/api/public/intake': ['POST', 'OPTIONS'],
   '/api/public/estimator': ['GET', 'HEAD'], // FLW-201: questions only, never prices
+  // Pat's upload page: a working photo link token is required and can only add photos (photos.server.ts).
+  '/api/public/photos': ['POST'],
+  '/api/public/photos/done': ['POST'],
+  '/api/public/photos/$id': ['GET', 'HEAD'],
 }
 
 const routes = Object.values(getRouter().routesById) as AnyRoute[]
-const url = (path: string) => `${BASE}${path.replace('$', 'anything')}`
+const url = (path: string) => `${BASE}${path.replace(/\$[A-Za-z]*/g, 'anything')}`
 
 const pages = leafRoutes(routes).filter((r) => r.options.component)
 const serverHandlers = serverHandlersOf(routes)

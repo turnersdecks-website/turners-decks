@@ -3,6 +3,7 @@ import { Hammer, Plus, SearchX, UserRoundCheck } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { CustomerFields, type CustomerDraft, customerDraftFrom, customerInput } from '#/components/CustomerForms'
+import { PhotosPanel } from '#/components/PhotosPanel'
 import { EmptyState } from '#/components/empty-state'
 import { FormField } from '#/components/LeadForm'
 import { Badge } from '#/components/ui/badge'
@@ -194,9 +195,10 @@ function CustomerDetail() {
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-6">
           {/* Keyed on updatedAt so a save (or someone else's) resets the form to what was stored. */}
           <DetailsCard key={customer.updatedAt.toString()} customer={customer} referrers={referrers} timeZone={timeZone} refresh={refresh} />
+          <PhotosPanel key={customer.id} target={{ customerId: customer.id }} timeZone={timeZone} />
         </div>
 
         <aside className="min-w-0 self-start overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xs xl:sticky xl:top-6">

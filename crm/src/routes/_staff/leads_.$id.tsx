@@ -8,6 +8,7 @@ import { EmptyState } from '#/components/empty-state'
 import { LeadActivity } from '#/components/LeadActivity'
 import { QuoteFiles } from '#/components/QuoteFiles'
 import { LeadFieldsForm, useLeadDraft } from '#/components/LeadForm'
+import { PhotosPanel } from '#/components/PhotosPanel'
 import { Badge } from '#/components/ui/badge'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '#/components/ui/breadcrumb'
 import { Button } from '#/components/ui/button'
@@ -36,7 +37,7 @@ import { customerName } from '#/lib/customer-vocab'
 // Send mailer, and the Prospect history / Possible Prospects rail sections.
 // The tab lives in `?tab=` (no param = Homeowner), so SSR renders the right one; every panel stays mounted (hidden
 // when inactive) so a half-typed note or Homeowner edit survives a tab switch.
-const LEAD_TABS = ['activities', 'estimate', 'quote'] as const
+const LEAD_TABS = ['activities', 'estimate', 'quote', 'photos'] as const
 type LeadTab = (typeof LEAD_TABS)[number]
 
 async function loadLeadPage(leadId: string) {
@@ -292,6 +293,9 @@ function LeadDetail() {
             <TabsTrigger variant="line" value="quote">
               Quote
             </TabsTrigger>
+            <TabsTrigger variant="line" value="photos">
+              Photos
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -359,6 +363,10 @@ function LeadDetail() {
 
         <TabsContent value="quote" forceMount className={panelClass}>
           <QuoteFiles leadId={lead.id} files={files} timeZone={timeZone} onChange={refresh} />
+        </TabsContent>
+
+        <TabsContent value="photos" forceMount className={panelClass}>
+          <PhotosPanel key={lead.id} target={{ leadId: lead.id }} defaultStage={lead.stage === 'won' ? 'after' : 'before'} timeZone={timeZone} />
         </TabsContent>
       </Tabs>
     </div>

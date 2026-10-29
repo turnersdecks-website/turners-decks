@@ -79,6 +79,19 @@ Lead adds a Job unless that Lead already has an open one (not done or cancelled)
 `scheduled`, `in_progress`, `done`, `on_hold` or `cancelled`.
 _Avoid_: Project (fine in conversation), work order, deal
 
+**Photo**:
+A picture of a project, stored on its Job (or on the Lead before the Job exists; winning the Lead moves it to the
+Job). Its stage is `before`, `during`, `after`, or `mock` for an AI-made picture. Stored without location or other
+metadata. Photos are starred or hidden, never deleted.
+
+**Photo link**:
+An upload-only link for one Lead or Job and one stage, sent to Pat by text. It works for 14 days unless turned off,
+and can only add photos.
+_Avoid_: Upload link, magic link
+
+**Photo home screen**:
+One link saved on Pat's phone that lists every Photo link still open. Made and turned off by an admin in Settings.
+
 **Gross margin**:
 A Job's quoted price minus its actual material cost and labor cost. Blank until all three are filled in.
 

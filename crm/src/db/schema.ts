@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { JOB_STATUSES } from '#/lib/job-statuses'
 import { CLIENT_TYPES } from '#/lib/client-types'
+import { PHOTO_STAGES } from '#/lib/photo-vocab'
 import { type AnySQLiteColumn, check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // Better Auth tables (email + password, admin plugin). Times are epoch ms.
@@ -553,3 +554,64 @@ export const jobs = sqliteTable(
     index('jobs_status_idx').on(t.status),
   ],
 )
+
+// Photos (GLOSSARY Photo). The bytes live in R2 (LEAD_FILES bucket) at `photos/<id>.jpg` and `photos/<id>_t.jpg`
+// (thumbnail), always JPEG with location and other metadata stripped (photos.server.ts). A photo belongs to a Job, or
+// to a Lead before its Job exists; winning the Lead gives its photos the new Job. Photos are hidden, never deleted.
+export const photos = sqliteTable(
+  'photos',
+  {
+    id: text('id').primaryKey(),
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+    jobId: text('job_id').references(() => jobs.id, { onDelete: 'set null' }),
+    stage: text('stage', { enum: PHOTO_STAGES }).notNull(),
+    r2Key: text('r2_key').notNull().unique(),
+    thumbR2Key: text('thumb_r2_key'),
+    sizeBytes: integer('size_bytes').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    /** When the phone says it was taken (from the photo before its metadata was removed); null when unknown. */
+    takenAt: integer('taken_at', { mode: 'timestamp_ms' }),
+    uploadedAt: integer('uploaded_at', { mode: 'timestamp_ms' }).notNull(),
+    /** The Photo link it came through, or the Staff member who added it in the CRM. */
+    photoLinkId: text('photo_link_id').references((): AnySQLiteColumn => photoLinks.id, { onDelete: 'set null' }),
+    uploadedBy: text('uploaded_by').references(() => user.id, { onDelete: 'set null' }),
+    caption: text('caption'),
+    favorite: integer('favorite', { mode: 'boolean' }).notNull().default(false),
+    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
+  },
+  (t) => [index('photos_job_idx').on(t.jobId, t.uploadedAt), index('photos_lead_idx').on(t.leadId, t.uploadedAt)],
+)
+
+// Photo links (GLOSSARY Photo link): an upload-only link for one Lead or Job and one stage, sent to Pat by text. Only
+// the SHA-256 of the token is stored. Works until `expires_at` unless `revoked_at` is set.
+export const photoLinks = sqliteTable(
+  'photo_links',
+  {
+    id: text('id').primaryKey(),
+    tokenHash: text('token_hash').notNull().unique(),
+    leadId: text('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
+    jobId: text('job_id').references(() => jobs.id, { onDelete: 'cascade' }),
+    stage: text('stage').notNull(),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+    /** When Pat tapped "I'm done" (the link still works for more photos until it expires). */
+    doneAt: integer('done_at', { mode: 'timestamp_ms' }),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
+  },
+  (t) => [index('photo_links_lead_idx').on(t.leadId), index('photo_links_job_idx').on(t.jobId)],
+)
+
+// Photo home screens: a long-lived link saved on one phone (Pat's) that lists every open Photo link. Only the token's
+// SHA-256 is stored; turned off with `revoked_at`.
+export const photoDevices = sqliteTable('photo_devices', {
+  id: text('id').primaryKey(),
+  tokenHash: text('token_hash').notNull().unique(),
+  name: text('name').notNull(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+  lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
+})

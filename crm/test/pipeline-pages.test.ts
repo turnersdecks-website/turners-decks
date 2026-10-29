@@ -69,7 +69,7 @@ describe('Lead detail /leads/$id', () => {
       state: m[1].match(/data-state="(\w+)"/)?.[1],
     }))
 
-  it('shows the Homeowner, Activities, Estimate and Quote tabs and the Stage control with the current stage', async () => {
+  it('shows the Homeowner, Activities, Estimate, Quote and Photos tabs and the Stage control with the current stage', async () => {
     const { cookie } = await signedInStaff('staff')
     const id = await insertLead({ firstName: 'Tab', lastName: 'Lead', stage: 'quoted' })
 
@@ -81,6 +81,7 @@ describe('Lead detail /leads/$id', () => {
       { label: 'Activities', state: 'inactive' },
       { label: 'Estimate', state: 'inactive' },
       { label: 'Quote', state: 'inactive' },
+      { label: 'Photos', state: 'inactive' },
     ])
     const stage = html.match(/<button\b[^>]*aria-label="Pipeline stage"[^>]*>[\s\S]*?<\/button>/)?.[0]
     expect(stage).toBeDefined()

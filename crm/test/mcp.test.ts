@@ -142,7 +142,7 @@ describe('connecting Claude', () => {
 
     expect(res.status).toBe(200)
     const names = (await res.json<{ result: { tools: { name: string }[] } }>()).result.tools.map((t) => t.name)
-    expect(names).toEqual(expect.arrayContaining(['search_leads', 'get_lead', 'move_lead_stage', 'list_customers', 'import_customers', 'update_job', 'update_estimator_draft']))
+    expect(names).toEqual(expect.arrayContaining(['search_leads', 'get_lead', 'move_lead_stage', 'list_customers', 'import_customers', 'update_job', 'update_estimator_draft', 'create_photo_link', 'list_photos']))
     expect(names.filter((n) => /delete|remove|publish/.test(n))).toEqual([])
   })
 

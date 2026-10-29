@@ -20,6 +20,8 @@ import {
 } from '#/lib/customers.server'
 import { readDraft, readLatestVersion, saveDraft } from '#/lib/estimator/settings.server'
 import { JOB_STATUSES } from '#/lib/job-statuses'
+import { LINK_STAGES } from '#/lib/photo-vocab'
+import { createPhotoLinkRecord, listPhotoRecords } from '#/lib/photos.server'
 import {
   LEAD_EDIT_KEYS,
   addActivity,
@@ -494,6 +496,29 @@ function buildServer(env: Env, staff: Staff) {
           customerName: [r.customerFirstName, r.customerLastName].filter(Boolean).join(' '),
         })),
       ),
+  )
+
+  server.registerTool(
+    'create_photo_link',
+    {
+      title: 'Make a photo link for Pat',
+      description:
+        'Makes an upload-only link for one Lead or Job and a stage (before, during or after). Returns the link and a ready text message; Kristin sends it to Pat from her phone. The link works for 14 days and can only add photos.',
+      inputSchema: { leadId: id.optional(), jobId: id.optional(), stage: z.enum(LINK_STAGES) },
+      annotations: WRITE,
+    },
+    (a) => run(() => createPhotoLinkRecord(env.DB, a, staff.id, env.BETTER_AUTH_URL)),
+  )
+
+  server.registerTool(
+    'list_photos',
+    {
+      title: 'List photos',
+      description: 'Photos of a Lead, Job or Customer (stage, when taken, star, hidden, caption). Photos open in the CRM, not here.',
+      inputSchema: { leadId: id.optional(), jobId: id.optional(), customerId: id.optional() },
+      annotations: READ,
+    },
+    (a) => run(() => listPhotoRecords(env.DB, a)),
   )
 
   server.registerTool(
