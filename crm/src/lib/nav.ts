@@ -1,8 +1,10 @@
 import {
   Building2,
   Calculator,
+  Hammer,
   Inbox,
   KanbanSquare,
+  UserRoundCheck,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -10,6 +12,7 @@ import {
 // Sidebar groups ported from the Good Cover CRM (itself from the Lovable app-sidebar), cut to Good Cover v1: the
 // Pipeline, All Leads, Company settings and Submissions. Pine & Gable's other screens come back with their features.
 // FLW-203: Estimator settings, which every Staff member may view (only admins edit).
+// Customers and Jobs (GLOSSARY): their own group, after Leads (a won Lead becomes a Customer).
 // `admin` hides an item from non-admins in the sidebar only; the server guards are the real check.
 
 export type NavItem = { title: string; url: string; icon: LucideIcon; admin?: boolean }
@@ -21,6 +24,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: 'Pipeline', url: '/crm', icon: KanbanSquare },
       { title: 'All Leads', url: '/leads', icon: Users },
+    ],
+  },
+  {
+    title: 'Customers',
+    items: [
+      { title: 'Customers', url: '/customers', icon: UserRoundCheck },
+      { title: 'Jobs', url: '/jobs', icon: Hammer },
     ],
   },
   {
@@ -54,6 +64,8 @@ export type HeaderTrail = { title: string; parent?: { title: string; url: string
 // Pages reached from a sidebar screen rather than listed in it; the parent is the item that stays active for them.
 const SUB_PAGES: { match: (path: string) => boolean; title: string; parent: string }[] = [
   { match: (p) => p.startsWith('/leads/'), title: 'Lead', parent: '/crm' },
+  { match: (p) => p.startsWith('/customers/'), title: 'Customer', parent: '/customers' },
+  { match: (p) => p.startsWith('/jobs/'), title: 'Job', parent: '/jobs' },
 ]
 
 const normalize = (path: string) => path.replace(/\/+$/, '') || '/'

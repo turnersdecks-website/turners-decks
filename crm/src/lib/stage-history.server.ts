@@ -10,7 +10,8 @@ import { type PipelineStage, leadStageChanges, leads } from '#/db/schema'
 //   created_at) only when the Lead row exists and has no history yet, so an insert that did nothing writes nothing.
 
 type Db = ReturnType<typeof getDb>
-export type StageChangeBy = { at: Date | number; by?: string | null; reason?: string | null }
+/** `id`: the stage history row's id, when a later statement in the batch needs to know whether it was written. */
+export type StageChangeBy = { at: Date | number; by?: string | null; reason?: string | null; id?: string }
 
 const ms = (at: Date | number) => (typeof at === 'number' ? at : at.getTime())
 
@@ -29,7 +30,7 @@ export function stageMoveD1(d1: D1Database, to: PipelineStage, where: string, pa
       `INSERT INTO lead_stage_changes (id, lead_id, from_stage, to_stage, changed_at, changed_by, reason)
        SELECT ?, id, stage, ?, ?, ?, ? FROM leads WHERE (${where}) AND stage <> ?`,
     )
-    .bind(crypto.randomUUID(), to, ms(who.at), who.by ?? null, who.reason ?? null, ...params, to)
+    .bind(who.id ?? crypto.randomUUID(), to, ms(who.at), who.by ?? null, who.reason ?? null, ...params, to)
 }
 
 const CREATED = `INSERT INTO lead_stage_changes (id, lead_id, from_stage, to_stage, changed_at, changed_by, reason)

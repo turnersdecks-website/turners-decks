@@ -23,6 +23,7 @@ import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, up
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
 import { getCompanySettings } from '#/lib/settings.functions'
 import { cn } from '#/lib/utils'
+import { customerName } from '#/lib/customer-vocab'
 
 // Lead detail, ported from Pine & Gable (itself the Lovable /leads/$id in the Admin Kit issue-detail layout,
 // issue-detail-1/2): a header with the breadcrumb, name and the actions bar (admin-only Delete Lead), then the kit's
@@ -192,7 +193,7 @@ function LeadDetail() {
       />
     )
   }
-  const { lead, activity, stageHistory } = found
+  const { lead, activity, stageHistory, customer } = found
   // `sync` waits for the new loader data. A plain invalidate() reloads stale-while-revalidate: it can resolve with the
   // old data while the reload is still pending, and the Homeowner card would adopt the old fields after a Save.
   const refresh = () => router.invalidate({ sync: true })
@@ -299,7 +300,9 @@ function LeadDetail() {
                 lead={lead}
                 timeZone={timeZone}
                 busy={busy}
-                onStage={(stage) => run(() => moveLeadStage({ data: { leadId: lead.id, stage } }))}
+                onStage={(stage) =>
+                  run(() => moveLeadStage({ data: { leadId: lead.id, stage } }), stage === 'won' ? 'Won. Added to Customers with a new Job.' : undefined)
+                }
                 refresh={refresh}
               />
             </div>
@@ -311,6 +314,15 @@ function LeadDetail() {
                 <RailRow label="Created">{formatWhen(lead.createdAt, timeZone)}</RailRow>
                 {lead.leadScore != null && <RailRow label="Lead score">{lead.leadScore}</RailRow>}
               </RailSection>
+              {customer && (
+                <RailSection label="Customer">
+                  <RailRow label="Customer">
+                    <Link to="/customers/$id" params={{ id: customer.id }} className="font-medium hover:underline">
+                      {customerName(customer)}
+                    </Link>
+                  </RailRow>
+                </RailSection>
+              )}
               <RailSection label="Assigned to">
                 <label className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 text-sm">
                   <span className="text-muted-foreground">Assigned to</span>

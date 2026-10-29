@@ -7,6 +7,7 @@ import { toE164 } from '#/lib/phone'
 import { type OutboxEnv, enqueueJob, kickJobs } from '#/lib/outbox'
 import { formAckEnvelope, ownerAlertEnvelope } from '#/lib/outbox-kinds'
 import { type PricedEstimate, estimateEmail, isPricingFailure, priceEstimatorPayload, projectTypeLabel, snapshotInsert, usd } from '#/lib/intake-estimate'
+import { customerIdFor } from '#/lib/customers.server'
 import { leadCreated } from '#/lib/stage-history.server'
 import { verifyTurnstile } from '#/lib/turnstile'
 
@@ -369,10 +370,13 @@ async function upsertLead(
     )
   }
   if (!existing) {
+    // A past Customer's new inquiry starts a new Lead tied to their Customer record (GLOSSARY Customer).
+    const customerId = await customerIdFor(db, mapped)
     writes.push(
       db.insert(leads).values({
         id: leadId,
         ...mapped,
+        customerId,
         addressKey: addressKey(mapped),
         stage: 'new',
         source: LEAD_SOURCE_WEBSITE,

@@ -55,7 +55,7 @@ export function useLeadDraft(lead: Partial<Record<keyof LeadEdits, string | null
   }
 }
 
-function FormField({ id, label, className = '', children }: { id: string; label: string; className?: string; children: React.ReactNode }) {
+export function FormField({ id, label, className = '', children }: { id: string; label: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={`grid content-start gap-2 ${className}`}>
       <Label htmlFor={id}>{label}</Label>
@@ -65,7 +65,7 @@ function FormField({ id, label, className = '', children }: { id: string; label:
 }
 
 /** A native select drawn like the kit's Input / SelectTrigger (keeps plain form semantics and the SSR value). */
-const selectClass =
+export const selectClass =
   'border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-hidden md:text-sm [&>option]:bg-popover [&>option]:text-popover-foreground'
 
 export function LeadFieldsForm({ value, onChange }: { value: LeadEdits; onChange: (v: LeadEdits) => void }) {
