@@ -1,9 +1,8 @@
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
-import { AlertCircle, Plus, Users } from 'lucide-react'
+import { AlertCircle, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { LeadFieldsForm, emptyLead, useLeadFields } from '#/components/LeadForm'
 import { Alert, AlertDescription } from '#/components/ui/alert'
-import { Avatar, AvatarFallback } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -32,14 +31,6 @@ export const Route = createFileRoute('/_staff/crm')({
 })
 
 type BoardLead = Awaited<ReturnType<typeof listPipeline>>[number]
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('')
 
 function PipelineBoard() {
   const { leads, referrers, cronStale, stuckJobs, stuckSubmissions } = Route.useLoaderData()
@@ -218,23 +209,6 @@ function PipelineBoard() {
                               ))}
                             </select>
                           </label>
-                          {l.assigneeName ? (
-                            <span className="flex min-w-0 max-w-[50%] items-center gap-1.5 text-xs text-muted-foreground">
-                              <span className="truncate">{l.assigneeName}</span>
-                              <Avatar className="size-7 border border-background shadow-sm" aria-hidden>
-                                <AvatarFallback className="text-[10px] font-semibold">
-                                  {initials(l.assigneeName)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </span>
-                          ) : (
-                            <span
-                              className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-dashed text-muted-foreground"
-                              aria-hidden
-                            >
-                              <Users className="size-3.5" />
-                            </span>
-                          )}
                         </div>
                       </li>
                     ))}
