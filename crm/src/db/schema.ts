@@ -171,6 +171,8 @@ export const leads = sqliteTable(
     referredByName: text('referred_by_name'),
     /** Residential or commercial (CLIENT_TYPES). Copied to the Customer when won. */
     clientType: text('client_type', { enum: CLIENT_TYPES }).notNull().default('residential'),
+    /** Leave out of marketing and re-engagement (e.g. lost to a competitor, or not a good fit). */
+    doNotContact: integer('do_not_contact', { mode: 'boolean' }).notNull().default(false),
     assignedTo: text('assigned_to').references(() => user.id, { onDelete: 'set null' }),
     leadScore: integer('lead_score'),
     attributionJson: text('attribution_json'),
@@ -634,3 +636,12 @@ export const jobChecklist = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.jobId, t.itemKey] })],
 )
+
+// Customer email templates someone has edited (GLOSSARY Customer email template); a template with no row uses its
+// default from email-templates.ts. The Website calculator email lives in company_settings.estimate_email_template.
+export const emailTemplates = sqliteTable('email_templates', {
+  key: text('key').primaryKey(),
+  template: text('template').notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
+})

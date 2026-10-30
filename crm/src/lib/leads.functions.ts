@@ -9,6 +9,7 @@ import {
   type LeadEdits,
   addActivity,
   assignLeadTo,
+  setLeadDoNotContact,
   createLeadRecord,
   deleteLeadRecordingFiles,
   getLeadDetail,
@@ -118,6 +119,11 @@ export const listAssignableStaff = createServerFn({ method: 'GET' })
   )
 
 /** Assigns a Lead to a Staff member, or unassigns it (`staffId: null`). */
+export const setDoNotContact = createServerFn({ method: 'POST' })
+  .middleware([requireStaff])
+  .validator((data: { leadId: string; value: boolean }) => record(data))
+  .handler(({ data }) => setLeadDoNotContact(getDb(env.DB), requiredId(data.leadId), data.value))
+
 export const assignLead = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
   .validator((data: { leadId: string; staffId: string | null }) => record(data))

@@ -55,6 +55,15 @@ Who sent them to us: a Customer, or just a name when the person is not a Custome
 on the Lead and copied to the Customer when it is won.
 _Avoid_: Segment, property type
 
+**Do not contact**:
+A flag on a Lead: leave it out of marketing and re-engaging cold Leads (for example it went with a competitor or was
+not a good fit). The Lead stays in the CRM.
+
+**Customer email template**:
+An email a Homeowner gets from us, edited in Settings: the Website calculator email (sent automatically after the
+website price calculator), appointment confirmation and reminder, estimate follow-up, review request. Only the
+calculator email is sent today; the others go out once Appointments and workflows are built.
+
 **Attribution**:
 The campaign and page details captured with a Lead: UTM tags, click ids, landing page and referrer.
 _Avoid_: Tracking data

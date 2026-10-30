@@ -50,6 +50,13 @@
       "when": 1793318965308,
       "tag": "0006_project_board",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793320267814,
+      "tag": "0007_email_templates_do_not_contact",
+      "breakpoints": true
     }
   ]
 }

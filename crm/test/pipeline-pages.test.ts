@@ -161,10 +161,10 @@ describe('Settings /settings', () => {
     expect(html).not.toMatch(/Turner(&#x27;|')s Decks<\//)
     expect(html).not.toContain('Owner alert emails')
     expect(html).not.toContain('Save settings')
-    expect(html).not.toContain('Save Estimate email')
+    expect(html).not.toContain('Customer email templates')
   })
 
-  it('lets an admin edit the Estimate email, with the placeholders it can use', async () => {
+  it('lets an admin edit the Website calculator email in Customer email templates, with its placeholders', async () => {
     const { cookie } = await signedInStaff('admin')
 
     const html = await page('/settings', cookie)
@@ -172,7 +172,8 @@ describe('Settings /settings', () => {
     expect(html).toContain('id="estimateEmailTemplate"')
     expect(html).toContain('Subject: Your deck estimate from {company_name}')
     for (const p of ['{first_name}', '{low}', '{high}', '{review_note}', '{company_phone}', '{disclaimer}']) expect(html).toContain(p)
-    expect(html).toContain('Save Estimate email')
+    expect(html).toContain('Customer email templates')
+    expect(html).toContain('Website calculator email')
   })
 
   it('lets an admin edit the company and Owner alert emails, with no phone line or postcard sections', async () => {

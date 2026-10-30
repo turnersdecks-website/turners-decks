@@ -14,6 +14,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Button } from '#/components/ui/button'
 import { Label } from '#/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
+import { Checkbox } from '#/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import type { PipelineStage } from '#/db/schema'
 import { formatWhen } from '#/lib/dates'
@@ -21,7 +22,7 @@ import { errorMessage } from '#/lib/errors'
 import { listEstimateSnapshots } from '#/lib/estimate-snapshots.functions'
 import { listCustomers } from '#/lib/customers.functions'
 import { listLeadFiles } from '#/lib/lead-files.functions'
-import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, updateLead } from '#/lib/leads.functions'
+import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, setDoNotContact, updateLead } from '#/lib/leads.functions'
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
 import { getCompanySettings } from '#/lib/settings.functions'
 import { cn } from '#/lib/utils'
@@ -250,6 +251,7 @@ function LeadDetail() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
               {lead.needsReview && <Badge variant="destructive">Needs review</Badge>}
+              {lead.doNotContact && <Badge variant="secondary">Do not contact</Badge>}
             </div>
           </div>
           {/* Actions bar: the Lead's actions (Pine & Gable's Book appointment and Send mailer are not in v1). */}
@@ -331,6 +333,20 @@ function LeadDetail() {
                   </RailRow>
                 </RailSection>
               )}
+              <RailSection label="Marketing">
+                <label className="flex items-start gap-2.5 text-sm">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={lead.doNotContact}
+                    disabled={busy}
+                    onCheckedChange={(v) => run(() => setDoNotContact({ data: { leadId: lead.id, value: v === true } }))}
+                  />
+                  <span>
+                    <span className="font-medium">Do not contact</span>
+                    <span className="block text-xs text-muted-foreground">Leave out of marketing and re-engaging cold Leads (e.g. went with a competitor, not a good fit).</span>
+                  </span>
+                </label>
+              </RailSection>
               <RailSection label="Assigned to">
                 <label className="grid grid-cols-[7rem_minmax(0,1fr)] items-center gap-3 text-sm">
                   <span className="text-muted-foreground">Assigned to</span>
