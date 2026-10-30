@@ -43,6 +43,13 @@
       "when": 1793243919797,
       "tag": "0005_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793318965308,
+      "tag": "0006_project_board",
+      "breakpoints": true
     }
   ]
 }

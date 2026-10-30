@@ -21,6 +21,8 @@ import {
 import { readDraft, readLatestVersion, saveDraft } from '#/lib/estimator/settings.server'
 import { JOB_STATUSES } from '#/lib/job-statuses'
 import { LINK_STAGES } from '#/lib/photo-vocab'
+import { PROJECT_STEPS, PROJECT_STEP_LABELS } from '#/lib/project-steps'
+import { jobChecklist, moveJobToStep, setChecklistItem } from '#/lib/projects.server'
 import { createPhotoLinkRecord, listPhotoRecords } from '#/lib/photos.server'
 import {
   LEAD_EDIT_KEYS,
@@ -175,6 +177,7 @@ const jobFieldsShape = {
   projectType: z.string().max(100).nullable().optional().describe('New deck, Deck replacement, Redeck, Deck expansion, Pool deck, Repair, Railing only, Stairs, Pergola or roof, Other'),
   material: z.string().max(100).nullable().optional().describe('Composite, Pressure-treated wood, PVC, Cedar, Specialty wood, Not sure yet'),
   scope: z.string().max(8000).nullable().optional().describe('The scope of work, usually from the accepted estimate'),
+  township: z.string().max(100).nullable().optional().describe('The township, which decides the permit rules, e.g. "Exeter Township"'),
   status: z.enum(JOB_STATUSES).optional(),
   startDate: isoDate.nullable().optional(),
   finishDate: isoDate.nullable().optional(),
@@ -495,6 +498,39 @@ function buildServer(env: Env, staff: Staff) {
           customerName: [r.customerFirstName, r.customerLastName].filter(Boolean).join(' '),
         })),
       ),
+  )
+
+  server.registerTool(
+    'get_job_checklist',
+    {
+      title: "Get a Job's project steps",
+      description: `Where a Job is on the project board and its checklist for every step (${PROJECT_STEPS.map((s) => PROJECT_STEP_LABELS[s]).join(', ')}). Items of kind "auto" tick themselves from the Job.`,
+      inputSchema: { jobId: id },
+      annotations: READ,
+    },
+    (a) => run(() => jobChecklist(env.DB, a.jobId)),
+  )
+
+  server.registerTool(
+    'move_job_step',
+    {
+      title: 'Move a Job to a project step',
+      description: 'Moves a Job on the project board. The Job status follows (build and close out are in progress; done is done).',
+      inputSchema: { jobId: id, step: z.enum(PROJECT_STEPS) },
+      annotations: WRITE,
+    },
+    (a) => run(() => moveJobToStep(env.DB, a.jobId, a.step)),
+  )
+
+  server.registerTool(
+    'tick_checklist_item',
+    {
+      title: 'Tick a project checklist item',
+      description: 'Ticks (done true) or unticks one checklist item by its key (see get_job_checklist). Automatic items cannot be ticked.',
+      inputSchema: { jobId: id, key: z.string().max(100), done: z.boolean() },
+      annotations: WRITE,
+    },
+    (a) => run(() => setChecklistItem(env.DB, a.jobId, a.key, a.done, staff.id)),
   )
 
   server.registerTool(

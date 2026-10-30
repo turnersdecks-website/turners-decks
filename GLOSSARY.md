@@ -79,6 +79,12 @@ Lead adds a Job unless that Lead already has an open one (not done or cancelled)
 `scheduled`, `in_progress`, `done`, `on_hold` or `cancelled`.
 _Avoid_: Project (fine in conversation), work order, deal
 
+**Project step**:
+Where a won Job is on the project board: Waiting for deposit, Permit work, Customer selections, Material takeoff,
+Schedule with customer, Build, Close out, Done. Each step has a checklist; some items tick themselves from the Job
+(township set, start date set, after photos added). Moving a Job moves its status with it.
+_Avoid_: Phase, stage (Leads have stages)
+
 **Photo**:
 A picture of a project, stored on its Job (or on the Lead before the Job exists; winning the Lead moves it to the
 Job). Its stage is `before`, `during`, `after`, or `mock` for an AI-made picture. Stored without location or other

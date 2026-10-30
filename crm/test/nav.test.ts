@@ -4,9 +4,9 @@ import { headerTrail, isFullBleed, isNavItemActive, visibleNavGroups } from '#/l
 const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.title))
 
 describe('sidebar navigation', () => {
-  it('shows Staff the Pipeline, All Leads, Customers, Jobs and Estimator settings, without admin-only items', () => {
+  it('shows Staff the Pipeline, All Leads, Customers, Projects, Jobs and Estimator settings, without admin-only items', () => {
     expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads', 'Customers', 'Company'])
-    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Customers', 'Jobs', 'Estimator settings'])
+    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Customers', 'Projects', 'Jobs', 'Estimator settings'])
   })
 
   it('shows an admin Company settings and Submissions as well', () => {
@@ -22,7 +22,7 @@ describe('sidebar navigation', () => {
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/crm', '/leads', '/customers', '/jobs', '/settings', '/settings/estimator', '/submissions'])
+    expect(urls).toEqual(['/crm', '/leads', '/customers', '/projects', '/jobs', '/settings', '/settings/estimator', '/submissions'])
   })
 
   it('marks an item active on its path and sub-paths, and Pipeline (not All Leads) on a Lead page', () => {
@@ -73,6 +73,7 @@ describe('full-bleed screens', () => {
   it('is the Pipeline', () => {
     expect(isFullBleed('/crm')).toBe(true)
     expect(isFullBleed('/crm/')).toBe(true)
+    expect(isFullBleed('/projects')).toBe(true)
   })
 
   it('are not other screens, Lead pages included', () => {
