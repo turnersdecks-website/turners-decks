@@ -4,6 +4,7 @@ import {
   Hammer,
   Inbox,
   KanbanSquare,
+  ListChecks,
   UserRoundCheck,
   Users,
   type LucideIcon,
@@ -30,6 +31,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Customers',
     items: [
       { title: 'Customers', url: '/customers', icon: UserRoundCheck },
+      { title: 'Projects', url: '/projects', icon: ListChecks },
       { title: 'Jobs', url: '/jobs', icon: Hammer },
     ],
   },
@@ -86,7 +88,7 @@ export function headerTrail(path: string, role: string): HeaderTrail {
 }
 
 // The Pipeline uses the whole width and height (plan 007 decision 7).
-const FULL_BLEED = ['/crm']
+const FULL_BLEED = ['/crm', '/projects']
 
 export function isFullBleed(path: string): boolean {
   return FULL_BLEED.includes(normalize(path))

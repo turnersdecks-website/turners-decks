@@ -1,4 +1,5 @@
 import { PhotosPanel } from '#/components/PhotosPanel'
+import { ProjectChecklist } from '#/components/ProjectChecklist'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,7 +12,7 @@ import {
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
-import { Calculator, Hammer, Lock, MapPin, SearchX } from 'lucide-react'
+import { Calculator, Hammer, ListChecks, Lock, MapPin, SearchX } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { JobFields, type JobDraft, jobDraftFrom } from '#/components/CustomerForms'
@@ -176,6 +177,13 @@ function JobDetail() {
           <PhotosPanel key={job.id} target={{ jobId: job.id }} timeZone={timeZone} />
         </div>
         <aside className="min-w-0 space-y-6 self-start xl:sticky xl:top-6">
+          <section aria-label="Project steps" className="space-y-3 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <ListChecks className="size-4 text-muted-foreground" />
+              Project steps
+            </h2>
+            <ProjectChecklist key={job.id} jobId={job.id} onChanged={() => void refresh()} />
+          </section>
           <section aria-label="Customer" className="space-y-2 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <MapPin className="size-4 text-muted-foreground" />

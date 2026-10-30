@@ -527,6 +527,10 @@ export const jobs = sqliteTable(
     /** The scope of work, usually from the accepted estimate. */
     scope: text('scope'),
     status: text('status', { enum: JOB_STATUSES }).notNull().default('not_scheduled'),
+    /** Where the Job is on the project board (PROJECT_STEPS, project-steps.ts); checked in code, not by a CHECK. */
+    step: text('step').notNull().default('deposit'),
+    /** The township, which decides the permit rules (e.g. "Exeter Township"). */
+    township: text('township'),
     startDate: text('start_date'),
     finishDate: text('finish_date'),
     squareFootage: real('square_footage'),
@@ -615,3 +619,18 @@ export const photoDevices = sqliteTable('photo_devices', {
   revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
   lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
 })
+
+// Hand-ticked project checklist items (GLOSSARY Project step; the list itself is CHECKLIST in project-steps.ts). A row
+// means the item is done; unticking deletes it. Items backed by a Job column or worked out automatically have no row.
+export const jobChecklist = sqliteTable(
+  'job_checklist',
+  {
+    jobId: text('job_id')
+      .notNull()
+      .references(() => jobs.id, { onDelete: 'cascade' }),
+    itemKey: text('item_key').notNull(),
+    doneAt: integer('done_at', { mode: 'timestamp_ms' }).notNull(),
+    doneBy: text('done_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [primaryKey({ columns: [t.jobId, t.itemKey] })],
+)

@@ -112,6 +112,7 @@ export function jobChanges(data: Record<string, unknown>) {
   if (has(data, 'projectType')) out.projectType = optionalText(data.projectType, 100)
   if (has(data, 'material')) out.material = optionalText(data.material, 100)
   if (has(data, 'scope')) out.scope = optionalText(data.scope, 8000)
+  if (has(data, 'township')) out.township = optionalText(data.township, 100)
   if (has(data, 'notes')) out.notes = optionalText(data.notes, 8000)
   if (has(data, 'status')) {
     if (!JOB_STATUSES.includes(data.status as JobStatus)) throw badRequest(`Status is one of: ${JOB_STATUSES.join(', ')}.`)
@@ -316,6 +317,8 @@ export async function createJob(db: Db, data: Record<string, unknown>) {
 export async function updateJob(db: Db, jobId: string, data: Record<string, unknown>) {
   const fields = jobChanges(data)
   if (!Object.keys(fields).length) throw badRequest('Nothing to change.')
+  // Marking a Job done by its status also finishes it on the project board.
+  if (fields.status === 'done') fields.step = 'done'
   const saved = await db
     .update(jobs)
     .set({ ...fields, updatedAt: new Date() })

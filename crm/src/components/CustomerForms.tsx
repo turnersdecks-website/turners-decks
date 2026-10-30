@@ -162,6 +162,7 @@ export function CustomerFields({
 export type JobDraft = {
   name: string
   city: string
+  township: string
   projectType: string
   material: string
   scope: string
@@ -188,6 +189,7 @@ export type JobDraft = {
 type JobRow = {
   name: string
   city: string | null
+  township: string | null
   projectType: string | null
   material: string | null
   scope: string | null
@@ -218,6 +220,7 @@ export function jobDraftFrom(j: JobRow): JobDraft {
   return {
     name: j.name,
     city: j.city ?? '',
+    township: j.township ?? '',
     projectType: j.projectType ?? '',
     material: j.material ?? '',
     scope: j.scope ?? '',
@@ -298,6 +301,9 @@ export function JobFields({ value, onChange }: { value: JobDraft; onChange: (v: 
           </FormField>
           <FormField id="job-city" label="Town">
             <Input autoComplete="off" {...text('city')} />
+          </FormField>
+          <FormField id="job-township" label="Township (decides the permit)">
+            <Input autoComplete="off" placeholder="e.g. Exeter Township" {...text('township')} />
           </FormField>
           <FormField id="job-projectType" label="Project type">
             <SuggestSelect id="job-projectType" value={value.projectType} options={PROJECT_TYPES} onChange={(projectType) => onChange({ ...value, projectType })} />
