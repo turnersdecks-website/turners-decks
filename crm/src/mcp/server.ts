@@ -29,6 +29,7 @@ import {
   addActivity,
   assignLeadTo,
   createLeadRecord,
+  setLeadDoNotContact,
   getLeadDetail,
   importedAt,
   listOpenFollowUps,
@@ -304,7 +305,11 @@ function buildServer(env: Env, staff: Staff) {
     {
       title: 'Edit a Lead',
       description: 'Changes the named fields on a Lead (contact, project, how they found us, referred by, residential or commercial); fields left out keep their value; null clears a referral field. Stage, assignment and notes have their own tools.',
-      inputSchema: { leadId: id, ...leadFieldsShape },
+      inputSchema: {
+        leadId: id,
+        ...leadFieldsShape,
+        doNotContact: z.boolean().optional().describe('Leave this Lead out of marketing and re-engagement (lost to a competitor, not a good fit)'),
+      },
       annotations: WRITE,
     },
     (a) =>
@@ -312,6 +317,7 @@ function buildServer(env: Env, staff: Staff) {
         const { lead } = await getLeadDetail(db, a.leadId)
         const merged: Record<string, unknown> = {}
         for (const k of LEAD_EDIT_KEYS) merged[k] = a[k] !== undefined ? a[k] : lead[k]
+        if (a.doNotContact !== undefined) await setLeadDoNotContact(db, a.leadId, a.doNotContact)
         return updateLeadRecord(db, a.leadId, merged)
       }),
   )

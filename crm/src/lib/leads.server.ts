@@ -354,6 +354,18 @@ export async function addActivity(db: Db, data: Record<string, unknown>, staffId
 }
 
 /** Assigns a Lead to a Staff member, or unassigns it (`staffId: null`). */
+/** Do not contact (GLOSSARY): leave this Lead out of marketing and re-engagement. */
+export async function setLeadDoNotContact(db: Db, leadId: string, value: unknown) {
+  if (typeof value !== 'boolean') throw badRequest('Do not contact must be true or false.')
+  const saved = await db
+    .update(leads)
+    .set({ doNotContact: value, updatedAt: new Date() })
+    .where(eq(leads.id, leadId))
+    .returning({ id: leads.id, doNotContact: leads.doNotContact })
+  if (!saved.length) throw leadNotFound()
+  return saved[0]
+}
+
 export async function assignLeadTo(db: Db, leadId: string, staffId: string | null) {
   if (staffId) {
     const assignee = await db.select({ id: user.id }).from(user).where(and(eq(user.id, staffId), eq(user.banned, false))).get()

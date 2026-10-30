@@ -15,6 +15,8 @@ import { updateEstimateEmailTemplate } from '#/lib/estimator-settings.functions'
 import { ESTIMATE_EMAIL_PLACEHOLDERS } from '#/lib/estimator/email-template'
 import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, updateProfileName } from '#/lib/settings.functions'
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
+import { type TemplateKey, templateDef } from '#/lib/email-templates'
+import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
 import { cn } from '#/lib/utils'
 
 // Company settings, ported from Pine & Gable's /settings and cut to v1: Your profile and Company (name, contact,
@@ -35,7 +37,7 @@ export const Route = createFileRoute('/_staff/settings')({
 const SECTIONS = [
   { id: 'profile', title: 'Your profile', icon: UserRound },
   { id: 'company', title: 'Company', icon: Building2 },
-  { id: 'estimate-email', title: 'Estimate email', icon: Mail },
+  { id: 'email-templates', title: 'Customer email templates', icon: Mail },
   { id: 'photo-home', title: 'Photo home screen', icon: Camera },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id']
@@ -275,14 +277,110 @@ function AdminSettings() {
         </div>
       </div>
 
-      <EstimateEmailSection template={settings.estimateEmailTemplate} />
+      <EmailTemplatesSection calculatorTemplate={settings.estimateEmailTemplate} />
       <PhotoHomeSection />
     </>
   )
 }
 
-/** The Estimate email a Homeowner gets after the estimator (its own Save: a separate server function). */
-function EstimateEmailSection({ template: saved }: { template: string }) {
+/** GLOSSARY Customer email template: every email a Homeowner gets from us, each editable. */
+function EmailTemplatesSection({ calculatorTemplate }: { calculatorTemplate: string }) {
+  const [templates, setTemplates] = useState<Awaited<ReturnType<typeof listEmailTemplates>> | null>(null)
+  const load = async () => {
+    try {
+      setTemplates(await listEmailTemplates())
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    }
+  }
+  useEffect(() => {
+    void load()
+  }, [])
+  return (
+    <ContentSection
+      id="email-templates"
+      title="Customer email templates"
+      description="The emails Homeowners get from Turner's Decks. Start with a line like “Subject: …” to set the subject; words in braces are filled in for each Homeowner."
+    >
+      <div className="space-y-3">
+        <CalculatorEmailCard template={calculatorTemplate} />
+        {templates?.map((t) => (
+          <TemplateCard key={t.key} templateKey={t.key} saved={t.template} isDefault={t.isDefault} onSaved={load} />
+        ))}
+      </div>
+    </ContentSection>
+  )
+}
+
+/** One template, folded until opened. */
+function TemplateShell({ name, when, children }: { name: string; when: string; children: React.ReactNode }) {
+  return (
+    <details className="group rounded-xl border bg-card shadow-xs">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-4 sm:px-6">
+        <span className="min-w-0">
+          <span className="block font-medium">{name}</span>
+          <span className="block text-sm text-muted-foreground">{when}</span>
+        </span>
+        <span className="mt-0.5 shrink-0 text-sm text-primary underline-offset-2 group-open:hidden hover:underline">Edit</span>
+      </summary>
+      <div className="border-t">{children}</div>
+    </details>
+  )
+}
+
+function TemplateCard({ templateKey, saved, isDefault, onSaved }: { templateKey: TemplateKey; saved: string; isDefault: boolean; onSaved: () => Promise<void> }) {
+  const def = templateDef(templateKey)
+  const [template, setTemplate] = useState(saved)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => setTemplate(saved), [saved])
+
+  async function save(next: string | null) {
+    setBusy(true)
+    try {
+      await saveEmailTemplate({ data: { key: templateKey, template: next } })
+      toast.success(next === null ? `${def.name} reset` : `${def.name} saved`)
+      await onSaved()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <TemplateShell name={def.name} when={def.when}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          void save(template)
+        }}
+        className="space-y-4 p-4 sm:p-6"
+      >
+        <Textarea aria-label={`${def.name} text`} rows={12} value={template} onChange={(e) => setTemplate(e.target.value)} className="font-mono text-sm" required />
+        <ul className="flex flex-wrap gap-1.5" aria-label="Placeholders">
+          {def.placeholders.map((p) => (
+            <li key={p}>
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{`{${p}}`}</code>
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-end gap-2">
+          {!isDefault && (
+            <Button type="button" variant="ghost" disabled={busy} onClick={() => void save(null)}>
+              Reset to default
+            </Button>
+          )}
+          <Button variant="outline" disabled={busy || template === saved}>
+            {busy ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </form>
+    </TemplateShell>
+  )
+}
+
+/** The Website calculator email: what a Homeowner gets right after the price calculator (stored in company settings). */
+function CalculatorEmailCard({ template: saved }: { template: string }) {
   const router = useRouter()
   const [template, setTemplate] = useState(saved)
   const [busy, setBusy] = useState(false)
@@ -292,7 +390,7 @@ function EstimateEmailSection({ template: saved }: { template: string }) {
     setBusy(true)
     try {
       await updateEstimateEmailTemplate({ data: { template } })
-      toast.success('Estimate email saved')
+      toast.success('Website calculator email saved')
       await router.invalidate()
     } catch (error) {
       toast.error(await errorMessage(error))
@@ -302,16 +400,11 @@ function EstimateEmailSection({ template: saved }: { template: string }) {
   }
 
   return (
-    <ContentSection
-      id="estimate-email"
-      title="Estimate email"
-      description="The email a Homeowner gets right after using the online estimator, with their price range."
-    >
+    <TemplateShell name="Website calculator email" when="Sends automatically right after someone uses the price calculator on the website, with their price range.">
       <form onSubmit={save}>
-        <Card className="shadow-xs">
-          <CardContent className="space-y-4 p-4 sm:p-6">
+        <div className="space-y-4 p-4 sm:p-6">
             <div className="space-y-2">
-              <Label htmlFor="estimateEmailTemplate">Email text</Label>
+              <Label htmlFor="estimateEmailTemplate" className="sr-only">Website calculator email text</Label>
               <Textarea
                 id="estimateEmailTemplate"
                 rows={14}
@@ -334,13 +427,12 @@ function EstimateEmailSection({ template: saved }: { template: string }) {
             </div>
             <div className="flex justify-end">
               <Button variant="outline" disabled={busy || template === saved}>
-                {busy ? 'Saving…' : 'Save Estimate email'}
+                {busy ? 'Saving…' : 'Save'}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+        </div>
       </form>
-    </ContentSection>
+    </TemplateShell>
   )
 }
 
