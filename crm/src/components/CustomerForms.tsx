@@ -242,6 +242,29 @@ export function jobDraftFrom(j: JobRow): JobDraft {
   }
 }
 
+/** A yes/no flag drawn as two buttons, so both answers are a deliberate choice. */
+function Flag({ label, on, onLabel, offLabel, onChange }: { label: string; on: boolean; onLabel: string; offLabel: string; onChange: (v: boolean) => void }) {
+  const option = (value: boolean, text: string) => (
+    <button
+      type="button"
+      aria-pressed={on === value}
+      onClick={() => onChange(value)}
+      className={cn(
+        'h-9 px-3 text-sm font-medium transition-colors first:rounded-l-md last:rounded-r-md',
+        on === value ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-muted',
+      )}
+    >
+      {text}
+    </button>
+  )
+  return (
+    <div role="group" aria-label={label} className="inline-flex w-fit overflow-hidden rounded-md border">
+      {option(true, onLabel)}
+      {option(false, offLabel)}
+    </div>
+  )
+}
+
 export function JobFields({ value, onChange }: { value: JobDraft; onChange: (v: JobDraft) => void }) {
   const text = (k: keyof JobDraft) => ({
     id: `job-${k}`,
@@ -249,9 +272,6 @@ export function JobFields({ value, onChange }: { value: JobDraft; onChange: (v: 
     value: value[k] as string,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange({ ...value, [k]: e.target.value }),
   })
-  const check = (k: keyof JobDraft, label: string) => (
-    <Check id={`job-${k}`} label={label} checked={value[k] as boolean} onChange={(v) => onChange({ ...value, [k]: v })} />
-  )
   const money = (k: keyof JobDraft, label: string) => (
     <FormField id={`job-${k}`} label={label}>
       <div className="relative">
@@ -312,24 +332,19 @@ export function JobFields({ value, onChange }: { value: JobDraft; onChange: (v: 
         </div>
       </FormSection>
 
-      <div className="grid gap-8 sm:grid-cols-2">
-        <FormSection title="Permit and HOA">
-          <div className="grid gap-1">
-            {check('permitNeeded', 'Permit needed')}
-            {check('permitPulled', 'Permit pulled')}
-            {check('hoaNeeded', 'HOA approval needed')}
-            {check('hoaApproved', 'HOA approved')}
-          </div>
-        </FormSection>
-        <FormSection title="Photos and reviews">
-          <div className="grid gap-1">
-            {check('okToShowPhotos', 'OK to show photos')}
-            {check('onWebsite', 'On the website')}
-            {check('reviewAsked', 'Review asked')}
-            {check('reviewReceived', 'Review received')}
-          </div>
-        </FormSection>
-      </div>
+      {/* Flags only. The steps (permit pulled, HOA approved, review asked) move to the Job's project board. */}
+      <FormSection title="Flags">
+        <div className="flex flex-wrap gap-x-8 gap-y-4">
+          <Flag
+            label="Permit"
+            on={value.permitNeeded}
+            onLabel="Permit needed"
+            offLabel="No permit"
+            onChange={(permitNeeded) => onChange({ ...value, permitNeeded })}
+          />
+          <Flag label="HOA" on={value.hoaNeeded} onLabel="HOA" offLabel="No HOA" onChange={(hoaNeeded) => onChange({ ...value, hoaNeeded })} />
+        </div>
+      </FormSection>
 
       <FormField id="job-notes" label="Notes">
         <Textarea rows={4} {...text('notes')} />

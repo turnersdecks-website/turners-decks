@@ -1,6 +1,17 @@
 import { PhotosPanel } from '#/components/PhotosPanel'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '#/components/ui/alert-dialog'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
-import { Calculator, Hammer, MapPin, SearchX } from 'lucide-react'
+import { Calculator, Hammer, Lock, MapPin, SearchX } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { JobFields, type JobDraft, jobDraftFrom } from '#/components/CustomerForms'
@@ -48,6 +59,9 @@ const jobInput = (d: JobDraft) => d
 function JobCard({ job, timeZone, refresh }: { job: Found['job']; timeZone: string; refresh: () => Promise<void> }) {
   const [draft, setDraft] = useState<JobDraft>(() => jobDraftFrom(job))
   const [saving, setSaving] = useState(false)
+  // A done Job is locked so its numbers do not change by accident; "Edit anyway" asks first.
+  const [unlocked, setUnlocked] = useState(false)
+  const locked = job.status === 'done' && !unlocked
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
@@ -71,13 +85,40 @@ function JobCard({ job, timeZone, refresh }: { job: Found['job']; timeZone: stri
         </span>
         <h2 className="text-sm font-semibold">Job</h2>
       </div>
-      <fieldset disabled={saving} className="min-w-0">
+      {locked && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/40 px-4 py-3 text-sm">
+          <span className="flex items-center gap-2">
+            <Lock className="size-4 text-muted-foreground" aria-hidden />
+            This Job is done, so it is locked.
+          </span>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" size="sm" variant="outline">
+                Edit anyway
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Edit a done Job?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Its price, costs and dates feed the margin numbers. Change them only to correct a mistake.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep it locked</AlertDialogCancel>
+                <AlertDialogAction onClick={() => setUnlocked(true)}>Edit</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+      <fieldset disabled={saving || locked} className="min-w-0">
         <div className="p-4 sm:p-5">
           <JobFields value={draft} onChange={setDraft} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-4 py-3">
           <p className="text-xs text-muted-foreground">Last updated {formatWhen(job.updatedAt, timeZone)}</p>
-          <Button size="sm">Save changes</Button>
+          {!locked && <Button size="sm">Save changes</Button>}
         </div>
       </fieldset>
     </form>

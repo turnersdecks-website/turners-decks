@@ -188,7 +188,6 @@ const jobFieldsShape = {
   permitPulled: z.boolean().optional(),
   hoaNeeded: z.boolean().optional(),
   hoaApproved: z.boolean().optional(),
-  okToShowPhotos: z.boolean().optional(),
   onWebsite: z.boolean().optional(),
   reviewAsked: z.boolean().optional(),
   reviewReceived: z.boolean().optional(),
