@@ -1,5 +1,6 @@
 ---
-import { ChevronDown, Menu, Phone, X } from "@lucide/astro";
+// White-on-navy header that lies over the top of each page's hero (see BaseLayout).
+import { ChevronDown, Menu, X } from "@lucide/astro";
 import Logo from "./Logo.astro";
 import Button from "./Button.astro";
 import { SITE } from "@/lib/site";
@@ -33,24 +34,21 @@ const NAV = [
 const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/, "$1") || "/";
 ---
 
-<header class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-  <div class="container-site flex h-16 items-center justify-between gap-6 md:h-22">
-    <a href="/" aria-label="Turner's Decks home"><Logo eager /></a>
+<header class="on-dark absolute inset-x-0 top-0 z-40">
+  <div class="container-site flex h-(--header-h) items-center justify-between gap-6">
+    <a href="/" aria-label="Turner's Decks home"><Logo light eager /></a>
 
-    <nav class="hidden items-center gap-0 xl:gap-1 lg:flex" aria-label="Main">
+    <nav class="hidden items-center gap-7 text-[0.9375rem] font-medium lg:flex" aria-label="Main">
       {
         NAV.filter((item) => !item.mobileOnly).map((item) =>
           item.children ? (
             <div class="group relative">
-              <a
-                href={item.to}
-                class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium text-foreground hover:text-stone xl:px-3"
-              >
-                {item.label} <ChevronDown class="size-3.5" />
+              <a href={item.to} class="flex min-h-11 items-center gap-1 whitespace-nowrap hover:underline">
+                {item.label} <ChevronDown class="size-3.5" aria-hidden="true" />
               </a>
-              <div class="invisible absolute left-0 top-full min-w-48 rounded-lg border bg-popover p-2 opacity-0 shadow-card transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+              <div class="invisible absolute -left-3 top-full min-w-52 rounded-2xl bg-popover p-2 text-primary opacity-0 shadow-card transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
                 {item.children.map((c) => (
-                  <a href={c.to} class="block rounded-md px-3 py-2 text-sm hover:bg-secondary hover:text-stone">
+                  <a href={c.to} class="block rounded-lg px-3 py-2.5 hover:bg-secondary">
                     {c.label}
                   </a>
                 ))}
@@ -59,10 +57,7 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
           ) : (
             <a
               href={item.to}
-              class:list={[
-                "whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium hover:text-stone xl:px-3",
-                path === item.to ? "text-stone" : "text-foreground",
-              ]}
+              class:list={["flex min-h-11 items-center whitespace-nowrap underline-offset-4 hover:underline", { underline: path === item.to }]}
               aria-current={path === item.to ? "page" : undefined}
             >
               {item.label}
@@ -73,20 +68,11 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
     </nav>
 
     <div class="flex items-center gap-2">
-      <a
-        href={SITE.phoneHref}
-        class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:px-2 xl:px-3"
-        aria-label={`Call ${SITE.phone}`}
-      >
-        <Phone class="size-5 lg:size-4" aria-hidden="true" />
-        <span class="lg:hidden">Call</span>
-        <span class="hidden xl:inline">{SITE.phone}</span>
-      </a>
-      <Button href="/contact" variant="cta" class="hidden h-11 sm:inline-flex">Get a Free Estimate</Button>
+      <Button href="/contact" variant="light" class="hidden sm:inline-flex">Get a Free Estimate</Button>
       <button
         type="button"
         id="menu-toggle"
-        class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-md text-primary hover:bg-accent lg:hidden"
+        class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white hover:bg-white/10 lg:hidden"
         aria-label="Open menu"
         aria-expanded="false"
         aria-controls="mobile-nav"
@@ -97,16 +83,16 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
     </div>
   </div>
 
-  <div id="mobile-nav" class="hidden border-t bg-background lg:hidden">
+  <div id="mobile-nav" class="hidden border-t bg-navy-deep shadow-card lg:hidden">
     <nav class="container-site flex flex-col py-4" aria-label="Mobile">
       {
         NAV.map((item) => (
           <div>
-            <a href={item.to} class="block py-3 font-heading font-semibold text-primary">
+            <a href={item.to} class="block py-3 text-lg font-medium">
               {item.label}
             </a>
             {item.children?.map((c) => (
-              <a href={c.to} class="block py-2 pl-4 text-sm text-muted-foreground">
+              <a href={c.to} class="block py-2.5 pl-4 text-base text-muted-foreground">
                 {c.label}
               </a>
             ))}
@@ -114,8 +100,8 @@ const path = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/,
         ))
       }
       <div class="mt-4 grid gap-3 sm:grid-cols-2">
-        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button>
-        <Button href={SITE.phoneHref} variant="outline" size="lg"><Phone aria-hidden="true" /> Call {SITE.phone}</Button>
+        <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+        <Button href={SITE.phoneHref} variant="outline-light" size="lg">Call {SITE.phone}</Button>
       </div>
     </nav>
   </div>

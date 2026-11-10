@@ -4,6 +4,7 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import Button from "@/components/Button.astro";
 import Photo from "@/components/sections/Photo.astro";
 import SectionHeading from "@/components/sections/SectionHeading.astro";
+import PageHero from "@/components/sections/PageHero.astro";
 import StepList from "@/components/sections/StepList.astro";
 import ServiceCards from "@/components/sections/ServiceCards.astro";
 import Faq from "@/components/sections/Faq.astro";
@@ -26,57 +27,49 @@ const faqs = townFaqs(town.name);
   description={`Locally owned deck builder serving ${town.name}, ${town.county} County. New decks, deck replacement, and pool decks with permits handled. Free on-site estimates.`}
   schema={[localBusinessSchema([`${town.name}, PA`]), faqSchema(faqs)]}
 >
-  <section class="bg-secondary">
-    <div class="container-site py-14 md:py-20">
-      <p class="eyebrow">{town.county} County</p>
-      <h1 class="mt-2 max-w-3xl text-4xl font-bold md:text-5xl">Deck Builder in {town.name}, PA</h1>
-      <p class="mt-5 max-w-2xl text-lg text-muted-foreground">
-        Turner's Decks builds new decks, replaces old ones, and builds pool decks for homeowners in {town.name}. Founded by professional carpenter {SITE.owner}, we handle the permit from start to finish.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button>
-        <Button href="/estimator" variant="outline" size="lg">Try the Price Estimator</Button>
-      </div>
-    </div>
-  </section>
+  <PageHero
+    photo={PHOTO.compositeNew}
+    eyebrow={`${town.county} County`}
+    title={`Deck Builder in ${town.name}, PA`}
+    intro={`Turner's Decks builds new decks, replaces old ones, and builds pool decks for homeowners in ${town.name}. Founded by professional carpenter ${SITE.owner}, we handle the permit from start to finish.`}
+    note={`Your request goes to ${SITE.ownerFirst}, not a sales team.`}
+  >
+    <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+    <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
+  </PageHero>
 
-  <section class="section container-site">
-    <SectionHeading eyebrow="Permits" title={`Deck Permits in ${town.name}`} intro="Here's how we handle the permit for your deck, in four steps." />
-    <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
-    {/* [CONTENT] town-specific permit notes (township office, typical timeline) */}
+  <section class="section container-site split">
+    <div>
+      <SectionHeading eyebrow="Permits" title={`Deck Permits in ${town.name}`} intro="Here's how we handle the permit for your deck, in four steps." />
+      <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+      {/* [CONTENT] town-specific permit notes (township office, typical timeline) */}
+    </div>
+    <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading title="Decks We Build" />
-      <div class="mt-10"><ServiceCards /></div>
+      <SectionHeading eyebrow="What we build" title="Decks We Build" />
+      <div class="mt-12"><ServiceCards /></div>
     </div>
   </section>
 
   <section class="section container-site">
-    <SectionHeading title="Local Experience" />
-    <p class="mt-4 max-w-2xl text-muted-foreground">
-      We've been building decks around Douglassville since {SITE.since}, and {town.name} is well within our regular service area.
-    </p>
+    <SectionHeading eyebrow="Local experience" title="Local Experience" intro={`We've been building decks around Douglassville since ${SITE.since}, and ${town.name} is well within our regular service area.`} />
     {/* [CONTENT] local details, neighborhoods, or notes about building in this town */}
+    <h2 class="mt-16 text-[clamp(1.5rem,2.6vw,2rem)]">Recent Projects</h2>
+    <div class="mt-8 grid gap-6 sm:grid-cols-3">
+      {[PHOTO.replacementSkirt, PHOTO.groundComposite, PHOTO.poolDeck].map((p) => <Photo photo={p} class="aspect-square w-full rounded-2xl object-cover" />)}
+    </div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading title="Recent Projects" />
-      <div class="mt-8 grid gap-5 sm:grid-cols-3">
-        {[PHOTO.replacementSkirt, PHOTO.groundComposite, PHOTO.poolDeck].map((p) => (
-          <figure class="overflow-hidden rounded-xl">
-            <Photo photo={p} class="aspect-[4/3] w-full object-cover" />
-          </figure>
-        ))}
+      <div class="max-w-3xl">
+        <SectionHeading eyebrow="Questions" title={`${town.name} FAQs`} />
+        <Faq faqs={faqs} />
       </div>
     </div>
-  </section>
-
-  <section class="section container-site max-w-3xl">
-    <SectionHeading title={`${town.name} FAQs`} />
-    <Faq faqs={faqs} />
   </section>
 
   <CtaBand title={`Planning a deck in ${town.name}?`} />

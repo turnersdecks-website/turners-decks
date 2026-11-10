@@ -2,10 +2,11 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/sections/PageHero.astro";
 import SectionHeading from "@/components/sections/SectionHeading.astro";
-import ProcessSteps from "@/components/sections/ProcessSteps.astro";
 import StepList from "@/components/sections/StepList.astro";
+import Photo from "@/components/sections/Photo.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
-import { PERMIT_STEPS } from "@/lib/site";
+import { PHOTO } from "@/lib/photos";
+import { PERMIT_STEPS, PROCESS_STEPS } from "@/lib/site";
 ---
 
 <BaseLayout
@@ -13,11 +14,17 @@ import { PERMIT_STEPS } from "@/lib/site";
   description="From free on-site estimate to final inspection: how Turner's Decks plans, permits, and builds your deck in four simple steps."
 >
   <PageHero eyebrow="Why us · Our process" title="How a deck gets built" intro="Four steps, from the first visit to the final walkthrough." />
-  <section class="section container-site"><ProcessSteps level={2} /></section>
+  <section class="section container-site split">
+    <div>
+      <SectionHeading eyebrow="How it works" title="From first visit to final walkthrough" />
+      <div class="mt-8"><StepList steps={PROCESS_STEPS} /></div>
+    </div>
+    <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+  </section>
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading title="Permits, handled for you" />
-      <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+      <SectionHeading eyebrow="Permits" title="Permits, handled for you" />
+      <div class="mt-10"><StepList steps={PERMIT_STEPS} columns={2} /></div>
     </div>
   </section>
   <CtaBand />

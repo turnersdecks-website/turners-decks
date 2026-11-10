@@ -16,3 +16,8 @@ export const GOOGLE_REVIEWS = [
     text: "We recently had our deck done by Turner’s Decks. Pat and team did a wonderful job! Pat really takes great pride in his work making sure things are done right and it shows. We couldn’t be happier with the results and highly recommend Turner’s Decks!!",
   },
 ] as const;
+/** The large pull quote: one whole sentence from a review above, word for word (reviews.test.ts checks). */
+export const FEATURED_REVIEW = {
+  name: "Tricia",
+  text: "Pat really takes great pride in his work making sure things are done right and it shows.",
+} as const;

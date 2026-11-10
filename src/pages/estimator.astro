@@ -1,16 +1,21 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/sections/PageHero.astro";
 import FinancingBlock from "@/components/sections/FinancingBlock.astro";
 import Estimator from "@/components/islands/Estimator";
+import { SITE } from "@/lib/site";
 ---
 
 <BaseLayout
   title="Deck Price Estimator | Turner's Decks"
   description="Plan your deck budget. Answer a few questions about size, materials, railings, and stairs to see a realistic preliminary price range from Turner's Decks."
+  chip="call"
 >
+  <PageHero eyebrow="Price estimator" title="Deck price estimator">
+    <p class="text-sm">Rather talk it through? <a href={SITE.phoneHref} class="link">Call {SITE.phone}</a></p>
+  </PageHero>
   <section class="bg-secondary">
-    <div class="container-site max-w-5xl py-10 md:py-16">
-      <h1 class="text-3xl font-bold md:text-4xl">Deck price estimator</h1>
+    <div class="container-site py-10 md:py-14">
       {/* The intro, questions and prices come from the CRM's Published version (the island loads them). */}
       <Estimator client:load />
       <div class="mt-8"><FinancingBlock level={2} /></div>

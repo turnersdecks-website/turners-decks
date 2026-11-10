@@ -1,16 +1,40 @@
 ---
+// Navy hero that opens every page. The header lies over its top (BaseLayout), so it pads for it.
+// With a photo it becomes the full-width job photo under a navy wash.
+import { Picture } from "astro:assets";
 import Button from "@/components/Button.astro";
-interface Props { eyebrow?: string; title: string; intro?: string }
-const { eyebrow, title, intro } = Astro.props;
+import type { Photo } from "@/lib/photos";
+interface Props { eyebrow?: string; title: string; intro?: string; photo?: Photo; note?: string; tall?: boolean }
+const { eyebrow, title, intro, photo, note, tall = false } = Astro.props;
 ---
 
-<section class="bg-secondary">
-  <div class="container-site py-14 md:py-20">
-    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
-    <h1 class="mt-2 max-w-3xl text-4xl font-bold md:text-5xl">{title}</h1>
-    {intro && <p class="mt-5 max-w-2xl text-lg text-muted-foreground">{intro}</p>}
-    <div class="mt-8 flex flex-wrap gap-3">
-      <slot><Button href="/contact" variant="cta" size="lg">Get a Free Estimate</Button></slot>
+<section class="on-dark relative isolate overflow-hidden bg-navy-deep">
+  {
+    photo && (
+      <>
+        <Picture
+          src={photo.src}
+          alt={photo.alt}
+          widths={[640, 1024, 1600, 1920]}
+          sizes="100vw"
+          formats={["webp"]}
+          loading="eager"
+          fetchpriority="high"
+          class="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+        <div class="hero-overlay absolute inset-0 -z-10" aria-hidden="true" />
+      </>
+    )
+  }
+  <div class="container-site pt-(--header-h)">
+    <div class:list={["max-w-[45rem]", tall ? "py-[clamp(4.5rem,11vw,9rem)]" : "py-[clamp(3rem,7vw,6rem)]"]}>
+      {eyebrow && <p class="eyebrow mb-4 text-white">{eyebrow}</p>}
+      <h1 class="display-1">{title}</h1>
+      {intro && <p class="mt-5 max-w-[32em] text-[clamp(1.0625rem,1.6vw,1.25rem)] leading-normal">{intro}</p>}
+      <div class="mt-8 flex flex-wrap gap-3">
+        <slot><Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button></slot>
+      </div>
+      {note && <p class="mt-3.5 pl-1.5 text-sm">{note}</p>}
     </div>
   </div>
 </section>

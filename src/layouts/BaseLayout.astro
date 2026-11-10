@@ -1,12 +1,13 @@
 ---
-import "@fontsource-variable/inter";
+import "@fontsource/poppins/400.css";
 import "@fontsource/poppins/500.css";
 import "@fontsource/poppins/600.css";
-import "@fontsource/poppins/700.css";
 import "@/styles/global.css";
 import { getImage } from "astro:assets";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import UtilityBar from "@/components/UtilityBar.astro";
+import ContactChip from "@/components/ContactChip.astro";
 import { HERO } from "@/lib/photos";
 import { fullTitle } from "@/lib/seo";
 import { SITE } from "@/lib/site";
@@ -16,9 +17,11 @@ interface Props {
   description: string;
   schema?: object | object[];
   noindex?: boolean;
+  /** The floating chip. "call" drops its estimate link, for pages that already are the form. */
+  chip?: "full" | "call";
 }
 
-const { title, description, schema, noindex = false } = Astro.props;
+const { title, description, schema, noindex = false, chip = "full" } = Astro.props;
 const pageTitle = fullTitle(title);
 // Static "file" builds report paths like /about.html; the public URL is /about.
 const cleanPath = Astro.url.pathname.replace(/(index)?\.html$/, "").replace(/(.)\/$/, "$1") || "/";
@@ -49,10 +52,15 @@ const schemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
     {schemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
-    <Header />
-    <main>
-      <slot />
-    </main>
+    <UtilityBar />
+    {/* The header lies over the top of the page's hero, so every page starts with a navy hero. */}
+    <div class="relative">
+      <Header />
+      <main>
+        <slot />
+      </main>
+    </div>
     <Footer />
+    <ContactChip estimateLink={chip === "full"} />
   </body>
 </html>

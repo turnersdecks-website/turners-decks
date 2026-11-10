@@ -1,9 +1,14 @@
 ---
 // Why us: a real framing photo beside three plain statements. The photo does the
 // persuading; the list just says what's true.
+import Button from "@/components/Button.astro";
 import Photo from "./Photo.astro";
+import StepList from "./StepList.astro";
 import { PHOTO } from "@/lib/photos";
 import { SITE } from "@/lib/site";
+
+interface Props { eyebrow?: string; title: string; cta?: { href: string; label: string } }
+const { eyebrow, title, cta } = Astro.props;
 
 const items = [
   { title: "Built by carpenters", body: `Founded by professional carpenter ${SITE.owner} in ${SITE.since}. No sales team, just people who build decks.` },
@@ -12,19 +17,15 @@ const items = [
 ];
 ---
 
-<div class="grid items-center gap-10 md:grid-cols-2 lg:gap-16">
+<div class="split">
   <figure>
-    <Photo photo={PHOTO.framing} sizes="(min-width: 768px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-lg object-cover" />
+    <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
     <figcaption class="mt-3 text-sm text-muted-foreground">Posts, beams, and joists on one of our elevated decks, before the decking goes on.</figcaption>
   </figure>
-  <ul>
-    {
-      items.map(({ title, body }) => (
-        <li class="border-t border-primary/15 py-6 first:border-t-0 first:pt-0 last:pb-0">
-          <h3 class="text-xl font-semibold">{title}</h3>
-          <p class="mt-2 text-muted-foreground">{body}</p>
-        </li>
-      ))
-    }
-  </ul>
+  <div>
+    {eyebrow && <p class="eyebrow mb-2.5">{eyebrow}</p>}
+    <h2 class="display-2">{title}</h2>
+    <div class="mt-8"><StepList steps={items} /></div>
+    {cta && <Button href={cta.href} variant="outline" size="lg" class="mt-8">{cta.label}</Button>}
+  </div>
 </div>
