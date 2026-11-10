@@ -1,0 +1,18 @@
+---
+// Recent projects as square photo cards: small uppercase type label, underlined title.
+import Photo from "./Photo.astro";
+import { PROJECTS } from "@/lib/photos";
+const cards = PROJECTS.map((p) => ({ ...p, cover: p.photos[0] ?? p.after })).filter((p) => p.cover).slice(0, 4);
+---
+
+<div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-x-7 gap-y-10">
+  {
+    cards.map((p) => (
+      <a href="/gallery" class="group block">
+        <Photo photo={p.cover!} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" class="aspect-square w-full rounded-2xl object-cover" />
+        <p class="eyebrow mt-4">{p.type}</p>
+        <h3 class="mt-1 text-xl leading-snug tracking-normal text-primary underline underline-offset-3 group-hover:decoration-2">{p.title}</h3>
+      </a>
+    ))
+  }
+</div>

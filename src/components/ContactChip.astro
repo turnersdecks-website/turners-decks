@@ -1,0 +1,11 @@
+---
+// Pinned bottom right on every page, so an estimate or a call is always one tap away.
+import { SITE } from "@/lib/site";
+interface Props { estimateLink?: boolean }
+const { estimateLink = true } = Astro.props;
+---
+
+<div class="on-dark fixed bottom-4 right-4 z-40 flex max-w-[calc(100%-2rem)] items-center gap-3.5 rounded-2xl border border-[#8FA3C4] bg-primary p-2 text-sm shadow-card print:hidden">
+  {estimateLink && <a href="/contact" class="inline-flex min-h-11 items-center pl-2 font-medium underline underline-offset-3 hover:decoration-2">Get a free estimate</a>}
+  <a href={SITE.phoneHref} class="inline-flex min-h-11 items-center whitespace-nowrap rounded-full bg-white px-4 font-medium text-primary transition-opacity hover:opacity-90">Call or text {SITE.ownerFirst}</a>
+</div>

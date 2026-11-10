@@ -503,7 +503,7 @@ function Result({ est, a, done, headingRef }: { est: PublicEstimator; a: Answers
       <div className="rounded-xl bg-card p-6 text-center shadow-card md:p-10">
         <h2 ref={headingRef} tabIndex={-1} className="sr-only focus:outline-none">Your estimate</h2>
         <p className="text-muted-foreground">Based on the information provided, a realistic preliminary investment range for your project is:</p>
-        <p className="mt-3 font-heading text-4xl font-bold text-primary md:text-5xl">{formatUSD(r.low)} – {formatUSD(r.high)}</p>
+        <p className="mt-3 display-2 text-primary">{formatUSD(r.low)} – {formatUSD(r.high)}</p>
         {r.belowMinimum && <p className="mx-auto mt-3 max-w-lg text-sm">Projects of this type typically begin around {formatUSD(r.low)}, depending on access, structure, materials, and project requirements.</p>}
         {r.needsReview && (
           <p className="mx-auto mt-4 flex max-w-lg items-start gap-2 rounded-lg bg-secondary p-3 text-left text-sm">

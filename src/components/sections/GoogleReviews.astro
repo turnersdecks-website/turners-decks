@@ -1,23 +1,27 @@
 ---
-import { Star } from "@lucide/astro";
-import { GOOGLE_REVIEWS } from "@/lib/reviews";
+// One large centered pull quote, then the three full Google reviews under it.
+// Cards are navy for a navy section (`dark`), section gray for a white one.
+import { FEATURED_REVIEW, GOOGLE_REVIEWS } from "@/lib/reviews";
+interface Props { dark?: boolean }
+const { dark = false } = Astro.props;
+const card = dark ? "bg-primary" : "bg-secondary";
 ---
 
-<div class="grid items-start gap-6 lg:grid-cols-3">
+<figure class:list={[card, "rounded-3xl px-[clamp(1.5rem,6vw,6rem)] py-[clamp(2rem,6vw,4.5rem)] text-center"]}>
+  <figcaption class="mb-3.5 text-[0.9375rem] text-muted-foreground">{FEATURED_REVIEW.name} · Google review</figcaption>
+  <blockquote class:list={["text-[clamp(1.5rem,3.2vw,2.375rem)] font-medium leading-tight tracking-[-0.01em]", dark ? "text-[#DCE6F7]" : "text-primary"]}>
+    <p>“{FEATURED_REVIEW.text}”</p>
+  </blockquote>
+</figure>
+<div class="mt-6 grid items-start gap-6 lg:grid-cols-3">
   {
     GOOGLE_REVIEWS.map((review) => (
-      <figure class="rounded-lg border bg-card p-6 shadow-card">
-        <div class="flex gap-1 text-star" role="img" aria-label={`${review.rating} out of 5 stars`}>
-          {Array.from({ length: review.rating }).map(() => (
-            <Star class="size-5 fill-current" aria-hidden="true" />
-          ))}
-        </div>
-        <blockquote class="mt-5 text-base leading-relaxed text-foreground">
+      <figure class:list={[card, "rounded-2xl p-7"]}>
+        <blockquote class="text-base leading-relaxed">
           <p>“{review.text}”</p>
         </blockquote>
-        <figcaption class="mt-6 border-t pt-4">
-          <p class="font-heading font-semibold text-primary">{review.name}</p>
-          <p class="mt-1 text-sm text-muted-foreground">Google review</p>
+        <figcaption class="mt-4 text-sm text-muted-foreground">
+          {review.name} · {review.rating} stars on Google
         </figcaption>
       </figure>
     ))

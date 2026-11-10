@@ -5,15 +5,15 @@ interface Props { faqs: { q: string; a: string }[] }
 const { faqs } = Astro.props;
 ---
 
-<div class="mt-6">
+<div class="mt-8 border-t">
   {
     faqs.map((f) => (
       <details class="faq border-b" name="faq">
-        <summary class="flex flex-1 cursor-pointer items-center justify-between py-4 text-left font-heading text-base font-medium text-primary transition-all hover:underline">
+        <summary class="flex cursor-pointer items-center justify-between gap-4 py-5 text-left text-[1.1875rem] font-medium leading-snug hover:underline">
           {f.q}
-          <ChevronDown class="faq-chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+          <ChevronDown class="faq-chevron size-5 shrink-0 text-muted-foreground transition-transform duration-200" />
         </summary>
-        <div class="pb-4 pt-0 text-sm text-muted-foreground">{f.a}</div>
+        <div class="pb-5 text-base text-muted-foreground">{f.a}</div>
       </details>
     ))
   }

@@ -1,7 +1,8 @@
 ---
-import { Clock, Mail, MapPin, Phone } from "@lucide/astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Photo from "@/components/sections/Photo.astro";
 import QuoteForm from "@/components/islands/QuoteForm";
+import { PHOTO } from "@/lib/photos";
 import { SITE } from "@/lib/site";
 import { localBusinessSchema } from "@/lib/seo";
 ---
@@ -10,21 +11,25 @@ import { localBusinessSchema } from "@/lib/seo";
   title="Get a Free Deck Estimate"
   description="Request a free on-site deck estimate from Turner's Decks in Douglassville, PA. Serving Berks, Montgomery, and Chester Counties."
   schema={localBusinessSchema()}
+  chip="call"
 >
-  <section class="bg-secondary">
-    <div class="container-site grid gap-10 py-12 md:py-20 lg:grid-cols-[1fr_1.4fr]">
+  <section class="on-dark bg-navy-deep">
+    <div class="container-site split items-start pb-[clamp(4rem,8vw,6.5rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]">
       <div>
-        <p class="eyebrow">Contact</p>
-        <h1 class="mt-2 text-4xl font-bold md:text-5xl">Get a free estimate</h1>
-        <p class="mt-4 text-lg text-muted-foreground">Tell us about your project and we'll set up a free on-site visit.</p>
-        <ul class="mt-8 space-y-3">
-          <li><a href={SITE.phoneHref} class="inline-flex min-h-11 items-center gap-3 font-semibold hover:text-stone"><Phone class="size-5 shrink-0 text-stone" aria-hidden="true" /> {SITE.phone}</a></li>
-          <li><a href={`mailto:${SITE.email}`} class="inline-flex min-h-11 items-center gap-3 hover:text-stone"><Mail class="size-5 shrink-0 text-stone" aria-hidden="true" /> {SITE.email}</a></li>
-          <li class="flex gap-3"><MapPin class="size-5 shrink-0 text-stone" aria-hidden="true" /> {SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</li>
-          <li class="flex gap-3"><Clock class="size-5 shrink-0 text-stone" aria-hidden="true" /> {SITE.hours}</li>
-        </ul>
+        <p class="eyebrow mb-4 text-white">Contact</p>
+        <h1 class="display-1">Get a free estimate</h1>
+        <p class="mb-8 mt-5 text-[1.1875rem] leading-normal text-muted-foreground">Tell us about your project and we'll set up a free on-site visit. Your request goes to {SITE.ownerFirst}, not a sales team.</p>
+        <QuoteForm client:load onDark />
       </div>
-      <QuoteForm client:load />
+      <div>
+        <Photo photo={PHOTO.groundComposite} sizes="(min-width: 900px) 50vw, 100vw" eager class="aspect-[4/3] w-full rounded-3xl object-cover" />
+        <dl class="divided mt-8 text-base md:grid-flow-row md:[&>*]:border-l-0 md:[&>*]:border-t md:[&>*]:px-0 md:[&>*]:py-4 md:[&>:first-child]:border-t-0 md:[&>:first-child]:pt-0">
+          <div><dt class="eyebrow">Call or text</dt><dd><a href={SITE.phoneHref} class="link inline-flex min-h-11 items-center">{SITE.phone}</a></dd></div>
+          <div><dt class="eyebrow">Email</dt><dd><a href={`mailto:${SITE.email}`} class="link inline-flex min-h-11 items-center break-all">{SITE.email}</a></dd></div>
+          <div><dt class="eyebrow">Where we build</dt><dd class="mt-1">{SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</dd></div>
+          <div><dt class="eyebrow">Hours</dt><dd class="mt-1">{SITE.hours}</dd></div>
+        </dl>
+      </div>
     </div>
   </section>
 </BaseLayout>
