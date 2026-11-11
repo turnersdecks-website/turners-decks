@@ -373,9 +373,9 @@ function QuestionField({ q, value, error, sqft, onChange }: { q: PublicQuestion;
         {help}
         {sections.map((s, idx) => (
           <div key={idx} className="flex flex-wrap items-end gap-3">
-            <span className="w-20 pb-3 text-sm font-medium">Section {idx + 1}</span>
+            <span className="w-full text-sm font-medium sm:w-20 sm:pb-3">Section {idx + 1}</span>
             {(["width", "depth"] as const).map((d) => (
-              <div key={d} className="w-32">
+              <div key={d} className="min-w-0 flex-1 sm:w-32 sm:flex-none">
                 <Label htmlFor={`s${idx}-${d}`}>{d === "width" ? "Width (ft)" : "Depth (ft)"}</Label>
                 <Input id={`s${idx}-${d}`} type="number" inputMode="decimal" min={3} max={100} value={s[d] || ""} className="mt-1 h-11"
                   aria-invalid={!!error && !ok(s[d])} aria-describedby={error ? errId : undefined}
