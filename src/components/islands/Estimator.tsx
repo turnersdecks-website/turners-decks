@@ -115,6 +115,14 @@ function Wizard({ est }: { est: PublicEstimator }) {
   const [serverError, setServerError] = useState("");
   const [done, setDone] = useState<Done | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  /** Brings the progress bar back into view on a new screen, only when it has scrolled off the top. */
+  const toTop = () => {
+    const el = progressRef.current;
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 16;
+    if (window.scrollY > y) window.scrollTo({ top: y });
+  };
   const headingRef = useRef<HTMLHeadingElement>(null);
   const keys = useRef(new SubmissionKeys());
   // What the Homeowner typed on the contact step, kept when they go back to fix an answer.
@@ -171,7 +179,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
   useEffect(() => {
     if (firstRender.current) { firstRender.current = false; return; }
     if (Object.keys(errors).length) return;
-    headingRef.current?.focus();
+    headingRef.current?.focus({ preventScroll: true });
   }, [step, done]);
   useFocusFirstError(rootRef, errors);
 
@@ -207,7 +215,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
     setErrors({});
     setServerError("");
     setStep(s);
-    window.scrollTo({ top: 0 });
+    toTop();
   };
   const next = () => {
     const e = stepErrors(step, a);
@@ -222,7 +230,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
       if (!e[key]) continue;
       setStep(s);
       setErrors({ [key]: e[key]! });
-      window.scrollTo({ top: 0 });
+      toTop();
       return true;
     }
     return false;
@@ -279,7 +287,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
       );
       try { sessionStorage.removeItem(storeKey(est.version)); } catch { /* storage unavailable */ }
       setDone(out);
-      window.scrollTo({ top: 0 });
+      toTop();
       return true;
     } catch (err) {
       console.error("[crm-intake]", err);
@@ -299,7 +307,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
   return (
     <div ref={rootRef}>
       <p className="mt-2 max-w-2xl text-muted-foreground">{est.copy.intro}</p>
-      <div className="mt-8">
+      <div ref={progressRef} className="mt-8">
         <div className="mb-2 flex justify-between text-sm text-muted-foreground">
           <span>{done ? "Your estimate" : `Step ${step + 1} of ${total}: ${titles[step]}`}</span>
           {step > 0 && !done && (
