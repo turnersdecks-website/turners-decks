@@ -7,6 +7,10 @@
   (`GET /api/public/estimator`, no prices) and the CRM prices the answers (`docs/adr/0003`). The
   site has no pricing code: do not add any. Its types and step rules mirror the CRM in
   `src/lib/estimator-public.ts`, and it never imports `crm/` code.
+- The estimator shows a short flow, one question per screen (`FLOW` in `Estimator.tsx`: project, size,
+  material, height, railings, stairs; ZIP is on the contact step). Every other CRM question is sent with
+  its CRM default, so each of those questions needs a default in Estimator settings. Size is picked from
+  rough buckets (`SIZE_BUCKETS`, one representative section each) or entered as real measurements.
 - Both forms post leads from the browser to the CRM intake through `src/lib/crm-intake.ts`
   (payload builders + `submitToCrm`, tested in `crm-intake.test.ts` and against the real intake in
   `crm/test/intake-contract.test.ts`), with Turnstile and the `website` honeypot
