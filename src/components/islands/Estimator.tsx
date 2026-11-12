@@ -7,7 +7,7 @@ import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendE
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { IntakeError, SubmissionKeys, estimatorPayload, fetchEstimator, submitToCrm, type EstimatorContact } from "@/lib/crm-intake";
 import {
-  answerError, filterAnswers, formatUSD, optionLabel, serviceAreaFor, totalSqft, visibleItems, visibleKeys,
+  answerError, filterAnswers, formatUSD, optionLabel, totalSqft, visibleKeys,
   type AnswerValue, type Answers, type PublicEstimator, type PublicQuestion, type PublicResult, type Section,
 } from "@/lib/estimator-public";
 import { contactSchema, fieldErrors } from "@/lib/quote";
@@ -15,8 +15,35 @@ import { SITE } from "@/lib/site";
 
 type Errs = Record<string, string>;
 type Copy = PublicEstimator["copy"];
-const storeKey = (version: number) => `td-estimator-v3:${version}`;
+const storeKey = (version: number) => `td-estimator-v4:${version}`;
 const EMPTY_SECTION: Section = { width: 0, depth: 0 };
+
+/**
+ * The short flow the Homeowner sees: one question per screen (the July 2026 estimator). Wording and options still come
+ * from the CRM. Every other CRM question is answered with its CRM default (set under Estimator settings), so the CRM
+ * prices the same document it always has.
+ */
+const FLOW: { key: string; title: string }[] = [
+  { key: "projectType", title: "Your project" },
+  { key: "sections", title: "Deck size" },
+  { key: "material", title: "Decking material" },
+  { key: "height", title: "Deck height" },
+  { key: "railingSides", title: "Railings" },
+  { key: "stairType", title: "Stairs" },
+];
+const FLOW_KEYS = new Set(FLOW.map((f) => f.key));
+
+/** Rough sizes for the size screen. Each fills one representative section; "I know my measurements" enters real ones. */
+type Bucket = { value: string; label: string; hint: string; width: number; depth: number };
+const SIZE_BUCKETS: Bucket[] = [
+  { value: "small", label: "Small", hint: "Up to about 150 sq ft, around 10 × 12 ft", width: 11, depth: 11 },
+  { value: "medium", label: "Medium", hint: "About 150 to 250 sq ft, around 12 × 16 ft", width: 13, depth: 15 },
+  { value: "large", label: "Large", hint: "About 250 to 400 sq ft, around 16 × 20 ft", width: 15, depth: 22 },
+  { value: "xl", label: "Extra large", hint: "400+ sq ft, 20 × 28 ft or larger", width: 20, depth: 28 },
+  { value: "unsure", label: "Not sure yet", hint: "We'll start from a mid-size deck", width: 13, depth: 15 },
+];
+type SizeMode = { mode: "bucket"; bucket?: string } | { mode: "exact" };
+const bucketOf = (s: SizeMode) => (s.mode === "bucket" ? SIZE_BUCKETS.find((b) => b.value === s.bucket) : undefined);
 
 const townhouseOrHoa = (a: Answers) => a.townhouse === "yes" || a.access === "townhouse" || a.hoa === "yes";
 
@@ -74,10 +101,12 @@ export default function Estimator() {
 type Done = { kind: "estimate"; result: PublicResult } | { kind: "received" };
 
 function Wizard({ est }: { est: PublicEstimator }) {
-  const questionSteps = est.steps.length;
+  const flow = FLOW.filter((f) => est.questions[f.key]);
+  const questionSteps = flow.length;
   const total = questionSteps + 1;
-  const titles = est.copy.steps;
+  const titles = [...flow.map((f) => f.title), "Your estimate"];
   const [a, setA] = useState<Answers>({});
+  const [size, setSize] = useState<SizeMode>({ mode: "bucket" });
   // Shown questions still on the default the estimator picked, never changed by the Homeowner.
   const [defaulted, setDefaulted] = useState<string[]>([]);
   const [step, setStep] = useState(0);
@@ -97,9 +126,14 @@ function Wizard({ est }: { est: PublicEstimator }) {
     try {
       const s = sessionStorage.getItem(storeKey(est.version));
       if (s) {
-        const saved = JSON.parse(s) as { answers?: unknown; defaulted?: unknown };
+        const saved = JSON.parse(s) as { answers?: unknown; defaulted?: unknown; size?: SizeMode };
         const answers = filterAnswers(est, saved.answers);
         setA(answers);
+        if (saved.size?.mode === "exact") setSize({ mode: "exact" });
+        else if (saved.size?.mode === "bucket") {
+          const bucket = saved.size.bucket;
+          if (SIZE_BUCKETS.some((b) => b.value === bucket)) setSize({ mode: "bucket", bucket });
+        }
         if (Array.isArray(saved.defaulted)) {
           setDefaulted(saved.defaulted.filter((k): k is string => typeof k === "string" && answers[k] !== undefined && answers[k] === est.questions[k]?.default));
         }
@@ -109,27 +143,28 @@ function Wizard({ est }: { est: PublicEstimator }) {
   }, [est]);
   useEffect(() => {
     if (!restored || done) return;
-    try { sessionStorage.setItem(storeKey(est.version), JSON.stringify({ answers: a, defaulted })); } catch { /* storage unavailable */ }
-  }, [a, defaulted, restored, done, est.version]);
+    try { sessionStorage.setItem(storeKey(est.version), JSON.stringify({ answers: a, defaulted, size })); } catch { /* storage unavailable */ }
+  }, [a, defaulted, size, restored, done, est.version]);
 
-  // A question's default (and an empty first section) is filled in the first time the question is shown.
+  // Questions outside the short flow take their CRM default; a flow question takes its default the first time it is shown.
   useEffect(() => {
-    if (!restored || step >= questionSteps) return;
+    if (!restored) return;
     const patch: Answers = {};
     const picked: string[] = [];
-    for (const { key } of visibleItems(est, step, a)) {
-      const q = est.questions[key]!;
-      if (a[key] !== undefined) continue;
-      if (q.kind === "sections") patch[key] = [EMPTY_SECTION];
+    const current = step < questionSteps ? flow[step]!.key : undefined;
+    for (const q of Object.values(est.questions)) {
+      if (a[q.key] !== undefined) continue;
+      if (FLOW_KEYS.has(q.key) && q.key !== current) continue;
+      if (q.kind === "sections" && q.key === current && size.mode === "exact") patch[q.key] = [EMPTY_SECTION];
       else if (q.kind === "choice" && q.default !== null && q.options?.some((o) => o.value === q.default)) {
-        patch[key] = q.default;
-        picked.push(key);
+        patch[q.key] = q.default;
+        picked.push(q.key);
       }
     }
     if (!Object.keys(patch).length) return;
     setA((x) => ({ ...x, ...patch }));
     if (picked.length) setDefaulted((d) => [...new Set([...d, ...picked])]);
-  }, [est, step, a, restored, questionSteps]);
+  }, [est, step, a, size, restored, questionSteps, flow]);
 
   // Each step change moves focus to the step's heading, unless an error is about to take it.
   const firstRender = useRef(true);
@@ -146,14 +181,27 @@ function Wizard({ est }: { est: PublicEstimator }) {
   };
 
   function stepErrors(s: number, answers: Answers): Errs {
-    const e: Errs = {};
-    for (const { key } of visibleItems(est, s, answers)) {
-      const q = est.questions[key]!;
-      const msg = answerError(q, answers[key]) ?? (!q.optional && answers[key] === undefined ? "This question needs an answer." : null);
-      if (msg) e[key] = msg;
-    }
-    return e;
+    const key = flow[s]!.key;
+    const q = est.questions[key]!;
+    if (q.kind === "sections" && size.mode === "bucket" && !bucketOf(size)) return { [key]: "Choose a size, or enter your measurements." };
+    const msg = answerError(q, answers[key]) ?? (!q.optional && answers[key] === undefined ? "This question needs an answer." : null);
+    return msg ? { [key]: msg } : {};
   }
+
+  const chooseBucket = (b: Bucket) => {
+    setSize({ mode: "bucket", bucket: b.value });
+    set("sections", [{ width: b.width, depth: b.depth }]);
+  };
+  const exactSize = (on: boolean) => {
+    setErrors({});
+    if (on) {
+      setSize({ mode: "exact" });
+      set("sections", [EMPTY_SECTION]);
+    } else {
+      setSize({ mode: "bucket" });
+      set("sections", undefined);
+    }
+  };
 
   const goTo = (s: number) => {
     setErrors({});
@@ -170,10 +218,10 @@ function Wizard({ est }: { est: PublicEstimator }) {
   /** Back to the first step with a missing or refused answer (a later answer can make an earlier question apply). */
   function sendBack(e: Errs): boolean {
     for (let s = 0; s < questionSteps; s++) {
-      const here = visibleItems(est, s, a).filter((i) => e[i.key]);
-      if (!here.length) continue;
+      const key = flow[s]!.key;
+      if (!e[key]) continue;
       setStep(s);
-      setErrors(Object.fromEntries(here.map((i) => [i.key, e[i.key]!])));
+      setErrors({ [key]: e[key]! });
       window.scrollTo({ top: 0 });
       return true;
     }
@@ -189,7 +237,8 @@ function Wizard({ est }: { est: PublicEstimator }) {
         return true;
       }
     }
-    const parsed = contactSchema.safeParse({ ...fd, zip: typeof a.zip === "string" ? a.zip : "" });
+    const zip = (fd.zip ?? "").replace(/\D/g, "").slice(0, 5);
+    const parsed = contactSchema.safeParse({ ...fd, zip });
     if (!parsed.success) {
       setErrors(fieldErrors(parsed.error.issues));
       return true;
@@ -197,21 +246,26 @@ function Wizard({ est }: { est: PublicEstimator }) {
     setErrors({});
     setSending(true);
     setServerError("");
-    const shownKeys = visibleKeys(est, a);
-    const answers: Answers = Object.fromEntries(shownKeys.flatMap((k) => (a[k] === undefined ? [] : [[k, a[k]]])));
+    const all: Answers = { ...a, zip };
+    setA(all);
+    const shownKeys = visibleKeys(est, all);
+    const answers: Answers = Object.fromEntries(shownKeys.flatMap((k) => (all[k] === undefined ? [] : [[k, all[k]]])));
+    // Tell the owner when the size is a rough pick, not a measurement.
+    const bucket = bucketOf(size);
+    const sizeNote = bucket ? `Deck size picked in the estimator: ${bucket.label} (${bucket.hint}). Not measured.` : "";
     const contact: EstimatorContact = {
       ...parsed.data,
       website: fd.website ?? "",
       timing: fd.timing ?? "",
       contact_method: fd.contact_method === "text" || fd.contact_method === "email" ? fd.contact_method : "phone",
       wants_financing: fd.financing === "on",
-      notes: fd.notes,
+      notes: [fd.notes?.trim(), sizeNote].filter(Boolean).join("\n\n") || undefined,
       address: fd.address,
     };
     const estimate = {
       version: est.version,
       answers,
-      defaulted: defaulted.filter((k) => shownKeys.includes(k) && a[k] === est.questions[k]?.default),
+      defaulted: defaulted.filter((k) => shownKeys.includes(k) && all[k] === est.questions[k]?.default),
     };
     try {
       const out = await submitToCrm(
@@ -258,23 +312,29 @@ function Wizard({ est }: { est: PublicEstimator }) {
       </div>
 
       {done ? (
-        <Result est={est} a={a} done={done} headingRef={headingRef} />
+        <Result est={est} a={a} size={size} done={done} headingRef={headingRef} />
       ) : (
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_280px]">
           <div className="space-y-7 rounded-xl bg-card p-6 shadow-card md:p-8">
             <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold focus:outline-none">{heading}</h2>
 
-            {step < questionSteps &&
-              visibleItems(est, step, a).map(({ key }) => (
+            {step < questionSteps && (() => {
+              const key = flow[step]!.key;
+              const q = est.questions[key]!;
+              return (
                 <div key={key} className="space-y-4">
-                  <QuestionField q={est.questions[key]!} value={a[key]} error={errors[key]} sqft={sqft} onChange={(v) => set(key, v)} />
+                  {q.kind === "sections" ? (
+                    <SizeField q={q} size={size} value={a[key]} error={errors[key]} sqft={sqft} onBucket={chooseBucket} onExact={exactSize} onChange={(v) => set(key, v)} />
+                  ) : (
+                    <QuestionField q={q} value={a[key]} error={errors[key]} sqft={sqft} onChange={(v) => set(key, v)} />
+                  )}
                   {NOTES.filter((n) => n.after === key && n.show(a)).map((n) => <Note key={n.copy}>{est.copy.disclaimers[n.copy]}</Note>)}
                 </div>
-              ))}
+              );
+            })()}
 
             {step === questionSteps && (
               <ContactStep
-                message={est.copy.serviceArea[serviceAreaFor(est, typeof a.zip === "string" ? a.zip : "")]}
                 draft={contactDraft}
                 errors={errors}
                 sending={sending}
@@ -294,14 +354,60 @@ function Wizard({ est }: { est: PublicEstimator }) {
             <p className="eyebrow">Your project so far</p>
             <dl className="mt-3 space-y-2 text-sm">
               {a.projectType !== undefined && <div><dt className="text-muted-foreground">Project</dt><dd className="font-medium">{optionLabel(est, "projectType", a.projectType)}</dd></div>}
-              {sqft > 0 && <div><dt className="text-muted-foreground">Size</dt><dd className="font-medium">About {sqft} sq ft</dd></div>}
+              {sqft > 0 && <div><dt className="text-muted-foreground">Size</dt><dd className="font-medium">{sizeLabel(size, sqft)}</dd></div>}
               {a.material !== undefined && <div><dt className="text-muted-foreground">Material</dt><dd className="font-medium">{optionLabel(est, "material", a.material)}</dd></div>}
-              {step > 4 && a.railingSides !== undefined && <div><dt className="text-muted-foreground">Railing</dt><dd className="font-medium">{a.railingSides === "none" ? "None" : optionLabel(est, "railingStyle", a.railingStyle)}</dd></div>}
-              {step > 5 && a.stairType !== undefined && <div><dt className="text-muted-foreground">Stairs</dt><dd className="font-medium">{optionLabel(est, "stairType", a.stairType)}</dd></div>}
+              {a.height !== undefined && <div><dt className="text-muted-foreground">Height</dt><dd className="font-medium">{optionLabel(est, "height", a.height)}</dd></div>}
+              {a.railingSides !== undefined && <div><dt className="text-muted-foreground">Railings</dt><dd className="font-medium">{a.railingSides === "none" ? "None" : "Yes"}</dd></div>}
+              {a.stairType !== undefined && <div><dt className="text-muted-foreground">Stairs</dt><dd className="font-medium">{optionLabel(est, "stairType", a.stairType)}</dd></div>}
             </dl>
           </aside>
         </div>
       )}
+    </div>
+  );
+}
+
+const sizeLabel = (size: SizeMode, sqft: number) => {
+  const b = bucketOf(size);
+  if (!b) return `About ${sqft} sq ft`;
+  return b.value === "unsure" ? "Not sure yet" : `${b.label} (about ${sqft} sq ft)`;
+};
+
+/** The size screen: rough size buckets, with a link to enter real measurements instead. */
+function SizeField({ q, size, value, error, sqft, onBucket, onExact, onChange }: {
+  q: PublicQuestion; size: SizeMode; value: AnswerValue | undefined; error?: string; sqft: number;
+  onBucket: (b: Bucket) => void; onExact: (on: boolean) => void; onChange: (v: AnswerValue | undefined) => void;
+}) {
+  const linkCls = "inline-flex min-h-11 items-center font-medium text-accent-blue underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md";
+  if (size.mode === "exact") {
+    return (
+      <div className="space-y-3">
+        <QuestionField q={{ ...q, label: "Enter your deck's measurements", help: "For L-shapes, wraparounds, or multiple platforms, add each rectangle separately." }} value={value} error={error} sqft={sqft} onChange={onChange} />
+        <button type="button" className={linkCls} onClick={() => onExact(false)}>Pick a rough size instead</button>
+      </div>
+    );
+  }
+  const errId = `${q.key}-error`;
+  return (
+    <div className="space-y-3">
+      <fieldset className="space-y-2" aria-describedby={[q.help && `${q.key}-help`, error && errId].filter(Boolean).join(" ") || undefined}>
+        <legend className={legendCls}>{q.label}</legend>
+        {q.help && <p id={`${q.key}-help`} className="text-sm text-muted-foreground">{q.help}</p>}
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SIZE_BUCKETS.map((b) => {
+            const on = size.bucket === b.value;
+            return (
+              <label key={b.value} className={`flex cursor-pointer items-start gap-2 rounded-lg border-2 p-3 text-left transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${on ? "border-accent-blue bg-accent-blue/5" : "border-border hover:border-accent-blue/50"}`}>
+                <input type="radio" name="q-size" value={b.value} checked={on} onChange={() => onBucket(b)} className="sr-only" aria-invalid={error ? true : undefined} />
+                <span aria-hidden="true" className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-accent-blue bg-accent-blue text-primary-foreground" : "border-border"}`}>{on && <Check className="size-3" />}</span>
+                <span><span className="block font-medium">{b.label}</span><span className="block text-sm text-muted-foreground">{b.hint}</span></span>
+              </label>
+            );
+          })}
+        </div>
+        <FieldError id={errId} message={error} />
+      </fieldset>
+      <button type="button" className={linkCls} onClick={() => onExact(true)}>I know my measurements</button>
     </div>
   );
 }
@@ -412,8 +518,7 @@ function QuestionField({ q, value, error, sqft, onChange }: { q: PublicQuestion;
   );
 }
 
-function ContactStep({ message, draft, errors, sending, serverError, onSubmit }: {
-  message: string;
+function ContactStep({ draft, errors, sending, serverError, onSubmit }: {
   draft: RefObject<Record<string, string>>;
   errors: Errs;
   sending: boolean;
@@ -436,7 +541,7 @@ function ContactStep({ message, draft, errors, sending, serverError, onSubmit }:
     <form onSubmit={handle} onChange={keep} noValidate className="relative space-y-5">
       <Honeypot />
       <div className="rounded-lg bg-secondary p-4">
-        <p className="font-heading font-semibold text-primary">{message}</p>
+        <p className="font-heading font-semibold text-primary">Last step: where should we send your price range?</p>
         <p className="mt-2 text-sm text-muted-foreground">Your price range and project summary appear on the next screen. {SITE.ownerFirst} gets a copy, to follow up and confirm the price at a free site visit. No sales team, and we never share your details.</p>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -447,7 +552,12 @@ function ContactStep({ message, draft, errors, sending, serverError, onSubmit }:
             <FieldError id={`e-${n}-error`} message={errors[n]} />
           </div>
         ))}
-        <div className="sm:col-span-2">
+        <div>
+          <Label htmlFor="e-zip">Project ZIP code</Label>
+          <Input id="e-zip" name="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" defaultValue={d.zip} className="mt-1.5 h-11 text-base" aria-invalid={!!errors.zip} aria-describedby={errors.zip ? "e-zip-error" : undefined} />
+          <FieldError id="e-zip-error" message={errors.zip} />
+        </div>
+        <div>
           <Label htmlFor="e-address">Project address (optional)</Label>
           <Input id="e-address" name="address" autoComplete="street-address" maxLength={200} defaultValue={d.address} className="mt-1.5 h-11 text-base" />
         </div>
@@ -477,7 +587,7 @@ function ContactStep({ message, draft, errors, sending, serverError, onSubmit }:
   );
 }
 
-function Result({ est, a, done, headingRef }: { est: PublicEstimator; a: Answers; done: Done; headingRef: RefObject<HTMLHeadingElement | null> }) {
+function Result({ est, a, size, done, headingRef }: { est: PublicEstimator; a: Answers; size: SizeMode; done: Done; headingRef: RefObject<HTMLHeadingElement | null> }) {
   const d = est.copy.disclaimers;
   if (done.kind === "received") {
     return (
@@ -491,11 +601,11 @@ function Result({ est, a, done, headingRef }: { est: PublicEstimator; a: Answers
   const label = (k: string) => optionLabel(est, k, a[k]);
   const summary: [string, string][] = [
     ["Project", label("projectType")],
-    ["Size", `About ${r.sqft} sq ft`],
+    ["Size", sizeLabel(size, r.sqft)],
     ["Material", label("material")],
-    ["Railing", a.railingSides === "none" ? "None" : `${label("railingStyle")}, about ${r.railingLf} ft`],
+    ["Height", label("height")],
+    ["Railings", a.railingSides === "none" ? "None" : `Yes, about ${r.railingLf} ft`],
     ["Stairs", label("stairType")],
-    ["Existing deck", label("demolition")],
     ["ZIP code", typeof a.zip === "string" ? a.zip : ""],
   ];
   return (
