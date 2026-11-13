@@ -2,6 +2,7 @@
 import { useEffect, type ComponentProps, type RefObject } from "react";
 import { buttonVariants, cn, type ButtonSize, type ButtonVariant } from "@/lib/utils";
 import { SITE } from "@/lib/site";
+import { SMS_CONSENT_TEXT } from "@/lib/sms-consent";
 
 export function Button({ className, variant, size, type = "button", ...props }: ComponentProps<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
   return <button type={type} className={cn(buttonVariants({ variant, size }), className)} {...props} />;
@@ -69,6 +70,18 @@ export function SendError({ message }: { message: string }) {
       <p>{message}</p>
       <a href={SITE.phoneHref} className="mt-1 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">Call {SITE.phone}</a>
     </div>
+  );
+}
+
+/** Opt-in for texts, unchecked by default and never required (A2P 10DLC). Posts `sms_consent=on` when ticked. */
+export function SmsConsent({ id = "sms_consent", className = "", defaultChecked = false }: { id?: string; className?: string; defaultChecked?: boolean }) {
+  return (
+    <label htmlFor={id} className={`flex items-start gap-3 text-sm ${className}`}>
+      <input id={id} type="checkbox" name="sms_consent" defaultChecked={defaultChecked} className="mt-0.5 size-5 shrink-0" />
+      <span>
+        {SMS_CONSENT_TEXT} See our <a href="/privacy-policy" className="underline underline-offset-2">Privacy Policy</a>.
+      </span>
+    </label>
   );
 }
 

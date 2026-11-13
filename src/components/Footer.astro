@@ -37,7 +37,8 @@ const linkCls = "inline-flex min-h-9 items-center hover:underline";
     <div>
       <h2 class="eyebrow">Contact</h2>
       <ul class="mt-3">
-        <li><a href={SITE.phoneHref} class={linkCls}>{SITE.phone}</a></li>
+        <li><a href={SITE.phoneHref} class={linkCls}>{SITE.phoneVanity} · {SITE.phone}</a></li>
+        <li><a href={SITE.smsHref} class={linkCls}>Text {SITE.ownerFirst}</a></li>
         <li><a href={`mailto:${SITE.email}`} class={linkCls}>{SITE.email}</a></li>
         <li class="py-1.5 text-muted-foreground">{SITE.city}, {SITE.state}</li>
         <li class="py-1.5 text-muted-foreground">Hours: {SITE.hours}</li>

@@ -6,6 +6,9 @@ import { SITE } from "@/lib/site";
 <div class="on-dark border-b border-white/10 bg-navy-deep text-[0.8125rem]">
   <div class="container-site flex items-center justify-between gap-4">
     <span class="hidden py-2.5 md:block">{SITE.city}, {SITE.state} · Berks, Montgomery and Chester Counties</span>
-    <a href={SITE.phoneHref} class="inline-flex min-h-11 items-center font-medium hover:underline">Call or text {SITE.ownerFirst}: {SITE.phone}</a>
+    <span class="inline-flex min-h-11 items-center gap-1 font-medium">
+      <a href={SITE.phoneHref} class="hover:underline">Call</a> or <a href={SITE.smsHref} class="hover:underline">text</a> {SITE.ownerFirst}:
+      <a href={SITE.phoneHref} class="hover:underline">{SITE.phoneVanity}</a>
+    </span>
   </div>
 </div>

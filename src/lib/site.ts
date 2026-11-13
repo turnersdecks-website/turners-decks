@@ -6,8 +6,11 @@ export const SITE = {
   ownerFirst: "Pat",
   responseTime: "within one business day", // [CONFIRM] promised in form success messages
   since: 2018,
-  phone: "(484) 824-0373",
-  phoneHref: "tel:+14848240373",
+  // Quo business line (texts and calls reach Pat in the Quo app). Buttons show digits so a tap dials right.
+  phone: "(484) 939-3325",
+  phoneVanity: "(484) 939-DECK",
+  phoneHref: "tel:+14849393325",
+  smsHref: "sms:+14849393325",
   email: "turnersdecks@gmail.com",
   city: "Douglassville",
   state: "PA",

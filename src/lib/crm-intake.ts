@@ -7,6 +7,7 @@
 // for other answers.
 // The payload builders and submitToCrm use no Astro or browser globals: crm/test/intake-contract.test.ts runs them
 // against the real intake inside the CRM's Workers test runtime.
+import { SMS_CONSENT_VERSION } from "./sms-consent";
 import { parsePublicEstimator, parsePublicResult, type Answers, type PublicEstimator, type PublicResult } from "./estimator-public";
 
 /** Build-time settings (`.env.example`). Empty when the CRM is not configured for this build. */
@@ -37,6 +38,8 @@ export type ContactFields = {
   zip: string;
   /** The honeypot's value; people never see it, so it is empty for them. */
   website: string;
+  /** The unchecked-by-default "Text me about my project" box. Only `true` records text consent in the CRM. */
+  sms_consent?: boolean;
 };
 
 export type QuoteFields = ContactFields & { project_type: string; approx_size?: string; material?: string; notes?: string };
@@ -77,6 +80,8 @@ function contactPart(f: ContactFields) {
     email: trimmed(f.email, 255),
     phone: trimmed(f.phone, 30),
     zip: trimmed(f.zip, 5),
+    // Sent only when ticked, with the wording version agreed to (crm/src/lib/intake.ts > consent_events).
+    ...(f.sms_consent === true ? { sms_consent: true as const, sms_consent_disclosure: SMS_CONSENT_VERSION } : {}),
   };
 }
 

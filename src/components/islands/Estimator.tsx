@@ -3,7 +3,7 @@
 // back (docs/adr/0003). This file is only the UI; no prices live on the site.
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Phone, Plus, Trash2 } from "lucide-react";
-import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { IntakeError, SubmissionKeys, estimatorPayload, fetchEstimator, submitToCrm, type EstimatorContact } from "@/lib/crm-intake";
 import {
@@ -267,6 +267,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
       timing: fd.timing ?? "",
       contact_method: fd.contact_method === "text" || fd.contact_method === "email" ? fd.contact_method : "phone",
       wants_financing: fd.financing === "on",
+      sms_consent: fd.sms_consent === "on",
       notes: [fd.notes?.trim(), sizeNote].filter(Boolean).join("\n\n") || undefined,
       address: fd.address,
     };
@@ -586,6 +587,7 @@ function ContactStep({ draft, errors, sending, serverError, onSubmit }: {
           <Textarea id="e-notes" name="notes" maxLength={2000} rows={3} defaultValue={d.notes} className="mt-1.5" />
         </div>
         <label className="flex items-center gap-3 sm:col-span-2"><input type="checkbox" name="financing" defaultChecked={d.financing === "on"} className="size-5" /> Send me financing information</label>
+        <SmsConsent id="e-sms_consent" className="sm:col-span-2" defaultChecked={d.sms_consent === "on"} />
       </div>
       <TurnstileBox boxRef={turnstile.ref} />
       <p className="text-xs text-muted-foreground">We only use your information to follow up on this project. We never sell it.</p>

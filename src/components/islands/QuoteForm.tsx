@@ -1,7 +1,7 @@
 // "Get a free estimate" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
 import { useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Button, FieldError, Honeypot, Input, Label, SendError, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
 import { fieldErrors, quoteSchema } from "@/lib/quote";
@@ -39,7 +39,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
     setErrors({});
     setServerError("");
     setStatus("sending");
-    const fields = { ...parsed.data, website: data.website ?? "" };
+    const fields = { ...parsed.data, website: data.website ?? "", sms_consent: data.sms_consent === "on" };
     try {
       await submitToCrm(
         quotePayload(fields, {
@@ -112,6 +112,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
         <Label htmlFor="notes">Notes (optional)</Label>
         <Textarea id="notes" name="notes" rows={4} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, timeline, or anything else." />
       </div>
+      <SmsConsent id="q-sms_consent" />
       <TurnstileBox boxRef={turnstile.ref} />
       {status === "error" && <SendError message={serverError} />}
       <Button type="submit" variant={onDark ? "light" : "cta"} size="lg" className="w-full sm:w-auto" disabled={status === "sending"}>
