@@ -5,7 +5,7 @@ import { getDb } from '#/db/client'
 import { customers, jobs } from '#/db/schema'
 import { requireAdmin, requireStaff } from '#/lib/guards'
 import { record } from '#/lib/input'
-import { type TxnFilter, assignTransactions, disconnectQuickBooks, jobFinancials, listTransactions, profitAndLoss, qboStatus, syncQuickBooks } from '#/lib/qbo.server'
+import { type TxnFilter, applyQboRulesToUnsorted, assignTransactions, disconnectQuickBooks, jobFinancials, listTransactions, profitAndLoss, qboRulesView, qboStatus, saveQboRules, syncQuickBooks } from '#/lib/qbo.server'
 
 // QuickBooks in the CRM (docs/adr/0006-quickbooks-sync.md). The work is in qbo.server.ts.
 
@@ -69,3 +69,19 @@ export const getProfitAndLoss = createServerFn({ method: 'GET' })
   .middleware([requireStaff])
   .validator((data: { year: number }) => record(data))
   .handler(({ data }) => profitAndLoss(getDb(env.DB), Number(data.year) || new Date().getFullYear()))
+
+/** Admins: the sorting rules and the accounts seen so far. */
+export const getQboRules = createServerFn({ method: 'GET' })
+  .middleware([requireAdmin])
+  .handler(() => qboRulesView(getDb(env.DB)))
+
+/** Admins: save the sorting rules (applies to new transactions from the next sync). */
+export const saveQboRulesFn = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .validator((data: { sortAccounts: string[]; vendors: { vendor: string; action: 'sort' | 'ignore' }[] }) => record(data))
+  .handler(({ data }) => saveQboRules(getDb(env.DB), data))
+
+/** Admins: run the rules over everything in To sort now. */
+export const applyQboRules = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .handler(({ context: { staff } }) => applyQboRulesToUnsorted(getDb(env.DB), staff.id))

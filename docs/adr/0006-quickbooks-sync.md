@@ -29,3 +29,13 @@ done today. So the CRM keeps its own copy and does the sorting.
 - Intuit's free Builder tier allows 500,000 read calls a month; this uses a few hundred.
 - Splitting one receipt across two Jobs is not supported yet (put it on the main Job, or ignore it).
 - Job "Actual material cost" stays a hand-entered field for now; the QuickBooks totals show beside it on the Job page.
+
+## Sorting rules (2026-11-14)
+
+Settings > Connections > QuickBooks sorting rules. New costs booked to a "Job cost account" (default: Job Supplies,
+Contractors, Cost of Goods Sold, Disposal & Dump Fees, Permits and Other Job Fees, Taxes & Licenses) land in To sort;
+every other new cost arrives Ignored (`assigned_by = rule`), so it is out of the way but still findable. A vendor rule
+(matched on the QuickBooks vendor or the bank description) wins over the account. Invoices and payments always come in
+to be sorted. Rules only touch a transaction when it first arrives, or when an admin clicks "Apply to To sort now";
+anything a person sorted is left alone. Taxes & Licenses is a Job cost account because township permits are often
+booked there. Owner's Pay & Personal Expenses is never copied at all (private).

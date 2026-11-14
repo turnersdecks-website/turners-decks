@@ -1,0 +1,1 @@
+ALTER TABLE `company_settings` ADD `qbo_rules` text;

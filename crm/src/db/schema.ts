@@ -411,6 +411,8 @@ export const companySettings = sqliteTable(
     ownerMobile: text('owner_mobile'),
     /** The Estimate email (FLW-200): `{placeholder}`s, and a first line "Subject: ..." becomes the subject. */
     estimateEmailTemplate: text('estimate_email_template').notNull().default(''),
+    /** QuickBooks sorting rules (QboRules in qbo-vocab.ts) as JSON; null = the defaults. */
+    qboRules: text('qbo_rules'),
   },
   // New columns are validated by the server (settings.functions.ts); a CHECK here would force a table rebuild.
   (t) => [check('company_settings_single_row', sql`${t.id} = 1`)],

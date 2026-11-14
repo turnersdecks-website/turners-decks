@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
-import { customers, jobs, qboConnection, qboTransactions } from '#/db/schema'
+import { companySettings, customers, jobs, qboConnection, qboTransactions } from '#/db/schema'
 import { badRequest } from '#/lib/input'
-import { OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, jobTotals } from '#/lib/qbo-vocab'
+import { OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, type QboRules, jobTotals, parseQboRules, ruleFor } from '#/lib/qbo-vocab'
 
 // QuickBooks Online sync (docs/adr/0006-quickbooks-sync.md). One admin connects once (OAuth 2.0, /api/qbo/connect).
 // A nightly cron (and "Sync now") pulls transactions: the first run reads everything since BACKFILL_FROM with queries,
@@ -310,6 +310,15 @@ export async function syncQuickBooks(db: Db, env: QboEnv, deps: QboDeps = {}): P
     const kept = rows.filter((r) => r.deleted || ((!r.txnDate || r.txnDate >= BACKFILL_FROM) && !isOwner(r)))
     const movedToOwner = rows.filter(isOwner).map((r) => r.id)
     for (let i = 0; i < movedToOwner.length; i += 90) await db.delete(qboTransactions).where(inArray(qboTransactions.id, movedToOwner.slice(i, i + 90)))
+    // New costs the rules say to ignore arrive Ignored; a transaction already in the CRM keeps how it was sorted.
+    const rules = await readQboRules(db)
+    const fresh = kept.filter((r) => !r.deleted)
+    const known = new Set<string>()
+    for (let i = 0; i < fresh.length; i += 90) {
+      for (const r of await db.select({ id: qboTransactions.id }).from(qboTransactions).where(inArray(qboTransactions.id, fresh.slice(i, i + 90).map((x) => x.id)))) known.add(r.id)
+    }
+    const at = new Date(startedAt)
+    for (const r of fresh) if (!known.has(r.id) && ruleFor(r, rules) === 'ignore') Object.assign(r, { assignment: 'ignored', assignedBy: 'rule', assignedAt: at })
     await saveRows(db, kept)
     if (!conn.companyName) {
       const info = await qboGet<{ CompanyInfo?: { CompanyName?: string } }>(env, conn.realmId, token, `companyinfo/${encodeURIComponent(conn.realmId)}`, {}, deps).catch(() => null)
@@ -533,4 +542,45 @@ export async function profitAndLoss(db: Db, year: number) {
     .from(qboTransactions)
     .where(eq(qboTransactions.deleted, false))
   return { year: Number(y), months, completedJobs, years: years.map((r) => Number(r.year)).filter(Number.isFinite) }
+}
+
+// ---------------------------------------------------------------------------
+// Sorting rules (QboRules, qbo-vocab.ts), kept on company_settings.
+
+export async function readQboRules(db: Db): Promise<QboRules> {
+  const row = await db.select({ rules: companySettings.qboRules }).from(companySettings).where(eq(companySettings.id, 1)).get()
+  return parseQboRules(row?.rules ?? null)
+}
+
+export async function saveQboRules(db: Db, raw: unknown) {
+  const rules = parseQboRules(raw)
+  await db.update(companySettings).set({ qboRules: JSON.stringify(rules) }).where(eq(companySettings.id, 1))
+  return rules
+}
+
+/** Settings: the rules, and every account seen so far (to choose from). */
+export async function qboRulesView(db: Db) {
+  const rules = await readQboRules(db)
+  const seen = await db
+    .select({ account: qboTransactions.account, n: sql<number>`count(*)` })
+    .from(qboTransactions)
+    .where(and(eq(qboTransactions.deleted, false), sql`${qboTransactions.kind} IN ('cost', 'cost_credit')`, sql`${qboTransactions.account} IS NOT NULL`))
+    .groupBy(qboTransactions.account)
+  const accounts = [...new Set([...rules.sortAccounts, ...seen.map((r) => r.account!).filter((a) => !(OWNER_ACCOUNTS as readonly string[]).includes(a))])].sort((a, b) => a.localeCompare(b))
+  return { rules, accounts }
+}
+
+/** Settings > "Apply to To sort": run the rules over costs nobody has sorted yet. Returns how many were ignored. */
+export async function applyQboRulesToUnsorted(db: Db, by: string) {
+  const rules = await readQboRules(db)
+  const open = await db
+    .select({ id: qboTransactions.id, kind: qboTransactions.kind, account: qboTransactions.account, partyName: qboTransactions.partyName, memo: qboTransactions.memo })
+    .from(qboTransactions)
+    .where(and(eq(qboTransactions.deleted, false), isNull(qboTransactions.assignment)))
+  const ids = open.filter((t) => ruleFor(t, rules) === 'ignore').map((t) => t.id)
+  if (!ids.length) return { ignored: 0 }
+  const res = await assignTransactions(db, { ids: ids.slice(0, 500), to: 'ignored' }, by)
+  let n = res.updated
+  for (let i = 500; i < ids.length; i += 500) n += (await assignTransactions(db, { ids: ids.slice(i, i + 500), to: 'ignored' }, by)).updated
+  return { ignored: n }
 }

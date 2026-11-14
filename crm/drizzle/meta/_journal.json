@@ -78,6 +78,13 @@
       "when": 1794624700156,
       "tag": "0010_quickbooks",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1794684969851,
+      "tag": "0011_qbo_rules",
+      "breakpoints": true
     }
   ]
 }
