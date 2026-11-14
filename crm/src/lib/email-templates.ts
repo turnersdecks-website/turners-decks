@@ -23,7 +23,7 @@ export const EMAIL_TEMPLATES: TemplateDef[] = [
     defaultTemplate: `Subject: Your appointment with {company_name}
 Hi {first_name},
 
-You're all set. Pat will see you on {appointment_date} at {appointment_time} at {address} to look at your project and take measurements.
+You're all set. We'll see you on {appointment_date} at {appointment_time} at {address} to look at your project and take measurements.
 
 Need to change the time? Call or text {company_phone}.
 

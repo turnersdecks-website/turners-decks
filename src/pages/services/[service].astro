@@ -9,7 +9,7 @@ import StepList from "@/components/sections/StepList.astro";
 import Materials from "@/components/sections/Materials.astro";
 import FinancingBlock from "@/components/sections/FinancingBlock.astro";
 import QuoteForm from "@/components/islands/QuoteForm";
-import { PERMIT_STEPS, SERVICES, SITE, type ServiceSlug } from "@/lib/site";
+import { PERMIT_STEPS, SERVICES, type ServiceSlug } from "@/lib/site";
 import { SERVICE_CONTENT } from "@/lib/services";
 import { PHOTO, SERVICE_IMAGES } from "@/lib/photos";
 
@@ -22,7 +22,7 @@ const c = SERVICE_CONTENT[slug];
 ---
 
 <BaseLayout title={c.metaTitle} description={c.metaDesc}>
-  <PageHero photo={SERVICE_IMAGES[slug]} eyebrow="Services" title={c.h1} intro={c.intro} note={`Your request goes to ${SITE.ownerFirst}, not a sales team.`}>
+  <PageHero photo={SERVICE_IMAGES[slug]} eyebrow="Services" title={c.h1} intro={c.intro} note="Your request goes straight to our team.">
     <Button href="#quote" variant="light" size="lg">Get a Free Estimate</Button>
     <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
   </PageHero>
