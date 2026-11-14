@@ -52,7 +52,7 @@ export async function hasTextConsent(db: Db, phoneE164: string): Promise<boolean
 export function leadReplyText(firstName: string | null, company: string) {
   // Plan 010 F6 (as form_ack): only a plain first name is echoed back.
   const name = firstName && /^[A-Za-z][A-Za-z'-]{0,39}$/.test(firstName) ? firstName : 'there'
-  return `Hi ${name}, this is Pat at ${company}. Thanks for your request! I'll be in touch soon to set up your free estimate. You can text me at this number anytime. Reply STOP to opt out.`
+  return `Hi ${name}, this is ${company}. Thanks for your request! We'll be in touch soon to set up your free estimate. You can text us at this number anytime. Reply STOP to opt out.`
 }
 
 /** Settings > Texting, for admins. Never includes the signing secret. */

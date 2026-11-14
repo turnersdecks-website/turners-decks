@@ -64,7 +64,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
       <div className={onDark ? "" : "rounded-2xl bg-card p-8 shadow-card"} role="status">
         <CheckCircle2 className="size-12 text-stone" />
         <h3 className="mt-4 text-3xl">Thanks, we got it.</h3>
-        <p className="mt-3 text-muted-foreground">{SITE.ownerFirst} will call you {SITE.responseTime} to set up your free on-site estimate.</p>
+        <p className="mt-3 text-muted-foreground">We'll call you {SITE.responseTime} to set up your free on-site estimate.</p>
         <p className="mt-2 text-muted-foreground">Need us sooner? <a href={SITE.phoneHref} className="link inline-flex min-h-11 items-center">Call {SITE.phone}</a></p>
       </div>
     );

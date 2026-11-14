@@ -259,7 +259,7 @@ describe('texting from the CRM', () => {
     await connect(true)
     await postIntake(estimatorPayload({ phone: on, first_name: 'Jane', sms_consent: true, sms_consent_disclosure: '2026-11-13' }))
     await postIntake(estimatorPayload({ phone: unticked }))
-    expect(await queued()).toEqual([expect.objectContaining({ to: e164(on), content: expect.stringMatching(/^Hi Jane, this is Pat at .*Reply STOP to opt out\.$/) })])
+    expect(await queued()).toEqual([expect.objectContaining({ to: e164(on), content: expect.stringMatching(/^Hi Jane, this is .*We'll be in touch.*Reply STOP to opt out\.$/) })])
   })
 })
 

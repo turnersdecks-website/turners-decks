@@ -83,7 +83,7 @@ export default function Estimator() {
     return (
       <div className="mt-8 rounded-xl bg-card p-6 text-center shadow-card md:p-10" role="alert">
         <p className="font-heading text-xl font-semibold text-primary">We couldn't load the estimator right now.</p>
-        <p className="mt-2 text-muted-foreground">Please try again, or call {SITE.ownerFirst} and we'll talk through your project and price over the phone.</p>
+        <p className="mt-2 text-muted-foreground">Please try again, or give us a call and we'll talk through your project and price over the phone.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <LinkButton href={SITE.phoneHref} variant="cta" size="lg"><Phone className="size-4" aria-hidden="true" /> Call {SITE.phone}</LinkButton>
           <Button variant="outline" size="lg" onClick={load}>Try again</Button>
@@ -551,7 +551,7 @@ function ContactStep({ draft, errors, sending, serverError, onSubmit }: {
       <Honeypot />
       <div className="rounded-lg bg-secondary p-4">
         <p className="font-heading font-semibold text-primary">Last step: where should we send your price range?</p>
-        <p className="mt-2 text-sm text-muted-foreground">Your price range and project summary appear on the next screen. {SITE.ownerFirst} gets a copy, to follow up and confirm the price at a free site visit. No sales team, and we never share your details.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Your price range and project summary appear on the next screen. We get a copy too, so we can follow up and confirm the price at a free site visit. No sales team, and we never share your details.</p>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         {([["first_name", "First name", "given-name", "text"], ["last_name", "Last name", "family-name", "text"], ["email", "Email", "email", "email"], ["phone", "Phone", "tel", "tel"]] as const).map(([n, l, ac, t]) => (
@@ -603,7 +603,7 @@ function Result({ est, a, size, done, headingRef }: { est: PublicEstimator; a: A
     return (
       <div className="mt-8 rounded-xl bg-card p-8 text-center shadow-card" role="status">
         <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold focus:outline-none">Thanks, we got it.</h2>
-        <p className="mt-2 text-muted-foreground">{SITE.ownerFirst} will reach out {SITE.responseTime}. Need us sooner? <a href={SITE.phoneHref} className="font-semibold text-accent-blue underline">Call {SITE.phone}</a></p>
+        <p className="mt-2 text-muted-foreground">We'll reach out {SITE.responseTime}. Need us sooner? <a href={SITE.phoneHref} className="font-semibold text-accent-blue underline">Call {SITE.phone}</a></p>
       </div>
     );
   }
@@ -636,7 +636,7 @@ function Result({ est, a, size, done, headingRef }: { est: PublicEstimator; a: A
           <LinkButton href={SITE.phoneHref} variant="cta" size="lg"><Phone className="size-4" aria-hidden="true" /> Call {SITE.phone}</LinkButton>
           <LinkButton href="/gallery" variant="outline" size="lg">See Our Work</LinkButton>
         </div>
-        <p className="mt-4 text-sm text-muted-foreground">{SITE.ownerFirst} has your details and will reach out {SITE.responseTime} to book your free site visit. Want it sooner? Give us a call.</p>
+        <p className="mt-4 text-sm text-muted-foreground">We have your details and will reach out {SITE.responseTime} to book your free site visit. Want it sooner? Give us a call.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
