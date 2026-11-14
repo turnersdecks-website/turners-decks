@@ -56,6 +56,17 @@ describe("payload builders", () => {
     expect(unticked).not.toHaveProperty("sms_consent_disclosure");
   });
 
+  it("sends where the visitor first found us, and this visit's outside arrival instead of our own form page", () => {
+    const first = { t: Date.UTC(2026, 9, 1), landing_page_url: "https://turnersdecks.com/?utm_source=gbp&utm_medium=organic", utm_source: "gbp", utm_medium: "organic" };
+    const session = { t: Date.UTC(2026, 10, 1), landing_page_url: "https://turnersdecks.com/", referring_url: "https://www.google.com/" };
+    const p = quotePayload({ ...contact, project_type: "New deck" }, { ...ctx, href: "https://turnersdecks.com/contact", referrer: "https://turnersdecks.com/", firstTouch: first, sessionTouch: session });
+    expect(p).toMatchObject({ landing_page_url: "https://turnersdecks.com/", referring_url: "https://www.google.com/" });
+    expect(p).not.toHaveProperty("utm_source");
+    expect(JSON.parse((p as Record<string, string>).first_touch)).toEqual({
+      landing_page_url: first.landing_page_url, utm_source: "gbp", utm_medium: "organic", at: "2026-10-01T00:00:00.000Z",
+    });
+  });
+
   it("device type follows the viewport, and a page without tags has no UTM fields", () => {
     expect(attributionFrom({ href: "https://turnersdecks.com/", referrer: "", viewportWidth: 800 })).toEqual({ landing_page_url: "https://turnersdecks.com/", device_type: "tablet" });
     expect(attributionFrom({ href: "", referrer: "", viewportWidth: 1400 })).toEqual({ device_type: "desktop" });

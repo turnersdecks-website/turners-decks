@@ -187,6 +187,7 @@ async function newLead(db: Db, f: { phone: string; source: 'text' | 'phone'; at:
         stage: 'new',
         source: f.source,
         firstSource: f.source,
+        channel: f.source === 'text' ? 'text' : 'call',
         firstTouchJson: JSON.stringify({ channel: f.source, via: 'quo' }),
         message: label,
         customerId,

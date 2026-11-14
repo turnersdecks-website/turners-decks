@@ -19,6 +19,7 @@ import { errorMessage } from '#/lib/errors'
 import { createLead, listPipeline, moveLeadStage } from '#/lib/leads.functions'
 import { CLOSED_STAGES, OPEN_STAGES, STAGES, STAGE_LABELS, STAGE_STYLES, isOpenStage, leadName } from '#/lib/pipeline'
 import { getCompanySettings } from '#/lib/settings.functions'
+import { channelLabel, reportedSource } from '#/lib/lead-origin'
 import { cn } from '#/lib/utils'
 import { readDefaultView } from '#/lib/view-pref.functions'
 import { type BoardView, parseBoardView } from '#/lib/view-pref'
@@ -245,7 +246,9 @@ function LeadBoard({
                         dragId === l.id && 'scale-[0.98] opacity-55',
                       )}
                     >
-                      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{l.source}</p>
+                      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {channelLabel(l.channel)} · {reportedSource(l)}
+                      </p>
                       <h3 className="mt-1 line-clamp-2 text-sm font-semibold">
                         <Link to="/leads/$id" params={{ id: l.id }} className="hover:underline">
                           {leadName(l)}
@@ -310,7 +313,8 @@ function LeadBoard({
 const LEADS_CAP = 2000
 
 function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: string; show: Show }) {
-  const sources = [...new Set(rows.map((l) => l.source))].sort()
+  const channels = [...new Set(rows.map((l) => channelLabel(l.channel)))].sort()
+  const foundVia = [...new Set(rows.map((l) => reportedSource(l)))].sort()
   const towns = [...new Set(rows.map((l) => l.city).filter((v): v is string => !!v))].sort()
   const columns: ColumnDef<BoardLead, unknown>[] = [
     {
@@ -334,7 +338,8 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
       cell: ({ row }) => <Badge variant={row.original.stage === 'won' ? 'success' : 'secondary'}>{STAGE_LABELS[row.original.stage]}</Badge>,
       enableGlobalFilter: false,
     },
-    { accessorKey: 'source', header: 'Source', enableGlobalFilter: false },
+    { id: 'channel', accessorFn: (l) => channelLabel(l.channel), header: 'Came in by', enableGlobalFilter: false },
+    { id: 'foundVia', accessorFn: (l) => reportedSource(l), header: 'Found us via', enableGlobalFilter: false },
     {
       id: 'createdAt',
       accessorFn: (l) => new Date(l.createdAt).getTime(),
@@ -356,7 +361,8 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
       search={{ placeholder: 'Search name, phone, email or town' }}
       facets={[
         ...(stageOptions.length > 1 ? [{ columnId: 'stage', title: 'Stage', options: stageOptions }] : []),
-        { columnId: 'source', title: 'Source', options: sources.map((s) => ({ value: s, label: s })) },
+        { columnId: 'channel', title: 'Came in by', options: channels.map((s) => ({ value: s, label: s })) },
+        { columnId: 'foundVia', title: 'Found us via', options: foundVia.map((s) => ({ value: s, label: s })) },
         ...(towns.length ? [{ columnId: 'city', title: 'Town', options: towns.map((t) => ({ value: t, label: t })) }] : []),
       ]}
       empty={show === 'open' ? 'No open Leads.' : 'No Leads here.'}

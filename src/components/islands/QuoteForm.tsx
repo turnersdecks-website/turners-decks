@@ -6,6 +6,7 @@ import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
 import { fieldErrors, quoteSchema } from "@/lib/quote";
 import { SITE } from "@/lib/site";
+import { readTouches } from "@/lib/visit-touch";
 
 const selectCls = "flex h-12 w-full rounded-lg border px-3 text-base";
 // White fields with dark text on both tones; the navy band drops the field border, as the white fill carries it.
@@ -48,6 +49,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
           href: window.location.href,
           referrer: document.referrer,
           viewportWidth: window.innerWidth,
+          ...readTouches(),
         }),
       );
       setStatus("done");

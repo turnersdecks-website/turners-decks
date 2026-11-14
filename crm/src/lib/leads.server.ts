@@ -1,3 +1,4 @@
+import { originOfLead } from '#/lib/lead-origin'
 import { and, desc, eq, inArray, isNotNull, isNull, like, ne, or, sql } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
 import { PIPELINE_STAGES, type PipelineStage, customers, leadActivity, leadStageChanges, leads, user } from '#/db/schema'
@@ -172,6 +173,8 @@ export async function createLeadRecord(
   const now = new Date()
   const createdAt = imported.receivedAt ? new Date(imported.receivedAt) : now
   const source = imported.source ?? LEAD_SOURCE_MANUAL
+  // How they reached us (lead-origin.ts): an import says it (a past website form, a call); otherwise by hand.
+  const channel = ({ website: 'website', phone: 'call', email: 'email', text: 'text' } as Record<string, string>)[source] ?? 'manual'
   const id = crypto.randomUUID()
   await db.batch([
     db.insert(leads).values({
@@ -181,6 +184,7 @@ export async function createLeadRecord(
       stage: 'new',
       source,
       firstSource: source,
+      channel,
       createdAt,
       updatedAt: now,
     }),
@@ -300,7 +304,7 @@ export async function getLeadDetail(db: Db, leadId: string) {
   const customer = lead.customerId
     ? ((await db.select({ id: customers.id, firstName: customers.firstName, lastName: customers.lastName }).from(customers).where(eq(customers.id, lead.customerId)).get()) ?? null)
     : null
-  return { lead, activity, stageHistory, customer }
+  return { lead, activity, stageHistory, customer, origin: originOfLead(lead) }
 }
 
 /**

@@ -1,3 +1,4 @@
+import { ORIGIN_LABELS, channelLabel } from '#/lib/lead-origin'
 import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { SearchX, Trash2, UserRound } from 'lucide-react'
 import { useState, type ComponentType, type ReactNode } from 'react'
@@ -198,7 +199,16 @@ function LeadDetail() {
       />
     )
   }
-  const { lead, activity, stageHistory, customer } = found
+  const { lead, activity, stageHistory, customer, origin } = found
+  // The page they first landed on (first touch), as a path: where the website visit started.
+  const firstPage = (() => {
+    try {
+      const t = JSON.parse(lead.firstTouchJson ?? lead.attributionJson ?? 'null') as { landing_page_url?: string } | null
+      return t?.landing_page_url ? new URL(t.landing_page_url).pathname : null
+    } catch {
+      return null
+    }
+  })()
   // `sync` waits for the new loader data. A plain invalidate() reloads stale-while-revalidate: it can resolve with the
   // old data while the reload is still pending, and the Homeowner card would adopt the old fields after a Save.
   const refresh = () => router.invalidate({ sync: true })
@@ -311,7 +321,7 @@ function LeadDetail() {
                 timeZone={timeZone}
                 busy={busy}
                 onStage={(stage) =>
-                  run(() => moveLeadStage({ data: { leadId: lead.id, stage } }), stage === 'won' ? 'Won. Added to Customers with a new Job.' : undefined)
+                  run(() => moveLeadStage({ data: { leadId: lead.id, stage } }), stage === 'won' ? 'Won. Added to Contacts as a Customer, with a new Job.' : undefined)
                 }
                 refresh={refresh}
               />
@@ -319,8 +329,10 @@ function LeadDetail() {
 
             <aside className="min-w-0 self-start overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xs xl:sticky xl:top-6">
               <RailSection label="Lead details">
-                <RailRow label="Source">{lead.source}</RailRow>
-                <RailRow label="First source">{lead.firstSource}</RailRow>
+                <RailRow label="Came in by">{channelLabel(lead.channel)}</RailRow>
+                <RailRow label="Found us via">{ORIGIN_LABELS[origin]}</RailRow>
+                {lead.howFound && <RailRow label="They said">{lead.howFound}</RailRow>}
+                {firstPage && <RailRow label="First page">{firstPage}</RailRow>}
                 <RailRow label="Created">{formatWhen(lead.createdAt, timeZone)}</RailRow>
                 {lead.leadScore != null && <RailRow label="Lead score">{lead.leadScore}</RailRow>}
               </RailSection>

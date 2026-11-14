@@ -8,6 +8,7 @@
 // The payload builders and submitToCrm use no Astro or browser globals: crm/test/intake-contract.test.ts runs them
 // against the real intake inside the CRM's Workers test runtime.
 import { SMS_CONSENT_VERSION } from "./sms-consent";
+import { TOUCH_PARAMS, type Touch } from "./visit-touch";
 import { parsePublicEstimator, parsePublicResult, type Answers, type PublicEstimator, type PublicResult } from "./estimator-public";
 
 /** Build-time settings (`.env.example`). Empty when the CRM is not configured for this build. */
@@ -28,6 +29,9 @@ export type PayloadContext = {
   href: string;
   referrer: string;
   viewportWidth: number;
+  /** Where they first found us and what brought them this visit (visit-touch.ts). Optional: older callers omit them. */
+  firstTouch?: Touch | null;
+  sessionTouch?: Touch | null;
 };
 
 export type ContactFields = {
@@ -54,20 +58,30 @@ export type EstimatorContact = ContactFields & {
 
 export type EstimatorAnswers = { version: number; answers: Answers; defaulted: string[] };
 
-/** UTM and click ids on the landing URL, plus page, referrer and device type. */
-export function attributionFrom(ctx: Pick<PayloadContext, "href" | "referrer" | "viewportWidth">): Record<string, string> {
+/**
+ * This visit's attribution: the session touch (where they arrived from outside this visit) when the site recorded one,
+ * else the form page's own tags and referrer. Plus device type.
+ */
+export function attributionFrom(ctx: Pick<PayloadContext, "href" | "referrer" | "viewportWidth" | "sessionTouch">): Record<string, string> {
+  const w = ctx.viewportWidth;
+  const device = { device_type: w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop" };
+  if (ctx.sessionTouch?.landing_page_url) return { ...touchFields(ctx.sessionTouch), ...device };
   let params = new URLSearchParams();
   try {
     params = new URL(ctx.href).searchParams;
   } catch { /* not a URL: no tags */ }
-  const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"];
-  const w = ctx.viewportWidth;
   return {
-    ...Object.fromEntries(keys.flatMap((k) => (params.get(k) ? [[k, params.get(k)!.slice(0, 200)]] : []))),
+    ...Object.fromEntries(TOUCH_PARAMS.flatMap((k) => (params.get(k) ? [[k, params.get(k)!.slice(0, 200)]] : []))),
     ...(ctx.href ? { landing_page_url: ctx.href.slice(0, 500) } : {}),
     ...(ctx.referrer ? { referring_url: ctx.referrer.slice(0, 500) } : {}),
-    device_type: w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop",
+    ...device,
   };
+}
+
+/** A touch's tags, landing page and outside referrer, trimmed (no timestamp). */
+function touchFields(t: Touch): Record<string, string> {
+  const keys = [...TOUCH_PARAMS, "landing_page_url", "referring_url"] as const;
+  return Object.fromEntries(keys.flatMap((k) => (typeof t[k] === "string" && t[k] ? [[k, t[k]!.slice(0, k.endsWith("url") ? 500 : 200)]] : [])));
 }
 
 const trimmed = (v: string | undefined, max: number) => (v ?? "").trim().slice(0, max);
@@ -89,6 +103,8 @@ const envelope = (ctx: PayloadContext) => ({
   submission_key: ctx.submissionKey,
   turnstile_token: ctx.turnstileToken,
   ...attributionFrom(ctx),
+  // Where they first found us; the CRM works out the Lead's origin from it (crm/src/lib/lead-origin.ts).
+  ...(ctx.firstTouch?.landing_page_url ? { first_touch: JSON.stringify({ ...touchFields(ctx.firstTouch), ...(ctx.firstTouch.t ? { at: new Date(ctx.firstTouch.t).toISOString() } : {}) }) } : {}),
 });
 
 /** The quote form's JSON body. Pure. */
