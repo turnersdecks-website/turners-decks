@@ -103,6 +103,10 @@
 			"kv_namespaces": [{ "binding": "OAUTH_KV", "id": "00000000000000000000000000000000" }]
 		},
 		"staging": {
+			// The CRM's real address (moved 2026-11-14, turnersdecks.com DNS on Cloudflare). workers.dev stays on so photo
+			// links and home screens made before the move keep working. BETTER_AUTH_URL is https://crm.turnersdecks.com.
+			"routes": [{ "pattern": "crm.turnersdecks.com", "custom_domain": true }],
+			"workers_dev": true,
 			"secrets": {
 				"required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "SEED_ADMIN_EMAIL", "SEED_ADMIN_PASSWORD", "TURNSTILE_SECRET_KEY"]
 			},
