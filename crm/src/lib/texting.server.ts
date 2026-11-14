@@ -55,6 +55,11 @@ export function leadReplyText(firstName: string | null, company: string) {
   return `Hi ${name}, this is ${company}. Thanks for your request! We'll be in touch soon to set up your free estimate. You can text us at this number anytime. Reply STOP to opt out.`
 }
 
+/** The automatic reply to the first text from a number we don't know (they reached out, so they can be answered). */
+export function firstTextReplyText(company: string) {
+  return `Hi, this is ${company}. Thanks for your text! We got it and will get back to you soon. Reply STOP to opt out.`
+}
+
 /** Settings > Texting, for admins. Never includes the signing secret. */
 export async function readTextingSettings(db: Db, env: TextingEnv & { BETTER_AUTH_URL: string }) {
   const [conn, settings, status] = await Promise.all([
