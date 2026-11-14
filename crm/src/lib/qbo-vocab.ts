@@ -23,7 +23,8 @@ export const QBO_ENTITY_LABELS: Record<QboEntity, string> = {
   Payment: 'Payment received',
 }
 
-export const ASSIGNMENTS = ['job', 'overhead'] as const
+/** 'ignored': not a Job cost or payment (gas, insurance, software...). Overhead may get its own place later. */
+export const ASSIGNMENTS = ['job', 'ignored'] as const
 export type Assignment = (typeof ASSIGNMENTS)[number]
 
 /** A Job's money from QuickBooks. Costs net of credits; revenue = invoiced net of credit memos; payments separate. */

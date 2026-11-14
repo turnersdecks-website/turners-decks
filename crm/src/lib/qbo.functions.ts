@@ -19,22 +19,22 @@ export const syncQboNow = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .handler(() => syncQuickBooks(getDb(env.DB), env))
 
-/** Any Staff: transactions, filtered (Unassigned / On a Job / Overhead / All, dates, search). */
+/** Any Staff: transactions, filtered (To sort / On a Job / Ignored / All, dates, search). */
 export const listQboTransactions = createServerFn({ method: 'GET' })
   .middleware([requireStaff])
   .validator((data: TxnFilter) => record(data))
   .handler(({ data }) => listTransactions(getDb(env.DB), data as TxnFilter))
 
-/** Any Staff: put transactions on a Job, mark them overhead, or unsort them. QuickBooks is not changed. */
+/** Any Staff: put transactions on a Job, ignore them, or unsort them. QuickBooks is not changed. */
 export const assignQboTransactions = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
-  .validator((data: { ids: string[]; to: 'job' | 'overhead' | 'unassigned'; jobId?: string | null }) => record(data))
+  .validator((data: { ids: string[]; to: 'job' | 'ignored' | 'unassigned'; jobId?: string | null }) => record(data))
   .handler(({ data, context: { staff } }) =>
     assignTransactions(
       getDb(env.DB),
       {
         ids: Array.isArray(data.ids) ? (data.ids as string[]) : [],
-        to: data.to === 'job' || data.to === 'overhead' ? data.to : 'unassigned',
+        to: data.to === 'job' || data.to === 'ignored' ? data.to : 'unassigned',
         jobId: typeof data.jobId === 'string' ? data.jobId : null,
       },
       staff.id,

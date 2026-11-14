@@ -148,7 +148,7 @@ describe('the sync', () => {
       env.DB.prepare("INSERT INTO qbo_transactions (id, entity, qbo_id, kind, txn_date, amount_cents, deleted, synced_at) VALUES (?, 'Purchase', ?, 'cost', '2026-02-01', 100, 0, ?)").bind(`Purchase:b${i}`, `b${i}`, now),
     )
     await env.DB.batch(stmts)
-    const res = await assignTransactions(db(), { ids: stmts.map((_, i) => `Purchase:b${i}`), to: 'overhead' }, 'staff-1')
+    const res = await assignTransactions(db(), { ids: stmts.map((_, i) => `Purchase:b${i}`), to: 'ignored' }, 'staff-1')
     expect(res.updated).toBe(250)
   })
 
@@ -198,16 +198,16 @@ describe("a Job's money", () => {
     expect(jobTotals([{ kind: 'revenue', amountCents: 5000 }]).marginPct).toBeNull()
   })
 
-  it('overhead and unsorting work, and a Job shows only its own transactions', async () => {
+  it('ignoring and unsorting work, and a Job shows only its own transactions', async () => {
     const lee = await job('Lu', 'Leeward')
     const intuit = fakeIntuit({ query: { Purchase: [{ Id: '11', TxnDate: '2026-10-01', TotalAmt: 300 }, { Id: '12', TxnDate: '2026-10-01', TotalAmt: 20 }] } })
     await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: intuit.fetch, now: () => T0 })
     await syncQuickBooks(db(), qEnv, { fetch: intuit.fetch, now: () => T0 })
     await assignTransactions(db(), { ids: ['Purchase:11'], to: 'job', jobId: lee }, 'claude:staff-1')
-    await assignTransactions(db(), { ids: ['Purchase:12'], to: 'overhead' }, 'staff-1')
+    await assignTransactions(db(), { ids: ['Purchase:12'], to: 'ignored' }, 'staff-1')
 
     expect((await jobFinancials(db(), lee)).totals.costCents).toBe(30000)
-    expect(await txn('Purchase:12')).toMatchObject({ assignment: 'overhead', job_id: null })
+    expect(await txn('Purchase:12')).toMatchObject({ assignment: 'ignored', job_id: null })
     await assignTransactions(db(), { ids: ['Purchase:12'], to: 'unassigned' }, 'staff-1')
     expect(await txn('Purchase:12')).toMatchObject({ assignment: null })
     await expect(assignTransactions(db(), { ids: ['Purchase:11'], to: 'job', jobId: 'nope' }, 'staff-1')).rejects.toMatchObject({ status: 404 })
@@ -242,15 +242,15 @@ describe('the P&L', () => {
     await env.DB.batch([
       add('Invoice:p1', 'revenue', '2026-03-10', 10000, 'job', jobId),
       add('Purchase:p2', 'cost', '2026-02-05', 3000, 'job', jobId),
-      add('Purchase:p3', 'cost', '2026-03-02', 1000, 'overhead', null),
+      add('Purchase:p3', 'cost', '2026-03-02', 1000, 'ignored', null),
       add('Purchase:p4', 'cost', '2026-03-03', 500, null, null),
       add('Payment:p5', 'payment', '2026-03-15', 10000, 'job', jobId),
-      add('Purchase:p6', 'cost', '2025-12-30', 999, 'overhead', null),
+      add('Purchase:p6', 'cost', '2025-12-30', 999, 'ignored', null),
     ])
     const pnl = await profitAndLoss(db(), 2026)
     expect(pnl.months).toHaveLength(12)
     expect(pnl.months[1]).toMatchObject({ month: '2026-02', jobCostCents: 3000 })
-    expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, overheadCents: 1000, unsortedCents: 500, paidCents: 10000 })
+    expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, unsortedCents: 500, paidCents: 10000 })
     expect(pnl.completedJobs).toEqual([expect.objectContaining({ id: jobId, revenueCents: 10000, costCents: 3000 })])
     expect((await profitAndLoss(db(), 2025)).completedJobs).toEqual([])
   })

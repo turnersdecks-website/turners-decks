@@ -394,8 +394,8 @@ export async function autoMatch(db: Db): Promise<number> {
   return matched
 }
 
-/** Staff (or Claude) sort transactions: onto a Job, as overhead, or back to unsorted. */
-export async function assignTransactions(db: Db, input: { ids: string[]; to: 'job' | 'overhead' | 'unassigned'; jobId?: string | null }, by: string) {
+/** Staff (or Claude) sort transactions: onto a Job, ignored (not a Job cost or payment), or back to unsorted. */
+export async function assignTransactions(db: Db, input: { ids: string[]; to: 'job' | 'ignored' | 'unassigned'; jobId?: string | null }, by: string) {
   const ids = [...new Set(input.ids)].filter((x) => typeof x === 'string' && x.length <= 100)
   if (!ids.length || ids.length > 500) throw badRequest('Pick 1 to 500 transactions.')
   if (input.to === 'job') {
@@ -404,8 +404,8 @@ export async function assignTransactions(db: Db, input: { ids: string[]; to: 'jo
   const set =
     input.to === 'job'
       ? { assignment: 'job', jobId: input.jobId!, assignedBy: by, assignedAt: new Date() }
-      : input.to === 'overhead'
-        ? { assignment: 'overhead', jobId: null, assignedBy: by, assignedAt: new Date() }
+      : input.to === 'ignored'
+        ? { assignment: 'ignored', jobId: null, assignedBy: by, assignedAt: new Date() }
         : { assignment: null, jobId: null, assignedBy: null, assignedAt: null }
   // D1 allows 100 bound values per statement: 90 ids plus the 4 set values per update, all in one batch.
   const chunks: string[][] = []
@@ -415,13 +415,13 @@ export async function assignTransactions(db: Db, input: { ids: string[]; to: 'jo
   return { updated: res.reduce((n, r) => n + r.length, 0) }
 }
 
-export type TxnFilter = { show?: 'unassigned' | 'job' | 'overhead' | 'all'; jobId?: string | null; from?: string | null; to?: string | null; search?: string | null; limit?: number }
+export type TxnFilter = { show?: 'unassigned' | 'job' | 'ignored' | 'all'; jobId?: string | null; from?: string | null; to?: string | null; search?: string | null; limit?: number }
 
 export async function listTransactions(db: Db, f: TxnFilter = {}) {
   const conds = [eq(qboTransactions.deleted, false)]
   if (f.jobId) conds.push(eq(qboTransactions.jobId, f.jobId))
   else if (f.show === 'unassigned') conds.push(isNull(qboTransactions.assignment))
-  else if (f.show === 'job' || f.show === 'overhead') conds.push(eq(qboTransactions.assignment, f.show))
+  else if (f.show === 'job' || f.show === 'ignored') conds.push(eq(qboTransactions.assignment, f.show))
   if (f.from) conds.push(sql`${qboTransactions.txnDate} >= ${f.from}`)
   if (f.to) conds.push(sql`${qboTransactions.txnDate} <= ${f.to}`)
   const q = f.search?.trim().toLowerCase()
@@ -489,11 +489,11 @@ export async function disconnectQuickBooks(db: Db, env: QboEnv, deps: QboDeps = 
 
 // ---------------------------------------------------------------------------
 // Profit and loss for a year (the P&L page). Money is counted by QuickBooks transaction date: revenue is invoiced net of
-// credit memos; costs are net of vendor credits, split by how Staff sorted them (on a Job, overhead, not sorted yet).
+// credit memos; costs are net of vendor credits, split by how Staff sorted them (on a Job, not sorted yet; ignored ones are left out).
 // Payments received are shown apart and never added to revenue. Completed Jobs are those marked done with a finish
 // date in the year; their figures are every transaction sorted onto them, whatever its date.
 
-export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; overheadCents: number; unsortedCents: number; paidCents: number }
+export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; unsortedCents: number; paidCents: number }
 
 export async function profitAndLoss(db: Db, year: number) {
   const y = String(Math.trunc(year))
@@ -502,7 +502,6 @@ export async function profitAndLoss(db: Db, year: number) {
       month: sql<string>`substr(${qboTransactions.txnDate}, 1, 7)`,
       revenueCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'revenue' THEN ${qboTransactions.amountCents} WHEN 'revenue_credit' THEN -${qboTransactions.amountCents} ELSE 0 END), 0)`,
       jobCostCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'job' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
-      overheadCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'overhead' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
       unsortedCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} IS NULL THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
       paidCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'payment' THEN ${qboTransactions.amountCents} ELSE 0 END), 0)`,
     })
@@ -513,7 +512,7 @@ export async function profitAndLoss(db: Db, year: number) {
   const months: PnlMonth[] = Array.from({ length: 12 }, (_, i) => {
     const month = `${y}-${String(i + 1).padStart(2, '0')}`
     const m = byMonth.get(month)
-    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, overheadCents: m?.overheadCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
+    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
   })
   const completedJobs = await db
     .select({
