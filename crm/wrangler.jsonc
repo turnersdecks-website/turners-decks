@@ -24,6 +24,11 @@
  * and declared for env.development only: with no key no text is sent and texts stay queued. It is also what
  * Settings > Texting uses to connect the Quo number and make the webhook (/api/public/quo-webhook).
  *
+ * QuickBooks (docs/adr/0006-quickbooks-sync.md): QBO_CLIENT_ID and QBO_CLIENT_SECRET are secrets from the Intuit
+ * developer app (optional, like RESEND_API_KEY: without them Settings > QuickBooks says what to add). Optional var
+ * QBO_ENVIRONMENT=sandbox points at an Intuit sandbox company. The 09:17 UTC cron (about 4 or 5 AM Eastern) runs
+ * the nightly sync.
+ *
  * Quote files (src/lib/lead-files.server.ts): LEAD_FILES is one private R2 bucket per environment, never public
  * (no r2.dev URL, no custom domain): turners-decks-crm-files (production), -staging, -dev (local; Miniflare simulates
  * it under .wrangler/ and the tests use the top-level binding). Files are served only through /api/lead-files/<id>
@@ -49,7 +54,7 @@
 		{ "name": "INTAKE_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
 		{ "name": "AUTH_RATE_LIMITER", "namespace_id": "2001", "simple": { "limit": 5, "period": 60 } }
 	],
-	"triggers": { "crons": ["*/5 * * * *"] },
+	"triggers": { "crons": ["*/5 * * * *", "17 9 * * *"] },
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -76,7 +81,9 @@
 					"SEED_ADMIN_PASSWORD",
 					"TURNSTILE_SECRET_KEY",
 					"RESEND_API_KEY",
-					"QUO_API_KEY"
+					"QUO_API_KEY",
+					"QBO_CLIENT_ID",
+					"QBO_CLIENT_SECRET"
 				]
 			},
 			"vars": { "ENVIRONMENT": "development", "INTAKE_ALLOWED_ORIGINS": "http://localhost:4321" },

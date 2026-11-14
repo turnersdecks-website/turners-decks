@@ -316,6 +316,8 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
   const channels = [...new Set(rows.map((l) => channelLabel(l.channel)))].sort()
   const foundVia = [...new Set(rows.map((l) => reportedSource(l)))].sort()
   const towns = [...new Set(rows.map((l) => l.city).filter((v): v is string => !!v))].sort()
+  const yearOf = (d: Date | string) => new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric' }).format(new Date(d))
+  const years = [...new Set(rows.map((l) => yearOf(l.createdAt)))].sort().reverse()
   const columns: ColumnDef<BoardLead, unknown>[] = [
     {
       id: 'name',
@@ -340,6 +342,8 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
     },
     { id: 'channel', accessorFn: (l) => channelLabel(l.channel), header: 'Came in by', enableGlobalFilter: false },
     { id: 'foundVia', accessorFn: (l) => reportedSource(l), header: 'Found us via', enableGlobalFilter: false },
+    // Hidden; there for the Year filter (company timezone).
+    { id: 'year', accessorFn: (l) => yearOf(l.createdAt), header: 'Year', enableGlobalFilter: false, enableHiding: false },
     {
       id: 'createdAt',
       accessorFn: (l) => new Date(l.createdAt).getTime(),
@@ -360,6 +364,7 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
       rowProps={(l) => ({ 'data-stage': l.stage })}
       search={{ placeholder: 'Search name, phone, email or town' }}
       facets={[
+        ...(years.length > 1 ? [{ columnId: 'year', title: 'Year', options: years.map((y) => ({ value: y, label: y })) }] : []),
         ...(stageOptions.length > 1 ? [{ columnId: 'stage', title: 'Stage', options: stageOptions }] : []),
         { columnId: 'channel', title: 'Came in by', options: channels.map((s) => ({ value: s, label: s })) },
         { columnId: 'foundVia', title: 'Found us via', options: foundVia.map((s) => ({ value: s, label: s })) },
@@ -367,6 +372,7 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
       ]}
       empty={show === 'open' ? 'No open Leads.' : 'No Leads here.'}
       cap={LEADS_CAP}
+      initialColumnVisibility={{ year: false }}
     />
   )
 }

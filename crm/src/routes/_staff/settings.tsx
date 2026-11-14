@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Camera, Mail, MessageSquare, Save, UserRound } from 'lucide-react'
+import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import { Building2, Camera, Mail, MessageSquare, Receipt, Save, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -17,6 +17,7 @@ import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, u
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { type TemplateKey, templateDef } from '#/lib/email-templates'
 import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
+import { getQboStatus, syncQboNow } from '#/lib/qbo.functions'
 import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/lib/texting.functions'
 import { prettyPhone } from '#/lib/phone'
 import { cn } from '#/lib/utils'
@@ -41,6 +42,7 @@ const SECTIONS = [
   { id: 'company', title: 'Company', icon: Building2 },
   { id: 'email-templates', title: 'Customer email templates', icon: Mail },
   { id: 'texting', title: 'Texting (Quo)', icon: MessageSquare },
+  { id: 'quickbooks', title: 'QuickBooks', icon: Receipt },
   { id: 'photo-home', title: 'Photo home screen', icon: Camera },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id']
@@ -282,6 +284,7 @@ function AdminSettings() {
 
       <EmailTemplatesSection calculatorTemplate={settings.estimateEmailTemplate} />
       <TextingSection businessNumber={settings.businessNumber} />
+      <QuickBooksSection />
       <PhotoHomeSection />
     </>
   )
@@ -441,6 +444,98 @@ function CalculatorEmailCard({ template: saved }: { template: string }) {
 }
 
 type PhotoDevice = Awaited<ReturnType<typeof listPhotoDevices>>[number]
+
+type QboStatus = Awaited<ReturnType<typeof getQboStatus>>
+
+const QBO_RESULTS: Record<string, [ok: boolean, text: string]> = {
+  connected: [true, 'QuickBooks connected. The first sync is running; reload in a minute.'],
+  declined: [false, 'QuickBooks was not connected (you cancelled on the Intuit page).'],
+  expired: [false, 'That sign-in link expired. Click Connect QuickBooks again.'],
+  failed: [false, 'QuickBooks did not accept the connection. Check the app keys, then try again.'],
+  'missing-keys': [false, 'Add QBO_CLIENT_ID and QBO_CLIENT_SECRET to the CRM first.'],
+}
+
+/**
+ * QuickBooks (docs/adr/0006-quickbooks-sync.md): connect once; transactions sync every night (and on Sync now) and
+ * are sorted onto Jobs on the Transactions page. Read only: nothing is written to QuickBooks.
+ */
+function QuickBooksSection() {
+  const [st, setSt] = useState<QboStatus | null>(null)
+  const [busy, setBusy] = useState(false)
+  const load = async () => {
+    try {
+      setSt(await getQboStatus())
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    }
+  }
+  useEffect(() => {
+    void load()
+    const result = new URLSearchParams(window.location.search).get('qbo')
+    const msg = result ? QBO_RESULTS[result] : undefined
+    if (msg) (msg[0] ? toast.success : toast.error)(msg[1])
+  }, [])
+
+  async function sync() {
+    setBusy(true)
+    try {
+      const r = await syncQboNow()
+      toast.success(`Synced: ${r.saved} transactions read, ${r.matched} put on Jobs automatically.`)
+      await load()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ContentSection id="quickbooks" title="QuickBooks" description="Transactions copy into the CRM every night, so Jobs show their costs and invoices, and Claude can read them. Nothing is written to QuickBooks.">
+      {!st ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <Card className="shadow-xs">
+          <CardContent className="space-y-4 p-4 text-sm sm:p-6">
+            {!st.hasKeys ? (
+              <p className="text-muted-foreground">
+                Add the Intuit app keys to this CRM in Cloudflare as secrets named QBO_CLIENT_ID and QBO_CLIENT_SECRET, then come back. The app's redirect URI must be{' '}
+                <span className="font-mono text-xs break-all select-all">{st.redirectUri}</span>
+              </p>
+            ) : st.connected ? (
+              <div className="space-y-1">
+                <p>
+                  Connected on {new Date(st.connected.connectedAt).toLocaleDateString()}. {st.transactions} transactions,{' '}
+                  <Link to="/transactions" className="underline">
+                    {st.unassigned} to sort
+                  </Link>
+                  .
+                </p>
+                <p className="text-muted-foreground">Last sync: {st.lastSyncAt ? new Date(st.lastSyncAt).toLocaleString() : 'not yet'}</p>
+                {st.lastSyncError && <p className="text-destructive">Last sync failed: {st.lastSyncError}</p>}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">Not connected yet.</p>
+            )}
+            {st.hasKeys && (
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant={st.connected ? 'outline' : 'default'} size="sm">
+                  <a href="/api/qbo/connect">{st.connected ? 'Reconnect QuickBooks' : 'Connect QuickBooks'}</a>
+                </Button>
+                {st.connected && (
+                  <Button size="sm" variant="outline" disabled={busy} onClick={sync}>
+                    {busy ? 'Syncing…' : 'Sync now'}
+                  </Button>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Redirect URI for the Intuit app: <span className="font-mono break-all select-all">{st.redirectUri}</span></p>
+          </CardContent>
+        </Card>
+      )}
+    </ContentSection>
+  )
+}
 
 type TextingSettings = Awaited<ReturnType<typeof getTextingSettings>>
 

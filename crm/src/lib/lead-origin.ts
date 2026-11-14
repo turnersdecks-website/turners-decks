@@ -9,8 +9,8 @@ export const CHANNELS = ['estimator', 'quote_form', 'website', 'text', 'call', '
 export type Channel = (typeof CHANNELS)[number]
 export const CHANNEL_LABELS: Record<Channel, string> = {
   estimator: 'Price estimator',
-  quote_form: 'Quote form',
-  website: 'Website (form not recorded)',
+  quote_form: 'Website form',
+  website: 'Website (which form unknown)',
   text: 'Text',
   call: 'Phone call',
   email: 'Email',

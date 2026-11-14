@@ -60,5 +60,8 @@ describe('a website Lead records its form and where they first found us', () => 
     const report = await SELF.fetch(`${BASE}/lead-sources`, { headers: { cookie } }).then((r) => r.text())
     expect(report).toMatch(/data-source="Google Business Profile"/)
     expect(report).toMatch(/data-source="Price estimator"/)
+    // Another year has its own report; this Lead is not in it.
+    const earlier = await SELF.fetch(`${BASE}/lead-sources?year=2001`, { headers: { cookie } }).then((r) => r.text())
+    expect(earlier).toMatch(/No Leads in (<!-- -->)?2001/)
   })
 })

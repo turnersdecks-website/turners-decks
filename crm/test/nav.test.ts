@@ -6,7 +6,7 @@ const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.m
 describe('sidebar navigation', () => {
   it('shows Staff Contacts, Leads, Jobs and Estimator settings, without admin-only items', () => {
     expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['CRM', 'Company'])
-    expect(titles('staff')).toEqual(['Contacts', 'Leads', 'Jobs', 'Lead sources', 'Estimator settings'])
+    expect(titles('staff')).toEqual(['Contacts', 'Leads', 'Jobs', 'Transactions', 'Lead sources', 'Estimator settings'])
   })
 
   it('shows an admin Company settings and Submissions as well', () => {
@@ -22,7 +22,7 @@ describe('sidebar navigation', () => {
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/contacts', '/leads', '/jobs', '/lead-sources', '/settings', '/settings/estimator', '/submissions'])
+    expect(urls).toEqual(['/contacts', '/leads', '/jobs', '/transactions', '/lead-sources', '/settings', '/settings/estimator', '/submissions'])
   })
 
   it('marks an item active on its path and sub-paths: Leads on a Lead page, Contacts on a Customer page', () => {

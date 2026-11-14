@@ -39,6 +39,7 @@ import {
   updateLeadRecord,
 } from '#/lib/leads.server'
 import { readCompanySettings, saveCompanySettings } from '#/lib/settings.server'
+import { assignTransactions, jobFinancials, listTransactions, qboStatus } from '#/lib/qbo.server'
 import type { McpProps } from '#/mcp/oauth'
 
 // The CRM's MCP tools (GLOSSARY words throughout). Each call runs as the Staff member who connected (McpProps),
@@ -732,6 +733,92 @@ function buildServer(env: Env, staff: Staff) {
           }
           return { ...r, body }
         })
+      }),
+  )
+
+
+  // QuickBooks (docs/adr/0006-quickbooks-sync.md) ------------------------------------------------------------
+  // Transactions synced nightly from QuickBooks (read only there). Money in dollars. kind: cost, cost_credit,
+  // revenue (invoice / sales receipt), revenue_credit (credit memo), payment (paid against invoices; not revenue).
+
+  const txnView = (r: Awaited<ReturnType<typeof listTransactions>>[number]) => {
+    const { amountCents, linesJson, syncedAt: _s, qboUpdatedAt: _u, deleted: _d, ...rest } = r
+    let lines: { account: string | null; description: string | null; amountCents: number }[] = []
+    try {
+      lines = linesJson ? JSON.parse(linesJson) : []
+    } catch {
+      lines = []
+    }
+    return { ...rest, amount: amountCents / 100, lines: lines.map(({ amountCents: c, ...l }) => ({ ...l, amount: c / 100 })) }
+  }
+
+  server.registerTool(
+    'list_transactions',
+    {
+      title: 'List QuickBooks transactions',
+      description:
+        'QuickBooks transactions synced into the CRM (expenses, bills, vendor credits, invoices, sales receipts, credit memos, payments), newest first. ' +
+        'show: unassigned (not sorted yet), job, overhead or all; or one Job. Dates are YYYY-MM-DD. search matches vendor/customer, memo, account and line text. ' +
+        'suggestedJobId is the CRM\'s guess for an unsorted cost.',
+      inputSchema: {
+        show: z.enum(['unassigned', 'job', 'overhead', 'all']).optional(),
+        jobId: id.optional(),
+        from: isoDate.optional(),
+        to: isoDate.optional(),
+        search: z.string().max(100).optional(),
+        limit: z.number().int().min(1).max(2000).optional(),
+      },
+      annotations: READ,
+    },
+    (a) => run(async () => (await listTransactions(db, { show: a.show ?? 'all', jobId: a.jobId, from: a.from, to: a.to, search: a.search, limit: a.limit ?? 200 })).map(txnView)),
+  )
+
+  server.registerTool(
+    'assign_transactions',
+    {
+      title: 'Sort QuickBooks transactions',
+      description:
+        'Put transactions on a Job (to: job, with jobId), mark them overhead (not for any Job), or unsort them. Only changes the CRM; QuickBooks is never changed. ' +
+        'Use search_leads / get_customer / list_jobs to find the right Job; when unsure which Job a cost belongs to, ask instead of guessing.',
+      inputSchema: { transactionIds: z.array(z.string().max(100)).min(1).max(500), to: z.enum(['job', 'overhead', 'unassigned']), jobId: id.optional() },
+      annotations: WRITE,
+    },
+    (a) => run(() => assignTransactions(db, { ids: a.transactionIds, to: a.to, jobId: a.jobId ?? null }, `claude:${staff.id}`)),
+  )
+
+  server.registerTool(
+    'job_financials',
+    {
+      title: 'A Job\'s money from QuickBooks',
+      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, invoiced minus costs; plus the transactions.',
+      inputSchema: { jobId: id },
+      annotations: READ,
+    },
+    (a) =>
+      run(async () => {
+        const f = await jobFinancials(db, a.jobId)
+        return {
+          costs: f.totals.costCents / 100,
+          invoiced: f.totals.revenueCents / 100,
+          paid: f.totals.paidCents / 100,
+          invoicedMinusCosts: f.totals.profitCents / 100,
+          transactions: f.transactions.map(txnView),
+        }
+      }),
+  )
+
+  server.registerTool(
+    'quickbooks_status',
+    {
+      title: 'QuickBooks sync status',
+      description: 'Whether QuickBooks is connected, when it last synced, any sync error, and how many transactions are still unsorted.',
+      inputSchema: {},
+      annotations: READ,
+    },
+    () =>
+      run(async () => {
+        const st = await qboStatus(db, env)
+        return { connected: Boolean(st.connected), lastSyncAt: st.lastSyncAt ? new Date(st.lastSyncAt).toISOString() : null, lastSyncError: st.lastSyncError, transactions: st.transactions, unsorted: st.unassigned }
       }),
   )
 
