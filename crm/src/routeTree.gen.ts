@@ -23,6 +23,7 @@ import { Route as StaffJobsRouteImport } from './routes/_staff/jobs'
 import { Route as StaffLeadSourcesRouteImport } from './routes/_staff/lead-sources'
 import { Route as StaffLeadsRouteImport } from './routes/_staff/leads'
 import { Route as StaffProfileRouteImport } from './routes/_staff/profile'
+import { Route as StaffProfitLossRouteImport } from './routes/_staff/profit-loss'
 import { Route as StaffProjectsRouteImport } from './routes/_staff/projects'
 import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
 import { Route as StaffSubmissionsRouteImport } from './routes/_staff/submissions'
@@ -115,6 +116,11 @@ const StaffLeadsRoute = StaffLeadsRouteImport.update({
 const StaffProfileRoute = StaffProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffProfitLossRoute = StaffProfitLossRouteImport.update({
+  id: '/profit-loss',
+  path: '/profit-loss',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffProjectsRoute = StaffProjectsRouteImport.update({
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/lead-sources': typeof StaffLeadSourcesRoute
   '/leads': typeof StaffLeadsRoute
   '/profile': typeof StaffProfileRoute
+  '/profit-loss': typeof StaffProfitLossRoute
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/lead-sources': typeof StaffLeadSourcesRoute
   '/leads': typeof StaffLeadsRoute
   '/profile': typeof StaffProfileRoute
+  '/profit-loss': typeof StaffProfitLossRoute
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/_staff/lead-sources': typeof StaffLeadSourcesRoute
   '/_staff/leads': typeof StaffLeadsRoute
   '/_staff/profile': typeof StaffProfileRoute
+  '/_staff/profit-loss': typeof StaffProfitLossRoute
   '/_staff/projects': typeof StaffProjectsRoute
   '/_staff/settings': typeof StaffSettingsRoute
   '/_staff/submissions': typeof StaffSubmissionsRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/lead-sources'
     | '/leads'
     | '/profile'
+    | '/profit-loss'
     | '/projects'
     | '/settings'
     | '/submissions'
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/lead-sources'
     | '/leads'
     | '/profile'
+    | '/profit-loss'
     | '/projects'
     | '/settings'
     | '/submissions'
@@ -451,6 +462,7 @@ export interface FileRouteTypes {
     | '/_staff/lead-sources'
     | '/_staff/leads'
     | '/_staff/profile'
+    | '/_staff/profit-loss'
     | '/_staff/projects'
     | '/_staff/settings'
     | '/_staff/submissions'
@@ -597,6 +609,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof StaffProfileRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/profit-loss': {
+      id: '/_staff/profit-loss'
+      path: '/profit-loss'
+      fullPath: '/profit-loss'
+      preLoaderRoute: typeof StaffProfitLossRouteImport
       parentRoute: typeof StaffRoute
     }
     '/_staff/projects': {
@@ -778,6 +797,7 @@ interface StaffRouteChildren {
   StaffLeadSourcesRoute: typeof StaffLeadSourcesRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffProfileRoute: typeof StaffProfileRoute
+  StaffProfitLossRoute: typeof StaffProfitLossRoute
   StaffProjectsRoute: typeof StaffProjectsRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
   StaffSubmissionsRoute: typeof StaffSubmissionsRoute
@@ -797,6 +817,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffLeadSourcesRoute: StaffLeadSourcesRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffProfileRoute: StaffProfileRoute,
+  StaffProfitLossRoute: StaffProfitLossRoute,
   StaffProjectsRoute: StaffProjectsRoute,
   StaffSettingsRoute: StaffSettingsRoute,
   StaffSubmissionsRoute: StaffSubmissionsRoute,

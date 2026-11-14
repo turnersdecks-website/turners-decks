@@ -481,3 +481,52 @@ export async function disconnectQuickBooks(db: Db, env: QboEnv, deps: QboDeps = 
   await db.delete(qboConnection).where(eq(qboConnection.id, 1))
   return { disconnected: true }
 }
+
+// ---------------------------------------------------------------------------
+// Profit and loss for a year (the P&L page). Money is counted by QuickBooks transaction date: revenue is invoiced net of
+// credit memos; costs are net of vendor credits, split by how Staff sorted them (on a Job, overhead, not sorted yet).
+// Payments received are shown apart and never added to revenue. Completed Jobs are those marked done with a finish
+// date in the year; their figures are every transaction sorted onto them, whatever its date.
+
+export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; overheadCents: number; unsortedCents: number; paidCents: number }
+
+export async function profitAndLoss(db: Db, year: number) {
+  const y = String(Math.trunc(year))
+  const monthRows = await db
+    .select({
+      month: sql<string>`substr(${qboTransactions.txnDate}, 1, 7)`,
+      revenueCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'revenue' THEN ${qboTransactions.amountCents} WHEN 'revenue_credit' THEN -${qboTransactions.amountCents} ELSE 0 END), 0)`,
+      jobCostCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'job' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
+      overheadCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'overhead' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
+      unsortedCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} IS NULL THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
+      paidCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'payment' THEN ${qboTransactions.amountCents} ELSE 0 END), 0)`,
+    })
+    .from(qboTransactions)
+    .where(and(eq(qboTransactions.deleted, false), sql`substr(${qboTransactions.txnDate}, 1, 4) = ${y}`))
+    .groupBy(sql`substr(${qboTransactions.txnDate}, 1, 7)`)
+  const byMonth = new Map(monthRows.map((m) => [m.month, m]))
+  const months: PnlMonth[] = Array.from({ length: 12 }, (_, i) => {
+    const month = `${y}-${String(i + 1).padStart(2, '0')}`
+    const m = byMonth.get(month)
+    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, overheadCents: m?.overheadCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
+  })
+  const completedJobs = await db
+    .select({
+      id: jobs.id,
+      name: jobs.name,
+      finishDate: jobs.finishDate,
+      first: customers.firstName,
+      last: customers.lastName,
+      revenueCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'revenue' THEN t.amount_cents WHEN 'revenue_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
+      costCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'cost' THEN t.amount_cents WHEN 'cost_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
+    })
+    .from(jobs)
+    .innerJoin(customers, eq(customers.id, jobs.customerId))
+    .where(and(eq(jobs.status, 'done'), sql`substr(${jobs.finishDate}, 1, 4) = ${y}`))
+    .orderBy(desc(jobs.finishDate))
+  const years = await db
+    .select({ year: sql<string>`DISTINCT substr(${qboTransactions.txnDate}, 1, 4)` })
+    .from(qboTransactions)
+    .where(eq(qboTransactions.deleted, false))
+  return { year: Number(y), months, completedJobs, years: years.map((r) => Number(r.year)).filter(Number.isFinite) }
+}
