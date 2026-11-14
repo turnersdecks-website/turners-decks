@@ -211,44 +211,53 @@ describe('Lead detail /leads/$id', () => {
   })
 })
 
-describe('Settings /settings', () => {
-  // Plan 006 S13: staff-role Staff see only "Your profile".
-  it('shows a staff-role Staff member only their profile', async () => {
+describe('Settings /settings and Your profile /profile', () => {
+  it('sends a staff-role Staff member from Settings to their profile, which shows only their name', async () => {
     const { cookie } = await signedInStaff('staff', { name: 'Dana Profile' })
 
-    const html = await page('/settings', cookie)
-
+    const res = await SELF.fetch(`${BASE}/settings`, { headers: { cookie }, redirect: 'manual' })
+    expect(res.status).toBeGreaterThanOrEqual(300)
+    expect(new URL(res.headers.get('location')!, BASE).pathname).toBe('/profile')
+    const html = await page('/profile', cookie)
     expect(html).toContain('Your profile')
     expect(html).toContain('Dana Profile')
-    expect(html).not.toMatch(/Turner(&#x27;|')s Decks<\//)
     expect(html).not.toContain('Owner alert emails')
-    expect(html).not.toContain('Save settings')
-    expect(html).not.toContain('Customer email templates')
   })
 
-  it('lets an admin edit the Website calculator email in Customer email templates, with its placeholders', async () => {
+  it('opens on the Company tab: company info, Owner alert emails and the Photo home screen, no phone line or postcard sections', async () => {
     const { cookie } = await signedInStaff('admin')
 
     const html = await page('/settings', cookie)
 
+    for (const tab of ['Company', 'Automations', 'Connections']) expect(html).toContain(tab)
+    expect(html).toContain('Save settings')
+    expect(html).toContain('Owner alert emails')
+    expect(html).toContain('Photo home screen')
+    expect(html).not.toContain('Customer email templates')
+    expect(html).not.toContain('Appointment length')
+    expect(html).not.toContain('Postcard template')
+  })
+
+  it('Automations holds the Customer email templates, with the Website calculator email and its placeholders, and texting', async () => {
+    const { cookie } = await signedInStaff('admin')
+
+    const html = await page('/settings?tab=automations', cookie)
+
+    expect(html).toContain('Customer email templates')
     expect(html).toContain('id="estimateEmailTemplate"')
     expect(html).toContain('Subject: Your deck estimate from {company_name}')
     for (const p of ['{first_name}', '{low}', '{high}', '{review_note}', '{company_phone}', '{disclaimer}']) expect(html).toContain(p)
-    expect(html).toContain('Customer email templates')
     expect(html).toContain('Website calculator email')
+    expect(html).toContain('Texting')
+    expect(html).not.toContain('Owner alert emails')
   })
 
-  it('lets an admin edit the company and Owner alert emails, with no phone line or postcard sections', async () => {
+  it('Connections holds Quo and QuickBooks', async () => {
     const { cookie } = await signedInStaff('admin')
 
-    const html = await page('/settings', cookie)
+    const html = await page('/settings?tab=connections', cookie)
 
-    expect(html).toContain('Your profile')
-    expect(html).toContain('Save settings')
-    expect(html).toContain('Owner alert emails')
-    expect(html).toMatch(/Turner(&#x27;|')s Decks/)
-    expect(html).not.toContain('Appointment length')
-    expect(html).not.toContain('Postcard template')
-    expect(html).not.toContain('href="/mailers"')
+    expect(html).toContain('Quo (phone and texting)')
+    expect(html).toContain('QuickBooks')
   })
 })

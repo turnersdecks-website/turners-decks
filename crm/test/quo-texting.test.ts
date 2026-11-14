@@ -15,6 +15,8 @@ const SECRET = `whsec_${btoa('test-signing-secret-0123456789abcdef')}`
 const OUR_NUMBER = '+14849393325'
 const PN = 'PNtest000000000000000000000000'
 const e164 = (ten: string) => `+1${ten}`
+/** A number no other test file uses (484-7xx-xxxx), so the unique phone index never collides across files. */
+const quoPhone = () => `4847${String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')}`
 
 async function connect(textingEnabled = false) {
   await env.DB.prepare(
@@ -59,14 +61,14 @@ beforeEach(() => connect())
 
 describe('Quo webhook', () => {
   it('refuses a delivery whose signature does not match, or that is too old', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     expect((await deliver('message.received', { resource: { id: 'AC1', text: 'hi' }, context: { senderIdentifier: phone } }, { secret: `whsec_${btoa('wrong')}` })).status).toBe(401)
     expect((await deliver('message.received', { resource: { id: 'AC2', text: 'hi' }, context: { senderIdentifier: phone } }, { ts: Math.floor(Date.now() / 1000) - 3600 })).status).toBe(401)
     expect(await leadByPhone(phone)).toBeNull()
   })
 
   it('a text from a number we do not know becomes a new Lead with the text on it, and counts as text consent', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     expect((await textFrom(phone, 'Hi, do you build composite decks in Pottstown?')).status).toBe(200)
 
     const lead = await leadByPhone(phone)
@@ -78,7 +80,7 @@ describe('Quo webhook', () => {
   })
 
   it('a text from a known Lead goes on that Lead; the same delivery twice is logged once', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     const id = `msg_${crypto.randomUUID()}`
     const data = { resource: { id: 'ACsame', text: 'Tuesday works', createdAt: new Date().toISOString() }, context: { phoneNumberId: PN, senderIdentifier: phone } }
@@ -92,7 +94,7 @@ describe('Quo webhook', () => {
   })
 
   it('STOP revokes text consent and never creates a Lead; START grants it again', async () => {
-    const known = e164(randomPhone())
+    const known = e164(quoPhone())
     await insertLead({ phoneE164: known })
     await textFrom(known, 'Thanks')
     await textFrom(known, 'STOP')
@@ -100,19 +102,19 @@ describe('Quo webhook', () => {
     await textFrom(known, 'start')
     expect((await consentOf(known)).map((c) => c.event)).toEqual(['grant', 'revoke', 'grant'])
 
-    const stranger = e164(randomPhone())
+    const stranger = e164(quoPhone())
     await textFrom(stranger, 'Stop.')
     expect(await leadByPhone(stranger)).toBeNull()
     expect(await consentOf(stranger)).toEqual([{ event: 'revoke', source: 'text' }])
   })
 
   it('a short or missed call from an unknown number makes no Lead; a real conversation does', async () => {
-    const robo = e164(randomPhone())
+    const robo = e164(quoPhone())
     await callWith(robo, { direction: 'incoming', status: 'answered', duration: 8 })
     await callWith(robo, { direction: 'incoming', status: 'unanswered', duration: null })
     expect(await leadByPhone(robo)).toBeNull()
 
-    const caller = e164(randomPhone())
+    const caller = e164(quoPhone())
     await callWith(caller, { direction: 'incoming', status: 'answered', duration: 245 })
     const lead = await leadByPhone(caller)
     expect(lead).toMatchObject({ source: 'phone', stage: 'new' })
@@ -120,14 +122,14 @@ describe('Quo webhook', () => {
   })
 
   it('Pat calling or texting a new Lead from Quo moves it to contacted', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     await callWith(phone, { direction: 'outgoing', status: 'answered', duration: 90 })
 
     expect((await leadRow(leadId))?.stage).toBe('contacted')
     expect((await stageChanges(leadId)).at(-1)).toMatchObject({ from_stage: 'new', to_stage: 'contacted', reason: 'Call made from Quo' })
 
-    const other = e164(randomPhone())
+    const other = e164(quoPhone())
     const otherId = await insertLead({ phoneE164: other })
     await deliver('message.delivered', {
       resource: { id: `AC${crypto.randomUUID()}`, text: 'Hi, this is Pat. When can I come by?', direction: 'outgoing' },
@@ -138,7 +140,7 @@ describe('Quo webhook', () => {
   })
 
   it('a voicemail from an unknown number becomes a Lead with the transcript', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     await deliver('call.voicemail.completed', {
       resource: { id: `VM${crypto.randomUUID()}`, voicemailId: `VM${crypto.randomUUID()}`, from: phone, to: OUR_NUMBER, duration: 40, transcript: 'Calling about a new deck, call me back.', createdAt: new Date().toISOString() },
       context: { phoneNumberId: PN },
@@ -178,7 +180,7 @@ describe('texting from the CRM', () => {
 
   it('sends the instant reply from the Quo number once texting is on, and logs it on the Lead', async () => {
     await connect(true)
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     await grant(phone)
     const quo = mockQuo()
@@ -198,7 +200,7 @@ describe('texting from the CRM', () => {
   })
 
   it('sends nothing while texting is switched off (before A2P approval), or without text consent', async () => {
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     await grant(phone)
     const quo = mockQuo()
@@ -207,7 +209,7 @@ describe('texting from the CRM', () => {
     expect(await readJob(off)).toMatchObject({ outcome: 'failed' })
 
     await connect(true)
-    const stranger = e164(randomPhone())
+    const stranger = e164(quoPhone())
     const strangerLead = await insertLead({ phoneE164: stranger })
     const noConsent = await queueReply(stranger, strangerLead)
     await dispatchJob(sendingEnv, noConsent, { fetch: quo.fetch })
@@ -217,7 +219,7 @@ describe('texting from the CRM', () => {
 
   it('never sends a text twice: a Quo error that may have sent it is given up, not retried', async () => {
     await connect(true)
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     await grant(phone)
     const quo = mockQuo(() => Response.json({ message: 'Internal error' }, { status: 500 }))
@@ -231,7 +233,7 @@ describe('texting from the CRM', () => {
 
   it('a rate-limited text (429, nothing sent) is retried later', async () => {
     await connect(true)
-    const phone = e164(randomPhone())
+    const phone = e164(quoPhone())
     const leadId = await insertLead({ phoneE164: phone })
     await grant(phone)
     let n = 0

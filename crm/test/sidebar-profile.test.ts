@@ -2,7 +2,7 @@ import { SELF } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import { BASE, signedInStaff } from './staff'
 
-// Every Staff member reaches Your profile (/settings) from the sidebar header (name/avatar); the "Company settings"
+// Every Staff member reaches Your profile (/profile) from the sidebar header (name/avatar); the "Company settings"
 // menu item stays admin-only.
 
 const page = async (path: string, cookie: string) => {
@@ -12,18 +12,18 @@ const page = async (path: string, cookie: string) => {
 }
 
 describe('sidebar user header', () => {
-  it.each(['staff', 'admin'] as const)('links to /settings for a %s', async (role) => {
+  it.each(['staff', 'admin'] as const)('links to /profile for a %s', async (role) => {
     const { cookie } = await signedInStaff(role, { name: 'Pat Header' })
 
     const html = await page('/leads', cookie)
 
-    expect(html).toMatch(/<a(?=[^>]*href="\/settings")(?=[^>]*aria-label="Your profile")[^>]*>/)
+    expect(html).toMatch(/<a(?=[^>]*href="\/profile")(?=[^>]*aria-label="Your profile")[^>]*>/)
   })
 
-  it('a staff-role member does not see the Company settings item', async () => {
+  it('a staff-role member does not see the Settings item', async () => {
     const { cookie } = await signedInStaff('staff')
 
-    expect(await page('/leads', cookie)).not.toContain('Company settings')
+    expect(await page('/leads', cookie)).not.toMatch(/href="\/settings"/)
   })
 })
 
