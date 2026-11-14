@@ -11,15 +11,77 @@ const page = async (path: string, cookie: string) => {
   return res.text()
 }
 
-describe('Pipeline board /crm', () => {
-  it('shows every Pipeline stage and the Lead in its column', async () => {
+describe('Leads /leads: one page, Board and List', () => {
+  it('the board shows the open stages as columns with the Lead in its column, and Won and Lost as drop targets', async () => {
     const { cookie } = await signedInStaff('staff')
     await insertLead({ firstName: 'Quinn', lastName: 'Quoted', stage: 'quoted' })
+    await insertLead({ firstName: 'Wanda', lastName: 'Won', stage: 'won' })
 
-    const html = await page('/crm', cookie)
+    const html = await page('/leads?view=board', cookie)
 
     for (const label of ['New', 'Contacted', 'Appointment', 'Quoted', 'Won', 'Lost']) expect(html).toContain(label)
     expect(html).toMatch(/data-stage="quoted"(?:(?!data-stage=)[\s\S])*Quinn Quoted/)
+    expect(html).not.toContain('Wanda Won')
+    expect(html).toContain('Drop a Lead here')
+  })
+
+  it('a desktop opens on the board and a phone on the list; a saved choice wins', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'
+    const get = (headers: Record<string, string>) => SELF.fetch(`${BASE}/leads`, { headers: { cookie, ...headers } }).then((r) => r.text())
+
+    expect(await get({})).toContain('Drop a Lead here')
+    expect(await get({ 'user-agent': iphone })).toContain('role="tablist"')
+    expect(await get({ cookie: `${cookie}; leads_view=board`, 'user-agent': iphone })).toContain('Drop a Lead here')
+  })
+
+  it('the list shows open Leads by default, and Won, Lost and All on their tabs', async () => {
+    const { cookie } = await signedInStaff('staff')
+    await insertLead({ firstName: 'Olive', lastName: 'Open', stage: 'contacted' })
+    await insertLead({ firstName: 'Lou', lastName: 'Lost', stage: 'lost' })
+
+    const open = await page('/leads?view=list', cookie)
+    expect(open).toContain('Olive Open')
+    expect(open).not.toContain('Lou Lost')
+    const lost = await page('/leads?view=list&show=lost', cookie)
+    expect(lost).toContain('Lou Lost')
+    expect(lost).not.toContain('Olive Open')
+    const all = await page('/leads?view=list&show=all', cookie)
+    expect(all).toContain('Olive Open')
+    expect(all).toContain('Lou Lost')
+  })
+
+  it('old links to the Pipeline, Projects and Customers land on the new pages', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const go = (path: string) => SELF.fetch(`${BASE}${path}`, { headers: { cookie }, redirect: 'manual' })
+    for (const [from, to] of [['/crm', '/leads?view=board'], ['/projects', '/jobs?view=board'], ['/customers', '/contacts']]) {
+      const res = await go(from)
+      expect(res.status).toBeGreaterThanOrEqual(300)
+      expect(res.status).toBeLessThan(400)
+      expect(new URL(res.headers.get('location')!, BASE).pathname + new URL(res.headers.get('location')!, BASE).search).toBe(to)
+    }
+  })
+})
+
+describe('Contacts /contacts', () => {
+  it('lists Customers and Leads with no Customer, each with its worked-out type and marketing flags', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const customerId = crypto.randomUUID()
+    await env.DB.prepare(
+      `INSERT INTO customers (id, first_name, last_name, phone, phone_e164, ok_to_contact, client_type, created_at, updated_at)
+       VALUES (?, 'Carla', 'Customer', '(610) 555-0177', '+16105550177', 1, 'residential', ?, ?)`,
+    )
+      .bind(customerId, Date.now(), Date.now())
+      .run()
+    await insertLead({ firstName: 'Olga', lastName: 'Openlead', stage: 'new' })
+    const lost = await insertLead({ firstName: 'Dina', lastName: 'Dnc', stage: 'lost' })
+    await env.DB.prepare('UPDATE leads SET do_not_contact = 1 WHERE id = ?').bind(lost).run()
+
+    const html = await page('/contacts', cookie)
+
+    expect(html).toMatch(/data-type="customer"(?:(?!data-type=)[\s\S])*Carla Customer/)
+    expect(html).toMatch(/data-type="open_lead"(?:(?!data-type=)[\s\S])*Olga Openlead/)
+    expect(html).toMatch(/data-type="closed_lead"(?:(?!data-type=)[\s\S])*Dina Dnc(?:(?!data-type=)[\s\S])*Do not contact/)
   })
 })
 

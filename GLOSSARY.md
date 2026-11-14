@@ -18,6 +18,12 @@ _Avoid_: User, rep, team member
 The person a Lead is about: the one who asked about a deck. Becomes a Lead the moment they contact us.
 _Avoid_: Contact, customer (only after a Lead is won), client, prospect, user
 
+**Contact**:
+Any person in the CRM: a Customer, or a Lead with no Customer. Not a record of its own: the Contacts page lists
+both, with a type worked out from them (Customer, Customer with open lead, Open lead, Closed lead), and the
+marketing flags OK to market (not Do not contact) and Texts OK (latest text consent).
+_Avoid_: making a Lead a "type" of Contact (a Lead is one inquiry about one project)
+
 **Customer**:
 A Homeowner we have done, or are doing, work for. A Lead that is moved to `won` becomes a Customer (or joins the
 Customer with the same phone, else email). Past Customers can be added by hand or imported. A new Form submission

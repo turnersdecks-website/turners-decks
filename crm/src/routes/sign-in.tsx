@@ -30,7 +30,7 @@ function SignIn() {
     // followed, so the link cannot send anyone elsewhere after signing in.
     const next = new URLSearchParams(window.location.search).get('next')
     if (next?.startsWith('/oauth/authorize?')) return window.location.assign(next)
-    navigate({ to: '/crm' })
+    navigate({ to: '/leads' })
   }
 
   return (

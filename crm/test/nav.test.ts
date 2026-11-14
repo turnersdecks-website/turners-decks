@@ -4,9 +4,9 @@ import { headerTrail, isFullBleed, isNavItemActive, visibleNavGroups } from '#/l
 const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.map((i) => i.title))
 
 describe('sidebar navigation', () => {
-  it('shows Staff the Pipeline, All Leads, Customers, Projects, Jobs and Estimator settings, without admin-only items', () => {
-    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['Leads', 'Customers', 'Company'])
-    expect(titles('staff')).toEqual(['Pipeline', 'All Leads', 'Customers', 'Projects', 'Jobs', 'Estimator settings'])
+  it('shows Staff Contacts, Leads, Jobs and Estimator settings, without admin-only items', () => {
+    expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['CRM', 'Company'])
+    expect(titles('staff')).toEqual(['Contacts', 'Leads', 'Jobs', 'Estimator settings'])
   })
 
   it('shows an admin Company settings and Submissions as well', () => {
@@ -22,16 +22,17 @@ describe('sidebar navigation', () => {
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/crm', '/leads', '/customers', '/projects', '/jobs', '/settings', '/settings/estimator', '/submissions'])
+    expect(urls).toEqual(['/contacts', '/leads', '/jobs', '/settings', '/settings/estimator', '/submissions'])
   })
 
-  it('marks an item active on its path and sub-paths, and Pipeline (not All Leads) on a Lead page', () => {
+  it('marks an item active on its path and sub-paths: Leads on a Lead page, Contacts on a Customer page', () => {
     expect(isNavItemActive('/submissions', '/submissions')).toBe(true)
     expect(isNavItemActive('/submissionsx', '/submissions')).toBe(false)
-    expect(isNavItemActive('/leads/abc', '/crm')).toBe(true)
-    expect(isNavItemActive('/leads/abc', '/leads')).toBe(false)
+    expect(isNavItemActive('/leads/abc', '/leads')).toBe(true)
     expect(isNavItemActive('/leads', '/leads')).toBe(true)
-    expect(isNavItemActive('/settings', '/crm')).toBe(false)
+    expect(isNavItemActive('/customers/abc', '/contacts')).toBe(true)
+    expect(isNavItemActive('/jobs/abc', '/jobs')).toBe(true)
+    expect(isNavItemActive('/settings', '/leads')).toBe(false)
   })
 
   it('marks only Estimator settings active on /settings/estimator', () => {
@@ -43,19 +44,19 @@ describe('sidebar navigation', () => {
 
 describe('header title and breadcrumbs', () => {
   it('titles a sidebar screen with its item', () => {
-    expect(headerTrail('/crm', 'staff')).toEqual({ title: 'Pipeline' })
-    expect(headerTrail('/leads', 'staff')).toEqual({ title: 'All Leads' })
+    expect(headerTrail('/leads', 'staff')).toEqual({ title: 'Leads' })
+    expect(headerTrail('/contacts', 'staff')).toEqual({ title: 'Contacts' })
     expect(headerTrail('/submissions', 'admin')).toEqual({ title: 'Submissions' })
     expect(headerTrail('/settings/estimator', 'staff')).toEqual({ title: 'Estimator settings' })
-    expect(headerTrail('/crm/', 'staff')).toEqual({ title: 'Pipeline' })
+    expect(headerTrail('/leads/', 'staff')).toEqual({ title: 'Leads' })
   })
 
-  it('puts a Lead page under the Pipeline', () => {
-    expect(headerTrail('/leads/abc', 'staff')).toEqual({ title: 'Lead', parent: { title: 'Pipeline', url: '/crm' } })
+  it('puts a Lead page under Leads', () => {
+    expect(headerTrail('/leads/abc', 'staff')).toEqual({ title: 'Lead', parent: { title: 'Leads', url: '/leads' } })
   })
 
-  it('puts a Customer page under Customers and a Job page under Jobs', () => {
-    expect(headerTrail('/customers/abc', 'staff')).toEqual({ title: 'Customer', parent: { title: 'Customers', url: '/customers' } })
+  it('puts a Customer page under Contacts and a Job page under Jobs', () => {
+    expect(headerTrail('/customers/abc', 'staff')).toEqual({ title: 'Customer', parent: { title: 'Contacts', url: '/contacts' } })
     expect(headerTrail('/jobs/abc', 'staff')).toEqual({ title: 'Job', parent: { title: 'Jobs', url: '/jobs' } })
   })
 
@@ -70,15 +71,15 @@ describe('header title and breadcrumbs', () => {
 })
 
 describe('full-bleed screens', () => {
-  it('is the Pipeline', () => {
-    expect(isFullBleed('/crm')).toBe(true)
-    expect(isFullBleed('/crm/')).toBe(true)
-    expect(isFullBleed('/projects')).toBe(true)
+  it('are Leads and Jobs (board and list)', () => {
+    expect(isFullBleed('/leads')).toBe(true)
+    expect(isFullBleed('/leads/')).toBe(true)
+    expect(isFullBleed('/jobs')).toBe(true)
   })
 
   it('are not other screens, Lead pages included', () => {
     expect(isFullBleed('/leads/abc')).toBe(false)
-    expect(isFullBleed('/leads')).toBe(false)
-    expect(isFullBleed('/crmx')).toBe(false)
+    expect(isFullBleed('/contacts')).toBe(false)
+    expect(isFullBleed('/leadsx')).toBe(false)
   })
 })

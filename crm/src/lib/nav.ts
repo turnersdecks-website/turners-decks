@@ -1,14 +1,4 @@
-import {
-  Building2,
-  Calculator,
-  Hammer,
-  Inbox,
-  KanbanSquare,
-  ListChecks,
-  UserRoundCheck,
-  Users,
-  type LucideIcon,
-} from 'lucide-react'
+import { Building2, Calculator, Hammer, Inbox, KanbanSquare, Users, type LucideIcon } from 'lucide-react'
 
 // Sidebar groups ported from the Good Cover CRM (itself from the Lovable app-sidebar), cut to Good Cover v1: the
 // Pipeline, All Leads, Company settings and Submissions. Pine & Gable's other screens come back with their features.
@@ -20,18 +10,12 @@ export type NavItem = { title: string; url: string; icon: LucideIcon; admin?: bo
 export type NavGroup = { title: string; items: NavItem[] }
 
 export const NAV_GROUPS: NavGroup[] = [
+  // Contacts are people; Leads and Jobs are work, each one page with Board / List views (leads.tsx, jobs.tsx).
   {
-    title: 'Leads',
+    title: 'CRM',
     items: [
-      { title: 'Pipeline', url: '/crm', icon: KanbanSquare },
-      { title: 'All Leads', url: '/leads', icon: Users },
-    ],
-  },
-  {
-    title: 'Customers',
-    items: [
-      { title: 'Customers', url: '/customers', icon: UserRoundCheck },
-      { title: 'Projects', url: '/projects', icon: ListChecks },
+      { title: 'Contacts', url: '/contacts', icon: Users },
+      { title: 'Leads', url: '/leads', icon: KanbanSquare },
       { title: 'Jobs', url: '/jobs', icon: Hammer },
     ],
   },
@@ -52,21 +36,20 @@ export function visibleNavGroups(role: string): NavGroup[] {
   )
 }
 
-// "Pipeline" stays active on Lead pages (/leads/$id), as in Lovable. Pine & Gable has no sidebar item for All Leads;
-// Good Cover lists it, active on /leads only.
+// An item is active on its page and pages under it (Leads on /leads/$id, Jobs on /jobs/$id); Contacts also on Customer
+// pages (/customers/$id). Company settings is exact, so /settings/estimator lights only Estimator settings.
 export function isNavItemActive(path: string, url: string): boolean {
-  // Exact matches: /leads/$id belongs to the Pipeline, /settings/estimator to Estimator settings.
-  if (url === '/leads' || url === '/settings') return normalize(path) === url
+  if (url === '/settings') return normalize(path) === url
   if (path === url || path.startsWith(url + '/')) return true
-  return url === '/crm' && path.startsWith('/leads/')
+  return url === '/contacts' && path.startsWith('/customers/')
 }
 
 export type HeaderTrail = { title: string; parent?: { title: string; url: string } }
 
 // Pages reached from a sidebar screen rather than listed in it; the parent is the item that stays active for them.
 const SUB_PAGES: { match: (path: string) => boolean; title: string; parent: string }[] = [
-  { match: (p) => p.startsWith('/leads/'), title: 'Lead', parent: '/crm' },
-  { match: (p) => p.startsWith('/customers/'), title: 'Customer', parent: '/customers' },
+  { match: (p) => p.startsWith('/leads/'), title: 'Lead', parent: '/leads' },
+  { match: (p) => p.startsWith('/customers/'), title: 'Customer', parent: '/contacts' },
   { match: (p) => p.startsWith('/jobs/'), title: 'Job', parent: '/jobs' },
 ]
 
@@ -87,8 +70,8 @@ export function headerTrail(path: string, role: string): HeaderTrail {
   return { title: item?.title ?? 'Turner’s Decks' }
 }
 
-// The Pipeline uses the whole width and height (plan 007 decision 7).
-const FULL_BLEED = ['/crm', '/projects']
+// Leads and Jobs (board and list) use the whole width and height (plan 007 decision 7).
+const FULL_BLEED = ['/leads', '/jobs']
 
 export function isFullBleed(path: string): boolean {
   return FULL_BLEED.includes(normalize(path))

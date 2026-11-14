@@ -14,6 +14,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as StaffIndexRouteImport } from './routes/_staff/index'
+import { Route as StaffContactsRouteImport } from './routes/_staff/contacts'
 import { Route as StaffCrmRouteImport } from './routes/_staff/crm'
 import { Route as StaffCustomersRouteImport } from './routes/_staff/customers'
 import { Route as StaffJobsRouteImport } from './routes/_staff/jobs'
@@ -62,6 +63,11 @@ const SignInRoute = SignInRouteImport.update({
 const StaffIndexRoute = StaffIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffContactsRoute = StaffContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffCrmRoute = StaffCrmRouteImport.update({
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/contacts': typeof StaffContactsRoute
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
   '/jobs': typeof StaffJobsRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/contacts': typeof StaffContactsRoute
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
   '/jobs': typeof StaffJobsRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/_staff/contacts': typeof StaffContactsRoute
   '/_staff/crm': typeof StaffCrmRoute
   '/_staff/customers': typeof StaffCustomersRoute
   '/_staff/jobs': typeof StaffJobsRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/sign-in'
+    | '/contacts'
     | '/crm'
     | '/customers'
     | '/jobs'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/sign-in'
+    | '/contacts'
     | '/crm'
     | '/customers'
     | '/jobs'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/sign-in'
+    | '/_staff/contacts'
     | '/_staff/crm'
     | '/_staff/customers'
     | '/_staff/jobs'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof StaffIndexRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/contacts': {
+      id: '/_staff/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof StaffContactsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/_staff/crm': {
@@ -615,6 +634,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface StaffRouteChildren {
+  StaffContactsRoute: typeof StaffContactsRoute
   StaffCrmRoute: typeof StaffCrmRoute
   StaffCustomersRoute: typeof StaffCustomersRoute
   StaffJobsRoute: typeof StaffJobsRoute
@@ -630,6 +650,7 @@ interface StaffRouteChildren {
 }
 
 const StaffRouteChildren: StaffRouteChildren = {
+  StaffContactsRoute: StaffContactsRoute,
   StaffCrmRoute: StaffCrmRoute,
   StaffCustomersRoute: StaffCustomersRoute,
   StaffJobsRoute: StaffJobsRoute,

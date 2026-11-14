@@ -192,7 +192,7 @@ function LeadDetail() {
         title="Lead not found."
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to="/crm">Back to the Pipeline</Link>
+            <Link to="/leads">Back to Leads</Link>
           </Button>
         }
       />
@@ -221,7 +221,7 @@ function LeadDetail() {
     try {
       await deleteLead({ data: { leadId: lead.id } })
       toast.success('Lead deleted')
-      await navigate({ to: '/crm' })
+      await navigate({ to: '/leads' })
     } catch (error) {
       toast.error(await errorMessage(error))
       setBusy(false)
@@ -237,7 +237,7 @@ function LeadDetail() {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/crm">Pipeline</Link>
+                <Link to="/leads">Leads</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
