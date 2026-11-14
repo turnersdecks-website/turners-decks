@@ -384,6 +384,7 @@ async function upsertLead(
         stage: 'new',
         source: LEAD_SOURCE_WEBSITE,
         firstSource: LEAD_SOURCE_WEBSITE,
+        channel: channelOfForm(payload),
         attributionJson: attribution(payload),
         firstTouchJson: firstTouch(payload),
         createdAt: receivedAt,
@@ -638,6 +639,12 @@ export function splitAddress(address: string | null) {
   const m = address?.match(/^(.+?),\s*([^,\s][^,]*?),\s*([A-Za-z]{2})\.?(?:\s+(\d{5}(?:-\d{4})?))?$/)
   if (!m) return { street: address, city: null, state: null, zip: null }
   return { street: m[1], city: m[2], state: m[3].toUpperCase(), zip: m[4] ?? null }
+}
+
+/** Which website form (lead-origin.ts CHANNELS). */
+function channelOfForm(p: Record<string, unknown>) {
+  const s = trimmedNonEmptyString(p.source)
+  return s === 'estimator' || s === 'quote_form' ? s : 'website'
 }
 
 function attribution(p: Record<string, unknown>): string | null {

@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { originOfLead } from '#/lib/lead-origin'
 import { env } from 'cloudflare:workers'
 import { asc, desc, eq } from 'drizzle-orm'
 import { getDb } from '#/db/client'
@@ -59,11 +60,17 @@ export const listPipeline = createServerFn({ method: 'GET' })
         updatedAt: leads.updatedAt,
         createdAt: leads.createdAt,
         phoneE164: leads.phoneE164,
+        channel: leads.channel,
+        howFound: leads.howFound,
+        firstTouchJson: leads.firstTouchJson,
+        attributionJson: leads.attributionJson,
       })
       .from(leads)
       .leftJoin(user, eq(user.id, leads.assignedTo))
       .orderBy(desc(leads.createdAt))
-      .limit(2000),
+      .limit(2000)
+      // Where they found us (lead-origin.ts), worked out here so the raw visit data stays on the server.
+      .then((rows) => rows.map(({ firstTouchJson, attributionJson, ...l }) => ({ ...l, origin: originOfLead({ firstTouchJson, attributionJson }) }))),
   )
 
 /** A Lead added by hand on the board: stage new, Source and first Source `manual`. */

@@ -12,6 +12,7 @@ import {
 } from "@/lib/estimator-public";
 import { contactSchema, fieldErrors } from "@/lib/quote";
 import { SITE } from "@/lib/site";
+import { readTouches } from "@/lib/visit-touch";
 
 type Errs = Record<string, string>;
 type Copy = PublicEstimator["copy"];
@@ -284,6 +285,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
           href: window.location.href,
           referrer: document.referrer,
           viewportWidth: window.innerWidth,
+          ...readTouches(),
         }),
       );
       try { sessionStorage.removeItem(storeKey(est.version)); } catch { /* storage unavailable */ }

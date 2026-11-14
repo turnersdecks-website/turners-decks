@@ -158,6 +158,8 @@ export const leads = sqliteTable(
     stage: text('stage', { enum: PIPELINE_STAGES }).notNull().default('new'),
     source: text('source').notNull(),
     firstSource: text('first_source').notNull(),
+    /** How they reached us (CHANNELS, lead-origin.ts): estimator, quote_form, text, call... Set when the Lead is made. */
+    channel: text('channel'),
     serviceType: text('service_type'),
     message: text('message'),
     /** What the Homeowner said they want built with (form "Preferred material"), as given. */

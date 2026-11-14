@@ -18,6 +18,7 @@ import { Route as StaffContactsRouteImport } from './routes/_staff/contacts'
 import { Route as StaffCrmRouteImport } from './routes/_staff/crm'
 import { Route as StaffCustomersRouteImport } from './routes/_staff/customers'
 import { Route as StaffJobsRouteImport } from './routes/_staff/jobs'
+import { Route as StaffLeadSourcesRouteImport } from './routes/_staff/lead-sources'
 import { Route as StaffLeadsRouteImport } from './routes/_staff/leads'
 import { Route as StaffProjectsRouteImport } from './routes/_staff/projects'
 import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
@@ -83,6 +84,11 @@ const StaffCustomersRoute = StaffCustomersRouteImport.update({
 const StaffJobsRoute = StaffJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffLeadSourcesRoute = StaffLeadSourcesRouteImport.update({
+  id: '/lead-sources',
+  path: '/lead-sources',
   getParentRoute: () => StaffRoute,
 } as any)
 const StaffLeadsRoute = StaffLeadsRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
   '/jobs': typeof StaffJobsRoute
+  '/lead-sources': typeof StaffLeadSourcesRoute
   '/leads': typeof StaffLeadsRoute
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
   '/jobs': typeof StaffJobsRoute
+  '/lead-sources': typeof StaffLeadSourcesRoute
   '/leads': typeof StaffLeadsRoute
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/_staff/crm': typeof StaffCrmRoute
   '/_staff/customers': typeof StaffCustomersRoute
   '/_staff/jobs': typeof StaffJobsRoute
+  '/_staff/lead-sources': typeof StaffLeadSourcesRoute
   '/_staff/leads': typeof StaffLeadsRoute
   '/_staff/projects': typeof StaffProjectsRoute
   '/_staff/settings': typeof StaffSettingsRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/customers'
     | '/jobs'
+    | '/lead-sources'
     | '/leads'
     | '/projects'
     | '/settings'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/crm'
     | '/customers'
     | '/jobs'
+    | '/lead-sources'
     | '/leads'
     | '/projects'
     | '/settings'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/_staff/crm'
     | '/_staff/customers'
     | '/_staff/jobs'
+    | '/_staff/lead-sources'
     | '/_staff/leads'
     | '/_staff/projects'
     | '/_staff/settings'
@@ -474,6 +486,13 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/jobs'
       preLoaderRoute: typeof StaffJobsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/lead-sources': {
+      id: '/_staff/lead-sources'
+      path: '/lead-sources'
+      fullPath: '/lead-sources'
+      preLoaderRoute: typeof StaffLeadSourcesRouteImport
       parentRoute: typeof StaffRoute
     }
     '/_staff/leads': {
@@ -638,6 +657,7 @@ interface StaffRouteChildren {
   StaffCrmRoute: typeof StaffCrmRoute
   StaffCustomersRoute: typeof StaffCustomersRoute
   StaffJobsRoute: typeof StaffJobsRoute
+  StaffLeadSourcesRoute: typeof StaffLeadSourcesRoute
   StaffLeadsRoute: typeof StaffLeadsRoute
   StaffProjectsRoute: typeof StaffProjectsRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
@@ -654,6 +674,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffCrmRoute: StaffCrmRoute,
   StaffCustomersRoute: StaffCustomersRoute,
   StaffJobsRoute: StaffJobsRoute,
+  StaffLeadSourcesRoute: StaffLeadSourcesRoute,
   StaffLeadsRoute: StaffLeadsRoute,
   StaffProjectsRoute: StaffProjectsRoute,
   StaffSettingsRoute: StaffSettingsRoute,
