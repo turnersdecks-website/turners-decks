@@ -126,6 +126,22 @@ describe('the sync', () => {
     expect(conn!.last_sync_error).toBeNull()
   })
 
+  it('keeps nothing dated before 2026, even an edit CDC reports, and saves the company name', async () => {
+    const first = fakeIntuit()
+    await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: first.fetch, now: () => T0 })
+    await syncQuickBooks(db(), qEnv, { fetch: first.fetch, now: () => T0 })
+    const later = fakeIntuit({ cdc: { Bill: [{ Id: '70', TxnDate: '2025-12-31', TotalAmt: 10 }, { Id: '71', TxnDate: '2026-01-01', TotalAmt: 20 }] } })
+    const base = later.fetch
+    const withInfo = (async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).includes('/companyinfo/') ? Response.json({ CompanyInfo: { CompanyName: "Turner's Construction" } }) : base(input, init)) as typeof fetch
+    const res = await syncQuickBooks(db(), qEnv, { fetch: withInfo, now: () => T0 + 86_400_000 })
+    expect(res.saved).toBe(1)
+    expect(await txn('Bill:70')).toBeNull()
+    expect(await txn('Bill:71')).toMatchObject({ amount_cents: 2000 })
+    const conn = await env.DB.prepare('SELECT company_name FROM qbo_connection').first<Record<string, any>>()
+    expect(conn!.company_name).toBe("Turner's Construction")
+  })
+
   it('a revoked or expired refresh token asks Staff to reconnect', async () => {
     let revoked = false
     const intuit = fakeIntuit({ token: () => (revoked ? { error: 'invalid_grant' } : undefined) })

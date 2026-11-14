@@ -27,7 +27,7 @@ export const TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bea
 export const QBO_SCOPE = 'com.intuit.quickbooks.accounting'
 const MINOR_VERSION = '75'
 /** The first sync reads transactions dated from here on. */
-export const BACKFILL_FROM = '2025-01-01'
+export const BACKFILL_FROM = '2026-01-01'
 const CDC_MAX_DAYS = 29
 const PAGE = 1000
 const TIMEOUT_MS = 20_000
@@ -302,13 +302,21 @@ export async function syncQuickBooks(db: Db, env: QboEnv, deps: QboDeps = {}): P
         for (const entity of QBO_ENTITIES) for (const r of qr[entity] ?? []) rows.push(rowOf(entity, r, startedAt))
       }
     }
-    await saveRows(db, rows)
+    // Nothing dated before BACKFILL_FROM is kept, even when CDC reports an edit to an older record. A deletion still
+    // applies (it only marks a row we may already hold).
+    const kept = rows.filter((r) => r.deleted || !r.txnDate || r.txnDate >= BACKFILL_FROM)
+    await saveRows(db, kept)
+    if (!conn.companyName) {
+      const info = await qboGet<{ CompanyInfo?: { CompanyName?: string } }>(env, conn.realmId, token, `companyinfo/${encodeURIComponent(conn.realmId)}`, {}, deps).catch(() => null)
+      const name = info?.CompanyInfo?.CompanyName?.trim()
+      if (name) await db.update(qboConnection).set({ companyName: name }).where(eq(qboConnection.id, 1))
+    }
     const matched = await autoMatch(db)
     await db
       .update(qboConnection)
       .set({ lastSyncAt: new Date(startedAt), lastSyncError: null, ...(full ? { backfilledAt: new Date(startedAt) } : {}) })
       .where(eq(qboConnection.id, 1))
-    return { mode: full ? 'full' : 'changes', saved: rows.length, matched }
+    return { mode: full ? 'full' : 'changes', saved: kept.length, matched }
   } catch (err) {
     const message = err instanceof Response ? await err.clone().text() : String(err)
     console.error(JSON.stringify({ level: 'error', msg: 'quickbooks sync failed', error: message.slice(0, 1000) }))

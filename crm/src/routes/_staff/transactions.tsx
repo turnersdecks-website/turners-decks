@@ -78,7 +78,7 @@ function TransactionsPage() {
         </form>
       </div>
       {rows.length === 0 ? (
-        <EmptyState icon={Receipt} title="No transactions yet." description="An admin connects QuickBooks in Settings; the first sync brings in everything since January 2025." bordered />
+        <EmptyState icon={Receipt} title="No transactions yet." description="An admin connects QuickBooks in Settings; the first sync brings in everything since January 2026." bordered />
       ) : shown.length === 0 ? (
         <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">{show === 'unassigned' ? 'Everything is sorted.' : 'Nothing here.'}</p>
       ) : (
