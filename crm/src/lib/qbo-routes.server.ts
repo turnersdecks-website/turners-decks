@@ -8,7 +8,7 @@ import { type QboDeps, type QboEnv, authorizeUrl, completeConnect, makeState, re
 
 type Env = QboEnv & Parameters<typeof createAuth>[0]
 
-const back = (env: Env, result: string) => Response.redirect(`${env.BETTER_AUTH_URL.replace(/\/+$/, '')}/settings?qbo=${encodeURIComponent(result)}#quickbooks`, 302)
+const back = (env: Env, result: string) => Response.redirect(`${env.BETTER_AUTH_URL.replace(/\/+$/, '')}/settings?tab=connections&qbo=${encodeURIComponent(result)}`, 302)
 
 /** 401 with no session (route policy), 403 for Staff who are not admins, else the admin. */
 async function adminOf(request: Request, env: Env): Promise<Response | { id: string }> {

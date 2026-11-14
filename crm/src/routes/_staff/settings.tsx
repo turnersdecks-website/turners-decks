@@ -1,19 +1,18 @@
-import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Camera, Mail, MessageSquare, Receipt, Save, UserRound } from 'lucide-react'
+import { Link, createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
+import { Building2, Mail, Plug, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
-import { Button, buttonVariants } from '#/components/ui/button'
+import { Button } from '#/components/ui/button'
 import { Card, CardContent } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#/components/ui/select'
 import { Separator } from '#/components/ui/separator'
 import { Textarea } from '#/components/ui/textarea'
 import { errorMessage } from '#/lib/errors'
 import { updateEstimateEmailTemplate } from '#/lib/estimator-settings.functions'
 import { ESTIMATE_EMAIL_PLACEHOLDERS } from '#/lib/estimator/email-template'
-import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, updateProfileName } from '#/lib/settings.functions'
+import { type CompanySettingsInput, getCompanySettings, updateCompanySettings } from '#/lib/settings.functions'
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { type TemplateKey, templateDef } from '#/lib/email-templates'
 import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
@@ -22,126 +21,80 @@ import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/l
 import { prettyPhone } from '#/lib/phone'
 import { cn } from '#/lib/utils'
 
-// Company settings, ported from Pine & Gable's /settings and cut to v1: Your profile and Company (name, contact,
-// timezone, Owner alert emails) and the Estimate email template (FLW-203). Pine & Gable's Roofing products, Estimates, Phone line and Postcard sections come back
-// with those features. Every Staff member can rename themselves; everything else is admin only, so staff-role Staff see
-// just "Your profile". Server guards are the real check (requireAdmin on every company write).
-// Layout (plan 007 K9): kit original/(settings): a section nav on the left (a Select on phones) and content sections
-// (title, description, separator, body). One route with hash anchors, so /settings stays the profile link.
+// Settings (admins), ported from Pine & Gable's /settings and regrouped into three tabs:
+// - Company: name, contact, timezone, Owner alert emails; the Photo home screen for Pat's phone
+// - Automations: Customer email templates (incl. the Estimate email) and texting rules (on/off, Pat's cell)
+// - Connections: Quo and QuickBooks (connect, status, sync)
+// Your profile moved to /profile (the avatar menu). Staff who are not admins are sent there. Server guards are the real
+// check (requireAdmin on every company write). Old hash links (#texting, #quickbooks...) land on the right tab.
+const TABS = [
+  { id: 'company', title: 'Company', icon: Building2 },
+  { id: 'automations', title: 'Automations', icon: Mail },
+  { id: 'connections', title: 'Connections', icon: Plug },
+] as const
+type TabId = (typeof TABS)[number]['id']
+const HASH_TAB: Record<string, TabId> = { company: 'company', 'photo-home': 'company', 'email-templates': 'automations', texting: 'connections', quickbooks: 'connections' }
+
 export const Route = createFileRoute('/_staff/settings')({
-  head: () => ({ meta: [{ title: 'Company settings - Turner’s Decks CRM' }, { name: 'description', content: 'Company info and Owner alerts.' }] }),
-  loader: async ({ context }) => {
-    if (context.staff.role !== 'admin') return { settings: null }
-    return { settings: await getCompanySettings() }
+  validateSearch: (s: Record<string, unknown>): { tab?: TabId; qbo?: string } => ({
+    tab: TABS.some((t) => t.id === s.tab) ? (s.tab as TabId) : undefined,
+    qbo: typeof s.qbo === 'string' ? s.qbo.slice(0, 40) : undefined,
+  }),
+  beforeLoad: ({ context }) => {
+    if (context.staff.role !== 'admin') throw redirect({ to: '/profile' })
   },
+  head: () => ({ meta: [{ title: 'Settings - Turner’s Decks CRM' }, { name: 'description', content: 'Company info, automations and connections.' }] }),
+  loader: async () => ({ settings: await getCompanySettings() }),
   component: SettingsPage,
 })
 
-const SECTIONS = [
-  { id: 'profile', title: 'Your profile', icon: UserRound },
-  { id: 'company', title: 'Company', icon: Building2 },
-  { id: 'email-templates', title: 'Customer email templates', icon: Mail },
-  { id: 'texting', title: 'Texting (Quo)', icon: MessageSquare },
-  { id: 'quickbooks', title: 'QuickBooks', icon: Receipt },
-  { id: 'photo-home', title: 'Photo home screen', icon: Camera },
-] as const
-type SectionId = (typeof SECTIONS)[number]['id']
-
 function SettingsPage() {
-  const { settings } = Route.useLoaderData()
-  const { staff } = Route.useRouteContext()
-  const isAdmin = staff.role === 'admin' && settings !== null
+  const search = Route.useSearch()
+  const navigate = useNavigate()
+  const tab = search.tab ?? 'company'
+  // An old link with a hash (e.g. /settings#quickbooks) opens the tab that section lives on now.
+  useEffect(() => {
+    const t = HASH_TAB[window.location.hash.slice(1)]
+    if (t && t !== tab) void navigate({ to: '/settings', search: (s: Record<string, unknown>) => ({ ...s, tab: t }) as never, replace: true })
+  }, [])
 
   return (
     <div>
-      <PageHeader
-        title="Company settings"
-        description={isAdmin ? 'Your company info and where new-Lead alerts go.' : 'Your name as other Staff see it.'}
-      />
-      {isAdmin ? (
-        <div className="flex flex-col gap-6 lg:flex-row lg:gap-12">
-          <aside className="lg:sticky lg:top-20 lg:w-56 lg:shrink-0 lg:self-start">
-            <SectionNav />
-          </aside>
-          <div className="min-w-0 max-w-3xl flex-1 space-y-10">
-            <ProfileSection name={staff.name} />
-            <AdminSettings />
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-3xl">
-          <ProfileSection name={staff.name} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** Kit settings sidebar-nav: ghost links (the visible section is highlighted) on wide screens, a Select on phones. */
-function SectionNav() {
-  const navigate = useNavigate()
-  const [active, setActive] = useState<SectionId>('profile')
-
-  useEffect(() => {
-    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter((el): el is HTMLElement => el !== null)
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const top = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
-        if (top) setActive(top.target.id as SectionId)
-      },
-      { rootMargin: '-80px 0px -60% 0px' },
-    )
-    els.forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
-
-  function go(id: SectionId) {
-    setActive(id)
-    // Through the router, so its history state (scroll restoration key) survives; the router does the smooth scroll.
-    void navigate({ to: '.', hash: id, replace: true, resetScroll: false, hashScrollIntoView: { behavior: 'smooth', block: 'start' } })
-  }
-
-  return (
-    <>
-      <div className="lg:hidden">
-        <Select value={active} onValueChange={(v) => go(v as SectionId)}>
-          <SelectTrigger className="h-10 w-full sm:w-72" aria-label="Settings section">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SECTIONS.map(({ id, title, icon: Icon }) => (
-              <SelectItem key={id} value={id}>
-                <span className="flex items-center gap-2">
-                  <Icon className="size-4 text-muted-foreground" aria-hidden />
-                  {title}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <nav aria-label="Settings sections" className="hidden flex-col gap-1 lg:flex">
-        {SECTIONS.map(({ id, title, icon: Icon }) => (
-          <a
+      <PageHeader title="Settings" description="Company info, automations and connections." />
+      <div role="tablist" aria-label="Settings" className="mb-8 flex gap-1 border-b">
+        {TABS.map(({ id, title, icon: Icon }) => (
+          <Link
             key={id}
-            href={`#${id}`}
-            onClick={(e) => {
-              e.preventDefault()
-              go(id)
-            }}
-            aria-current={active === id ? 'true' : undefined}
+            to="/settings"
+            search={{ tab: id }}
+            role="tab"
+            aria-selected={tab === id}
             className={cn(
-              buttonVariants({ variant: 'ghost' }),
-              'h-9 justify-start gap-2 whitespace-normal text-left',
-              active === id ? 'bg-muted hover:bg-muted' : 'hover:bg-transparent hover:underline',
+              '-mb-px inline-flex h-10 items-center gap-2 border-b-2 px-3 text-sm font-medium transition',
+              tab === id ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
-            <Icon className="size-4 shrink-0" aria-hidden />
+            <Icon className="size-4" aria-hidden />
             {title}
-          </a>
+          </Link>
         ))}
-      </nav>
-    </>
+      </div>
+      <div className="max-w-3xl space-y-10">
+        {tab === 'company' && (
+          <>
+            <CompanySection />
+            <PhotoHomeSection />
+          </>
+        )}
+        {tab === 'automations' && <AutomationsTab />}
+        {tab === 'connections' && (
+          <>
+            <QuoConnectionSection />
+            <QuickBooksSection />
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -152,7 +105,7 @@ function ContentSection({
   description,
   children,
 }: {
-  id: SectionId
+  id: string
   title: string
   description?: React.ReactNode
   children: React.ReactNode
@@ -169,44 +122,12 @@ function ContentSection({
   )
 }
 
-function ProfileSection({ name }: { name: string }) {
-  const router = useRouter()
-  const [myName, setMyName] = useState(name)
-  const [busy, setBusy] = useState(false)
-
-  async function saveName(e: React.FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    try {
-      await updateProfileName({ data: { name: myName } })
-      toast.success('Name saved')
-      await router.invalidate()
-    } catch (error) {
-      toast.error(await errorMessage(error))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <ContentSection id="profile" title="Your profile" description="Shown on Leads, Follow-ups and Estimates you create.">
-      <form onSubmit={saveName} className="flex flex-col gap-2 sm:flex-row">
-        <Input aria-label="Your full name" value={myName} onChange={(e) => setMyName(e.target.value)} placeholder="Your full name" required />
-        <Button variant="outline" disabled={busy}>
-          Save
-        </Button>
-      </form>
-    </ContentSection>
-  )
-}
-
 const TIMEZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'UTC']
 const selectClass =
   'h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:bg-input/30'
 
-function AdminSettings() {
-  const { settings: s } = Route.useLoaderData()
-  const settings = s!
+function CompanySection() {
+  const { settings } = Route.useLoaderData()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [f, setF] = useState<CompanySettingsInput>({
@@ -281,11 +202,16 @@ function AdminSettings() {
           </Button>
         </div>
       </div>
+    </>
+  )
+}
 
+function AutomationsTab() {
+  const { settings } = Route.useLoaderData()
+  return (
+    <>
       <EmailTemplatesSection calculatorTemplate={settings.estimateEmailTemplate} />
-      <TextingSection businessNumber={settings.businessNumber} />
-      <QuickBooksSection />
-      <PhotoHomeSection />
+      <TextingRulesSection />
     </>
   )
 }
@@ -544,17 +470,13 @@ type TextingSettings = Awaited<ReturnType<typeof getTextingSettings>>
  * Leads right away. Sending texts (instant reply to website Leads, photo links to Pat) waits for the switch, which
  * goes on only after Quo shows carrier registration (A2P 10DLC) approved.
  */
-function TextingSection({ businessNumber }: { businessNumber: string | null }) {
+/** Loads texting settings for both halves (Connections: Quo; Automations: rules). */
+function useTexting() {
   const [t, setT] = useState<TextingSettings | null>(null)
-  const [phone, setPhone] = useState(businessNumber ? prettyPhone(businessNumber) : '')
-  const [mobile, setMobile] = useState('')
   const [busy, setBusy] = useState(false)
-
   const load = async () => {
     try {
-      const next = await getTextingSettings()
-      setT(next)
-      setMobile(next.ownerMobile ? prettyPhone(next.ownerMobile) : '')
+      setT(await getTextingSettings())
     } catch (error) {
       toast.error(await errorMessage(error))
     }
@@ -562,7 +484,6 @@ function TextingSection({ businessNumber }: { businessNumber: string | null }) {
   useEffect(() => {
     void load()
   }, [])
-
   async function run(fn: () => Promise<unknown>, done: string) {
     setBusy(true)
     try {
@@ -575,78 +496,89 @@ function TextingSection({ businessNumber }: { businessNumber: string | null }) {
       setBusy(false)
     }
   }
+  return { t, setT, busy, run }
+}
 
+/** Connections > Quo: the API key status and Connect Quo (makes the webhook). */
+function QuoConnectionSection() {
+  const { settings } = Route.useLoaderData()
+  const { t, busy, run } = useTexting()
+  const [phone, setPhone] = useState(settings.businessNumber ? prettyPhone(settings.businessNumber) : '')
   return (
-    <ContentSection
-      id="texting"
-      title="Texting (Quo)"
-      description="Texts and calls to the Quo number show up on Leads. Once carrier registration is approved in Quo, the CRM can also send texts."
-    >
+    <ContentSection id="quo" title="Quo (phone and texting)" description="Texts and calls to the Quo number show up on Leads as soon as Quo is connected.">
       {!t ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : (
         <Card className="shadow-xs">
-          <CardContent className="space-y-6 p-4 sm:p-6">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">1. Connect Quo</p>
-              {!t.hasApiKey ? (
-                <p className="text-sm text-muted-foreground">
-                  Add the Quo API key (Quo › Settings › API) to this CRM in Cloudflare as a secret named QUO_API_KEY, then come back.
-                </p>
-              ) : t.connected ? (
-                <p className="text-sm">
-                  Connected to {prettyPhone(t.connected.phoneNumberE164)} on {new Date(t.connected.connectedAt).toLocaleDateString()}.
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">Not connected yet.</p>
-              )}
-              {t.hasApiKey && (
-                <form
-                  className="flex flex-col gap-2 sm:flex-row"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    void run(() => connectQuoNumber({ data: { phone } }), 'Quo connected')
-                  }}
-                >
-                  <Input aria-label="Quo number" placeholder="(484) 939-3325" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                  <Button variant="outline" disabled={busy}>
-                    {t.connected ? 'Reconnect' : 'Connect Quo'}
-                  </Button>
-                </form>
-              )}
-              <p className="text-xs text-muted-foreground">Quo sends texts and calls to {t.webhookUrl}</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ownerMobile">2. Pat's cell (photo-link texts go here)</Label>
-              <Input id="ownerMobile" type="tel" value={mobile} placeholder="(484) 555-0123" onChange={(e) => setMobile(e.target.value)} />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">3. Send texts from the CRM</p>
-              <label className="flex items-start gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 size-4"
-                  checked={t.textingEnabled}
-                  disabled={busy || (!t.textingEnabled && !(t.hasApiKey && t.connected))}
-                  onChange={(e) => setT({ ...t, textingEnabled: e.target.checked })}
-                />
-                <span>
-                  Texting is on. Turn this on only after Quo › Settings › Trust shows carrier registration approved; carriers block business
-                  texts from unregistered numbers. When on, website Leads who tick “Text me about my project” get an instant text, and photo
-                  links can be texted to Pat.
-                </span>
-              </label>
-              <Button
-                size="sm"
-                disabled={busy}
-                onClick={() => run(() => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: mobile } }), 'Texting saved')}
+          <CardContent className="space-y-3 p-4 text-sm sm:p-6">
+            {!t.hasApiKey ? (
+              <p className="text-muted-foreground">Add the Quo API key (Quo › Settings › API) to this CRM in Cloudflare as a secret named QUO_API_KEY, then come back.</p>
+            ) : t.connected ? (
+              <p>
+                Connected to {prettyPhone(t.connected.phoneNumberE164)} on {new Date(t.connected.connectedAt).toLocaleDateString()}.
+              </p>
+            ) : (
+              <p className="text-muted-foreground">Not connected yet.</p>
+            )}
+            {t.hasApiKey && (
+              <form
+                className="flex flex-col gap-2 sm:flex-row"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void run(() => connectQuoNumber({ data: { phone } }), 'Quo connected')
+                }}
               >
-                <Save />
-                Save texting
-              </Button>
+                <Input aria-label="Quo number" placeholder="(484) 939-3325" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Button variant="outline" disabled={busy}>
+                  {t.connected ? 'Reconnect' : 'Connect Quo'}
+                </Button>
+              </form>
+            )}
+            <p className="text-xs text-muted-foreground">Quo sends texts and calls to {t.webhookUrl}</p>
+          </CardContent>
+        </Card>
+      )}
+    </ContentSection>
+  )
+}
+
+/**
+ * Automations > Texting: whether the CRM sends texts (instant reply to website Leads, photo links to Pat) and Pat's
+ * cell. Switched on only after Quo shows carrier registration (A2P 10DLC) approved (docs/adr/0004-quo-texting.md).
+ */
+function TextingRulesSection() {
+  const { t, setT, busy, run } = useTexting()
+  const [mobile, setMobile] = useState<string | null>(null)
+  const shownMobile = mobile ?? (t?.ownerMobile ? prettyPhone(t.ownerMobile) : '')
+  return (
+    <ContentSection id="texting" title="Texting" description="Automatic texts from the Quo number. Connect Quo first, under Connections.">
+      {!t ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <Card className="shadow-xs">
+          <CardContent className="space-y-5 p-4 sm:p-6">
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4"
+                checked={t.textingEnabled}
+                disabled={busy || (!t.textingEnabled && !(t.hasApiKey && t.connected))}
+                onChange={(e) => setT({ ...t, textingEnabled: e.target.checked })}
+              />
+              <span>
+                Texting is on. Turn this on only after Quo › Settings › Trust shows carrier registration approved; carriers block business texts from
+                unregistered numbers. When on, website Leads who tick “Text me about my project” get an instant text, and photo links can be texted to
+                Pat.
+              </span>
+            </label>
+            <div className="space-y-2">
+              <Label htmlFor="ownerMobile">Pat's cell (photo-link texts go here)</Label>
+              <Input id="ownerMobile" type="tel" value={shownMobile} placeholder="(484) 555-0123" onChange={(e) => setMobile(e.target.value)} />
             </div>
+            <Button size="sm" disabled={busy} onClick={() => run(() => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: shownMobile } }), 'Texting saved')}>
+              <Save />
+              Save texting
+            </Button>
           </CardContent>
         </Card>
       )}

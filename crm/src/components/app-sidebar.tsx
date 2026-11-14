@@ -99,7 +99,7 @@ const initialsOf = (staff: SidebarStaff) =>
     .map((s) => s[0]?.toUpperCase())
     .join('')
 
-// Footer user block. The name row is a real link to Your profile (/settings) for every Staff member, so it is in the
+// Footer user block. The name row is a real link to Your profile (/profile) for every Staff member, so it is in the
 // server-rendered HTML; the menu next to it holds theme and Log out. The Company settings item stays admin-only.
 function NavUser({ staff }: { staff: SidebarStaff }) {
   const { isMobile, setOpenMobile } = useSidebar()
@@ -128,7 +128,7 @@ function NavUser({ staff }: { staff: SidebarStaff }) {
     <SidebarMenu>
       <SidebarMenuItem className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col">
         <SidebarMenuButton asChild size="lg" tooltip="Your profile" className="min-w-0 flex-1">
-          <Link to="/settings" aria-label="Your profile" title="Your profile" onClick={() => setOpenMobile(false)}>
+          <Link to="/profile" aria-label="Your profile" title="Your profile" onClick={() => setOpenMobile(false)}>
             {who}
           </Link>
         </SidebarMenuButton>
@@ -160,7 +160,7 @@ function NavUser({ staff }: { staff: SidebarStaff }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link to="/settings" onClick={() => setOpenMobile(false)}>
+                <Link to="/profile" onClick={() => setOpenMobile(false)}>
                   <UserRound />
                   Your profile
                 </Link>

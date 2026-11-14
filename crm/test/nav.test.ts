@@ -6,12 +6,13 @@ const titles = (role: string) => visibleNavGroups(role).flatMap((g) => g.items.m
 describe('sidebar navigation', () => {
   it('shows Staff Contacts, Leads, Jobs and Estimator settings, without admin-only items', () => {
     expect(visibleNavGroups('staff').map((g) => g.title)).toEqual(['CRM', 'Company'])
-    expect(titles('staff')).toEqual(['Contacts', 'Leads', 'Jobs', 'Transactions', 'Lead sources', 'Estimator settings'])
+    expect(titles('staff')).toEqual(['Contacts', 'Leads', 'Jobs', 'Lead sources', 'Transactions', 'Estimator settings'])
   })
 
-  it('shows an admin Company settings and Submissions as well', () => {
+  it('shows an admin Submissions (under CRM) and Settings (under Company) as well', () => {
     const company = visibleNavGroups('admin').find((g) => g.title === 'Company')!
-    expect(company.items.map((i) => i.title)).toEqual(['Company settings', 'Estimator settings', 'Submissions'])
+    expect(company.items.map((i) => i.title)).toEqual(['Transactions', 'Estimator settings', 'Settings'])
+    expect(visibleNavGroups('admin').find((g) => g.title === 'CRM')!.items.map((i) => i.title)).toContain('Submissions')
   })
 
   it('has none of the screens that are not in v1', () => {
@@ -22,7 +23,7 @@ describe('sidebar navigation', () => {
 
   it('links every item to its planned path', () => {
     const urls = visibleNavGroups('admin').flatMap((g) => g.items.map((i) => i.url))
-    expect(urls).toEqual(['/contacts', '/leads', '/jobs', '/transactions', '/lead-sources', '/settings', '/settings/estimator', '/submissions'])
+    expect(urls).toEqual(['/contacts', '/leads', '/jobs', '/lead-sources', '/submissions', '/transactions', '/settings/estimator', '/settings'])
   })
 
   it('marks an item active on its path and sub-paths: Leads on a Lead page, Contacts on a Customer page', () => {
@@ -60,9 +61,9 @@ describe('header title and breadcrumbs', () => {
     expect(headerTrail('/jobs/abc', 'staff')).toEqual({ title: 'Job', parent: { title: 'Jobs', url: '/jobs' } })
   })
 
-  it('titles /settings Your profile for Staff and Company settings for an admin', () => {
-    expect(headerTrail('/settings', 'staff')).toEqual({ title: 'Your profile' })
-    expect(headerTrail('/settings', 'admin')).toEqual({ title: 'Company settings' })
+  it('titles /profile Your profile and /settings Settings', () => {
+    expect(headerTrail('/profile', 'staff')).toEqual({ title: 'Your profile' })
+    expect(headerTrail('/settings', 'admin')).toEqual({ title: 'Settings' })
   })
 
   it('falls back to the company name', () => {

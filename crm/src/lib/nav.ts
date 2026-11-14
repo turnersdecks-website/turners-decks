@@ -17,16 +17,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: 'Contacts', url: '/contacts', icon: Users },
       { title: 'Leads', url: '/leads', icon: KanbanSquare },
       { title: 'Jobs', url: '/jobs', icon: Hammer },
-      { title: 'Transactions', url: '/transactions', icon: Receipt },
       { title: 'Lead sources', url: '/lead-sources', icon: BarChart3 },
+      { title: 'Submissions', url: '/submissions', icon: Inbox, admin: true },
     ],
   },
   {
     title: 'Company',
     items: [
-      { title: 'Company settings', url: '/settings', icon: Building2, admin: true },
+      { title: 'Transactions', url: '/transactions', icon: Receipt },
       { title: 'Estimator settings', url: '/settings/estimator', icon: Calculator },
-      { title: 'Submissions', url: '/submissions', icon: Inbox, admin: true },
+      { title: 'Settings', url: '/settings', icon: Building2, admin: true },
     ],
   },
 ]
@@ -58,7 +58,7 @@ const SUB_PAGES: { match: (path: string) => boolean; title: string; parent: stri
 const normalize = (path: string) => path.replace(/\/+$/, '') || '/'
 
 /** The header's page title, with a parent crumb on pages under a sidebar screen. */
-export function headerTrail(path: string, role: string): HeaderTrail {
+export function headerTrail(path: string, _role: string): HeaderTrail {
   const p = normalize(path)
   const items = NAV_GROUPS.flatMap((g) => g.items)
   const sub = SUB_PAGES.find((s) => s.match(p))
@@ -66,8 +66,7 @@ export function headerTrail(path: string, role: string): HeaderTrail {
     const parent = items.find((i) => i.url === sub.parent)!
     return { title: sub.title, parent: { title: parent.title, url: parent.url } }
   }
-  // Staff see only their own profile on /settings; Company settings is the admin's view of the same page.
-  if (p === '/settings' && role !== 'admin') return { title: 'Your profile' }
+  if (p === '/profile') return { title: 'Your profile' }
   const item = items.find((i) => i.url === p)
   return { title: item?.title ?? 'Turner’s Decks' }
 }
