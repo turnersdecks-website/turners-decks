@@ -33,3 +33,10 @@ Quo app. The CRM connects to Quo two ways:
 - Quo's own missed-call auto-reply and business-hours greetings are set in the Quo app, not here.
 - Not built: two-way texting inside the CRM (Pat texts from the Quo app; it shows on the Lead), automatic follow-up
   sequences, logging texts on Customers who have no Lead.
+
+## Reply to a first text (2026-11-14)
+
+When texting is on, the first text from a number with no Lead gets one automatic reply: "Hi, this is {company}. Thanks
+for your text! We got it and will get back to you soon. Reply STOP to opt out." It goes through the outbox as an
+`sms_lead_reply` job (dedupe `sms_first_text_reply:{quo message id}`), so the consent and Do not contact checks run at
+send time. A STOP as the first text makes no Lead and gets no reply (Quo's own STOP confirmation still applies).

@@ -60,6 +60,29 @@ const consentOf = (phone: string) =>
 beforeEach(() => connect())
 
 describe('Quo webhook', () => {
+  it('a new number\'s first text gets one automatic reply when texting is on; not when off, not after STOP, not for a known Lead', async () => {
+    const replies = (phone: string) =>
+      env.DB.prepare("SELECT payload_json FROM notification_jobs WHERE kind = 'sms_lead_reply' AND payload_json LIKE ?").bind(`%${phone}%`).all<Record<string, any>>().then((r) => r.results.map((x) => JSON.parse(x.payload_json)))
+    await connect(true)
+    const fresh = e164(quoPhone())
+    await textFrom(fresh, 'Hi, do you build decks in Exeter?')
+    const [reply] = await replies(fresh)
+    expect(reply).toMatchObject({ to: fresh, lead_id: (await leadByPhone(fresh))!.id })
+    expect(reply.content).toMatch(/Thanks for your text!.*Reply STOP to opt out\./)
+    await textFrom(fresh, 'Also pergolas?')
+    expect(await replies(fresh)).toHaveLength(1)
+
+    const stopper = e164(quoPhone())
+    await textFrom(stopper, 'STOP')
+    expect(await replies(stopper)).toHaveLength(0)
+
+    await connect(false)
+    const quiet = e164(quoPhone())
+    await textFrom(quiet, 'hello')
+    expect(await leadByPhone(quiet)).not.toBeNull()
+    expect(await replies(quiet)).toHaveLength(0)
+  })
+
   it('refuses a delivery whose signature does not match, or that is too old', async () => {
     const phone = e164(quoPhone())
     expect((await deliver('message.received', { resource: { id: 'AC1', text: 'hi' }, context: { senderIdentifier: phone } }, { secret: `whsec_${btoa('wrong')}` })).status).toBe(401)

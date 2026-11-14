@@ -1,17 +1,21 @@
 import { and, eq } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { getDb } from '#/db/client'
-import { consentEvents, customers, leadActivity, leads, notificationJobs, quoConnection, quoWebhookEvents } from '#/db/schema'
+import { companySettings, consentEvents, customers, leadActivity, leads, notificationJobs, quoConnection, quoWebhookEvents } from '#/db/schema'
 import { customerIdFor } from '#/lib/customers.server'
 import { readBoundedText } from '#/lib/intake'
+import { type OutboxEnv, enqueueJob, kickJobs } from '#/lib/outbox'
 import { prettyPhone, toE164 } from '#/lib/phone'
 import { START_WORDS, STOP_WORDS, keywordOf, verifyQuoSignature } from '#/lib/quo'
 import { leadCreated, stageMove } from '#/lib/stage-history.server'
+import { firstTextReplyText } from '#/lib/texting.server'
 
 // POST /api/public/quo-webhook (docs/adr/0004-quo-texting.md). Quo calls it for the connected number:
 // - message.received: the text goes on the sender's Lead; a number we don't know becomes a new Lead (source `text`).
 //   STOP-type words revoke text consent; START grants it again. A first text from a number with no consent history
-//   counts as consent to reply about their project (they reached out), as the privacy policy says.
+//   counts as consent to reply about their project (they reached out), as the privacy policy says. When texting is
+//   switched on, that first text from a new number gets one automatic reply (firstTextReplyText), sent through the
+//   outbox like the website instant reply, so a STOP or Do not contact before it goes out still stops it.
 // - message.delivered: a text Pat sent from the Quo app goes on the Lead and moves a new Lead to contacted. Never
 //   creates a Lead. The CRM's own texts (found by Quo message id on their outbox job) are skipped: the outbox logs them.
 // - call.completed: the call goes on the Lead (answered / missed, length). An incoming answered call of 30 s or more
@@ -26,7 +30,7 @@ const MAX_BODY_BYTES = 64 * 1024
 export const MIN_NEW_LEAD_CALL_S = 30
 
 type Db = ReturnType<typeof getDb>
-type Env = { DB: D1Database }
+type Env = { DB: D1Database } & Partial<OutboxEnv>
 type Delivery = { id?: string; type?: string; createdAt?: string; data?: { resource?: Record<string, any>; context?: Record<string, any> } }
 
 export async function handleQuoWebhook(request: Request, env: Env, now = Date.now()): Promise<Response> {
@@ -53,7 +57,8 @@ export async function handleQuoWebhook(request: Request, env: Env, now = Date.no
   // A delivery for some other Quo number (the webhook is filtered to ours; this is belt and braces).
   if (context.phoneNumberId && context.phoneNumberId !== conn.phoneNumberId) return Response.json({ ok: true, ignored: 'other number' })
 
-  const writes = await writesFor(db, type, resource, context, conn.phoneNumberE164, now)
+  const jobIds: string[] = []
+  const writes = await writesFor(db, type, resource, context, conn.phoneNumberE164, now, jobIds)
   const record = db.insert(quoWebhookEvents).values({ webhookId: deliveryId, type, receivedAt: new Date(now) })
   try {
     await db.batch([...writes, record] as unknown as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
@@ -62,10 +67,19 @@ export async function handleQuoWebhook(request: Request, env: Env, now = Date.no
     if (/UNIQUE constraint failed: quo_webhook_events/.test(String(err))) return Response.json({ ok: true, duplicate: true })
     throw err
   }
+  if (jobIds.length && env.QUO_API_KEY !== undefined) kickJobs(env as OutboxEnv, jobIds)
   return Response.json({ ok: true })
 }
 
-async function writesFor(db: Db, type: string, r: Record<string, any>, ctx: Record<string, any>, ours: string, now: number): Promise<BatchItem<'sqlite'>[]> {
+async function writesFor(
+  db: Db,
+  type: string,
+  r: Record<string, any>,
+  ctx: Record<string, any>,
+  ours: string,
+  now: number,
+  jobIds: string[] = [],
+): Promise<BatchItem<'sqlite'>[]> {
   const at = new Date(Date.parse(r.createdAt ?? '') || now)
   const quoId = typeof r.id === 'string' ? r.id : null
   if (!quoId) return []
@@ -85,6 +99,20 @@ async function writesFor(db: Db, type: string, r: Record<string, any>, ctx: Reco
     if (leadId) writes.push(activity(db, { leadId, kind: 'text', direction: 'inbound', body, dedupeKey: `quo:${quoId}`, at }))
     const consent = stop ? 'revoke' : start ? 'grant' : (await hasConsentHistory(db, phone)) ? null : 'grant'
     if (consent) writes.push(consentWrite(db, { phone, event: consent, at, leadId, ref: quoId }))
+    // A new number's first text gets one automatic reply when texting is on (rechecked at send time).
+    if (lead && lead.writes.length && !stop) {
+      const settings = await db.select({ on: companySettings.textingEnabled, name: companySettings.name }).from(companySettings).where(eq(companySettings.id, 1)).get()
+      if (settings?.on) {
+        const job = enqueueJob(db, {
+          kind: 'sms_lead_reply',
+          dedupeKey: `sms_first_text_reply:${quoId}`,
+          payload: { lead_id: lead.id, to: phone, content: firstTextReplyText(settings.name) },
+          envelope: { to: [phone], subject: 'Text: reply to a first text' },
+        })
+        writes.push(job.insert)
+        jobIds.push(job.id)
+      }
+    }
     return writes
   }
 
