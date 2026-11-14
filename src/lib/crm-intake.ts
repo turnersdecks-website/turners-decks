@@ -46,7 +46,7 @@ export type ContactFields = {
   sms_consent?: boolean;
 };
 
-export type QuoteFields = ContactFields & { project_type: string; approx_size?: string; material?: string; notes?: string };
+export type QuoteFields = ContactFields & { street?: string; town?: string; project_type: string; approx_size?: string; material?: string; notes?: string };
 
 export type EstimatorContact = ContactFields & {
   timing: string;
@@ -117,7 +117,17 @@ export function quotePayload(f: QuoteFields, ctx: PayloadContext) {
     approx_size: trimmed(f.approx_size, 60),
     material: trimmed(f.material, 40),
     notes: trimmed(f.notes, 2000),
+    address: quoteAddress(f),
   };
+}
+
+/** The project address as the CRM reads it ("street, town, PA zip"); only when a street was given. Pure. */
+export function quoteAddress(f: { street?: string; town?: string; zip?: string }): string | undefined {
+  const street = f.street?.trim();
+  if (!street) return undefined;
+  const town = f.town?.trim();
+  const zip = f.zip?.trim();
+  return trimmed([street, town, `PA${zip ? ` ${zip}` : ""}`].filter(Boolean).join(", "), 200);
 }
 
 /** The estimator's JSON body: contact details, the Published version answered, the answers and which were defaults. Pure. */

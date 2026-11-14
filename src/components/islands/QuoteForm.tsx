@@ -1,5 +1,5 @@
 // "Get a free estimate" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
-import { useRef, useState, type ComponentProps, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
@@ -25,6 +25,14 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
   useFocusFirstError(formRef, errors);
   const turnstile = useTurnstile();
   const keys = useRef(new SubmissionKeys());
+  // The send button stays disabled until this island is running, so a tap before then can't do a plain-HTML submit
+  // (which reloads the page and loses the answers).
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  const doneRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (status === "done") doneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [status]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -63,7 +71,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
 
   if (status === "done") {
     return (
-      <div className={onDark ? "" : "rounded-2xl bg-card p-8 shadow-card"} role="status">
+      <div ref={doneRef} className={onDark ? "" : "rounded-2xl bg-card p-8 shadow-card"} role="status">
         <CheckCircle2 className="size-12 text-stone" />
         <h3 className="mt-4 text-3xl">Thanks, we got it.</h3>
         <p className="mt-3 text-muted-foreground">We'll call you {SITE.responseTime} to set up your free on-site estimate.</p>
@@ -88,6 +96,8 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
         {field("last_name", "Last name", { autoComplete: "family-name" })}
         {field("email", "Email", { type: "email", autoComplete: "email" })}
         {field("phone", "Phone", { type: "tel", autoComplete: "tel", inputMode: "tel" })}
+        {field("street", "Project address (optional)", { autoComplete: "address-line1", placeholder: "Street address" })}
+        {field("town", "Town (optional)", { autoComplete: "address-level2" })}
         {field("zip", "Zip code", { inputMode: "numeric", maxLength: 5, autoComplete: "postal-code" })}
         <div>
           <Label htmlFor="project_type">Project type</Label>
@@ -104,7 +114,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
           <Label htmlFor="material">Preferred material</Label>
           <select id="material" name="material" defaultValue="Not sure" className={`mt-1.5 ${selectCls} ${tone.field}`}>
             <option>Composite</option>
-            <option>Capped PVC</option>
+            <option>PVC</option>
             <option>Pressure-treated wood</option>
             <option>Not sure</option>
           </select>
@@ -117,7 +127,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
       <SmsConsent id="q-sms_consent" />
       <TurnstileBox boxRef={turnstile.ref} />
       {status === "error" && <SendError message={serverError} />}
-      <Button type="submit" variant={onDark ? "light" : "cta"} size="lg" className="w-full sm:w-auto" disabled={status === "sending"}>
+      <Button type="submit" variant={onDark ? "light" : "cta"} size="lg" className="w-full sm:w-auto" disabled={!ready || status === "sending"}>
         {status === "sending" ? "Sending…" : "Request My Free Estimate"}
       </Button>
     </form>
