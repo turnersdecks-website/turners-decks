@@ -234,11 +234,12 @@ describe('the P&L', () => {
       add('Purchase:p4', 'cost', '2026-03-03', 500, null, null),
       add('Payment:p5', 'payment', '2026-03-15', 10000, 'job', jobId),
       add('Purchase:p6', 'cost', '2025-12-30', 999, 'overhead', null),
+      env.DB.prepare("INSERT INTO qbo_transactions (id, entity, qbo_id, kind, txn_date, amount_cents, deleted, synced_at, account) VALUES ('Purchase:p7', 'Purchase', 'p7', 'cost', '2026-03-04', 700, 0, ?, 'Owner''s Pay & Personal Expenses')").bind(now),
     ])
     const pnl = await profitAndLoss(db(), 2026)
     expect(pnl.months).toHaveLength(12)
     expect(pnl.months[1]).toMatchObject({ month: '2026-02', jobCostCents: 3000 })
-    expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, overheadCents: 1000, unsortedCents: 500, paidCents: 10000 })
+    expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, overheadCents: 1000, unsortedCents: 500, ownerCents: 700, paidCents: 10000 })
     expect(pnl.completedJobs).toEqual([expect.objectContaining({ id: jobId, revenueCents: 10000, costCents: 3000 })])
     expect((await profitAndLoss(db(), 2025)).completedJobs).toEqual([])
   })

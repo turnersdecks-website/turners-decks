@@ -34,6 +34,7 @@ function ProfitLossPage() {
   const overhead = sum('overheadCents')
   const unsorted = sum('unsortedCents')
   const paid = sum('paidCents')
+  const owner = sum('ownerCents')
   const costs = jobCosts + overhead + unsorted
   const profit = revenue - costs
   const lastMonth = year === thisYear ? new Date().getMonth() + 1 : 12
@@ -71,6 +72,11 @@ function ProfitLossPage() {
           <StatCard label="Gross profit on Jobs" value={formatMoney(revenue - jobCosts) || '$0'} hint={`Revenue minus costs sorted onto Jobs (${pct(marginPct(revenue, jobCosts))})`} />
         </StatGrid>
 
+        {owner > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Owner's pay and personal spending ({formatMoney(owner)}, the QuickBooks account Owner's Pay &amp; Personal Expenses) is not a business cost, so it is left out of Costs and Profit.
+          </p>
+        )}
         {unsorted > 0 && (
           <p className="text-sm text-muted-foreground">
             {formatMoney(unsorted)} of costs are not sorted yet. They are taken off Profit already; sorting them on{' '}
@@ -92,6 +98,7 @@ function ProfitLossPage() {
                 <th className="px-3 py-2 text-right font-medium">Not sorted</th>
                 <th className="px-3 py-2 text-right font-medium">Profit</th>
                 <th className="px-3 py-2 text-right font-medium">Year to date</th>
+                <th className="px-3 py-2 text-right font-medium">Owner's pay</th>
               </tr>
             </thead>
             <tbody className="divide-y tabular-nums">
@@ -107,6 +114,7 @@ function ProfitLossPage() {
                     <td className="px-3 py-1.5 text-right text-muted-foreground">{money(m.unsortedCents)}</td>
                     <td className={cn('px-3 py-1.5 text-right', p < 0 && 'text-destructive')}>{money(p)}</td>
                     <td className={cn('px-3 py-1.5 text-right font-medium', running < 0 && 'text-destructive')}>{money(running)}</td>
+                    <td className="px-3 py-1.5 text-right text-muted-foreground">{money(m.ownerCents)}</td>
                   </tr>
                 )
               })}
@@ -120,6 +128,7 @@ function ProfitLossPage() {
                 <td className="px-3 py-2 text-right">{money(unsorted)}</td>
                 <td className={cn('px-3 py-2 text-right', profit < 0 && 'text-destructive')}>{money(profit)}</td>
                 <td />
+                <td className="px-3 py-2 text-right">{money(owner)}</td>
               </tr>
             </tfoot>
           </table>
