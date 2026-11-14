@@ -83,6 +83,12 @@ export function authorizeUrl(env: QboEnv, state: string) {
 
 type TokenResponse = { access_token: string; refresh_token: string; expires_in: number; x_refresh_token_expires_in: number }
 
+/** Intuit's request id (intuit_tid header), kept in error messages so Intuit support can trace a failed call. */
+function tidNote(res: Response) {
+  const tid = res.headers.get('intuit_tid')
+  return tid ? ` [intuit_tid ${tid}]` : ''
+}
+
 async function tokenCall(env: QboEnv, body: Record<string, string>, deps: QboDeps): Promise<TokenResponse> {
   if (!env.QBO_CLIENT_ID || !env.QBO_CLIENT_SECRET) throw badRequest('QBO_CLIENT_ID and QBO_CLIENT_SECRET are not set.')
   const res = await (deps.fetch ?? fetch)(TOKEN_URL, {
@@ -92,7 +98,8 @@ async function tokenCall(env: QboEnv, body: Record<string, string>, deps: QboDep
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   const json = await res.json<Partial<TokenResponse> & { error?: string }>().catch(() => ({}) as Partial<TokenResponse> & { error?: string })
-  if (!res.ok || !json.access_token || !json.refresh_token) throw new Error(`QuickBooks sign-in failed (${res.status}${json.error ? `: ${json.error}` : ''})`)
+  if (json.error === 'invalid_grant') throw new Error(`QuickBooks access has expired or was revoked. Reconnect QuickBooks in Settings › Connections.${tidNote(res)}`)
+  if (!res.ok || !json.access_token || !json.refresh_token) throw new Error(`QuickBooks sign-in failed (${res.status}${json.error ? `: ${json.error}` : ''})${tidNote(res)}`)
   return json as TokenResponse
 }
 
@@ -144,7 +151,7 @@ async function qboGet<T>(env: QboEnv, realmId: string, token: string, path: stri
     headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
     signal: AbortSignal.timeout(TIMEOUT_MS),
   })
-  if (!res.ok) throw new Error(`QuickBooks answered ${res.status} for ${path}: ${(await res.text()).slice(0, 300)}`)
+  if (!res.ok) throw new Error(`QuickBooks answered ${res.status} for ${path}${tidNote(res)}: ${(await res.text()).slice(0, 300)}`)
   return res.json<T>()
 }
 
@@ -304,6 +311,7 @@ export async function syncQuickBooks(db: Db, env: QboEnv, deps: QboDeps = {}): P
     return { mode: full ? 'full' : 'changes', saved: rows.length, matched }
   } catch (err) {
     const message = err instanceof Response ? await err.clone().text() : String(err)
+    console.error(JSON.stringify({ level: 'error', msg: 'quickbooks sync failed', error: message.slice(0, 1000) }))
     await db.update(qboConnection).set({ lastSyncError: message.slice(0, 500) }).where(eq(qboConnection.id, 1))
     throw err
   }

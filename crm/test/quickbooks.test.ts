@@ -126,6 +126,16 @@ describe('the sync', () => {
     expect(conn!.last_sync_error).toBeNull()
   })
 
+  it('a revoked or expired refresh token asks Staff to reconnect', async () => {
+    let revoked = false
+    const intuit = fakeIntuit({ token: () => (revoked ? { error: 'invalid_grant' } : undefined) })
+    await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: intuit.fetch, now: () => T0 })
+    revoked = true
+    await expect(syncQuickBooks(db(), qEnv, { fetch: intuit.fetch, now: () => T0 + 2 * 3600_000 })).rejects.toThrow(/Reconnect QuickBooks/)
+    const conn = await env.DB.prepare('SELECT last_sync_error FROM qbo_connection').first<Record<string, any>>()
+    expect(conn!.last_sync_error).toMatch(/Reconnect QuickBooks in Settings/)
+  })
+
   it('a failed sync is recorded for Settings to show', async () => {
     const intuit = fakeIntuit()
     await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: intuit.fetch, now: () => T0 })
