@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getDb } from '#/db/client'
 import { jobTotals } from '#/lib/qbo-vocab'
-import { assignTransactions, completeConnect, disconnectQuickBooks, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
+import { assignTransactions, completeConnect, profitAndLoss, disconnectQuickBooks, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
 
 // docs/adr/0006-quickbooks-sync.md: QuickBooks transactions copy into the CRM nightly (read only there), invoices go on
 // their Customer's Job by themselves, costs wait for Staff or Claude with a suggested Job.
@@ -217,5 +217,29 @@ describe('disconnecting', () => {
     expect(revoked).toEqual(['https://developer.api.intuit.com/v2/oauth2/tokens/revoke refresh-1'])
     expect(await env.DB.prepare('SELECT count(*) AS n FROM qbo_connection').first()).toEqual({ n: 0 })
     expect(await txn('Bill:77')).toBeTruthy()
+  })
+})
+
+describe('the P&L', () => {
+  it('months, totals by how costs are sorted, and completed Jobs with their own figures', async () => {
+    const jobId = await job('Pia', 'Ell', { finish: '2026-03-20' })
+    await env.DB.prepare("UPDATE jobs SET status = 'done' WHERE id = ?").bind(jobId).run()
+    const now = Date.now()
+    const add = (id: string, kind: string, date: string, cents: number, assignment: string | null, job: string | null) =>
+      env.DB.prepare('INSERT INTO qbo_transactions (id, entity, qbo_id, kind, txn_date, amount_cents, deleted, synced_at, assignment, job_id) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)').bind(id, 'Purchase', id, kind, date, cents, now, assignment, job)
+    await env.DB.batch([
+      add('Invoice:p1', 'revenue', '2026-03-10', 10000, 'job', jobId),
+      add('Purchase:p2', 'cost', '2026-02-05', 3000, 'job', jobId),
+      add('Purchase:p3', 'cost', '2026-03-02', 1000, 'overhead', null),
+      add('Purchase:p4', 'cost', '2026-03-03', 500, null, null),
+      add('Payment:p5', 'payment', '2026-03-15', 10000, 'job', jobId),
+      add('Purchase:p6', 'cost', '2025-12-30', 999, 'overhead', null),
+    ])
+    const pnl = await profitAndLoss(db(), 2026)
+    expect(pnl.months).toHaveLength(12)
+    expect(pnl.months[1]).toMatchObject({ month: '2026-02', jobCostCents: 3000 })
+    expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, overheadCents: 1000, unsortedCents: 500, paidCents: 10000 })
+    expect(pnl.completedJobs).toEqual([expect.objectContaining({ id: jobId, revenueCents: 10000, costCents: 3000 })])
+    expect((await profitAndLoss(db(), 2025)).completedJobs).toEqual([])
   })
 })

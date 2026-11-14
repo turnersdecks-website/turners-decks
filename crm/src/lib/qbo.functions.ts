@@ -5,7 +5,7 @@ import { getDb } from '#/db/client'
 import { customers, jobs } from '#/db/schema'
 import { requireAdmin, requireStaff } from '#/lib/guards'
 import { record } from '#/lib/input'
-import { type TxnFilter, assignTransactions, disconnectQuickBooks, jobFinancials, listTransactions, qboStatus, syncQuickBooks } from '#/lib/qbo.server'
+import { type TxnFilter, assignTransactions, disconnectQuickBooks, jobFinancials, listTransactions, profitAndLoss, qboStatus, syncQuickBooks } from '#/lib/qbo.server'
 
 // QuickBooks in the CRM (docs/adr/0006-quickbooks-sync.md). The work is in qbo.server.ts.
 
@@ -63,3 +63,9 @@ export const listJobChoices = createServerFn({ method: 'GET' })
 export const disconnectQbo = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
   .handler(() => disconnectQuickBooks(getDb(env.DB), env))
+
+/** Any Staff: the P&L for one year (profitAndLoss). */
+export const getProfitAndLoss = createServerFn({ method: 'GET' })
+  .middleware([requireStaff])
+  .validator((data: { year: number }) => record(data))
+  .handler(({ data }) => profitAndLoss(getDb(env.DB), Number(data.year) || new Date().getFullYear()))
