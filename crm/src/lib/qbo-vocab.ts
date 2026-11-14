@@ -31,5 +31,11 @@ export function jobTotals(rows: { kind: string; amountCents: number; deleted?: b
   const sum = (k: QboKind) => rows.filter((r) => r.kind === k && !r.deleted).reduce((a, r) => a + r.amountCents, 0)
   const costCents = sum('cost') - sum('cost_credit')
   const revenueCents = sum('revenue') - sum('revenue_credit')
-  return { costCents, revenueCents, paidCents: sum('payment'), profitCents: revenueCents - costCents }
+  return { costCents, revenueCents, paidCents: sum('payment'), profitCents: revenueCents - costCents, marginPct: marginPct(revenueCents, costCents) }
+}
+
+/** Profit as a share of what was invoiced, rounded. Null until a Job has both invoices and costs on it (otherwise a
+ * Job whose costs are not sorted yet would show 100%). */
+export function marginPct(revenueCents: number, costCents: number) {
+  return revenueCents > 0 && costCents > 0 ? Math.round((100 * (revenueCents - costCents)) / revenueCents) : null
 }

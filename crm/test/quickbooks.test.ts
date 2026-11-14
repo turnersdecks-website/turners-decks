@@ -182,7 +182,8 @@ describe("a Job's money", () => {
         { kind: 'payment', amountCents: 4500 },
         { kind: 'cost', amountCents: 999, deleted: true },
       ]),
-    ).toEqual({ costCents: 900, revenueCents: 4500, paidCents: 4500, profitCents: 3600 })
+    ).toEqual({ costCents: 900, revenueCents: 4500, paidCents: 4500, profitCents: 3600, marginPct: 80 })
+    expect(jobTotals([{ kind: 'revenue', amountCents: 5000 }]).marginPct).toBeNull()
   })
 
   it('overhead and unsorting work, and a Job shows only its own transactions', async () => {
