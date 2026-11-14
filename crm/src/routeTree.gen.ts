@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StaffRouteImport } from './routes/_staff'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StaffIndexRouteImport } from './routes/_staff/index'
 import { Route as StaffContactsRouteImport } from './routes/_staff/contacts'
 import { Route as StaffCrmRouteImport } from './routes/_staff/crm'
@@ -55,6 +57,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -63,6 +70,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StaffIndexRoute = StaffIndexRouteImport.update({
@@ -229,8 +241,10 @@ const ApiPublicPhotosDoneRoute = ApiPublicPhotosDoneRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof StaffIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/contacts': typeof StaffContactsRoute
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
@@ -265,8 +279,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/contacts': typeof StaffContactsRoute
   '/crm': typeof StaffCrmRoute
   '/customers': typeof StaffCustomersRoute
@@ -304,8 +320,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_staff': typeof StaffRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/terms': typeof TermsRoute
   '/_staff/contacts': typeof StaffContactsRoute
   '/_staff/crm': typeof StaffCrmRoute
   '/_staff/customers': typeof StaffCustomersRoute
@@ -344,8 +362,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
     | '/sign-in'
+    | '/terms'
     | '/contacts'
     | '/crm'
     | '/customers'
@@ -380,8 +400,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
     | '/sign-in'
+    | '/terms'
     | '/contacts'
     | '/crm'
     | '/customers'
@@ -418,8 +440,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_staff'
     | '/forgot-password'
+    | '/privacy'
     | '/reset-password'
     | '/sign-in'
+    | '/terms'
     | '/_staff/contacts'
     | '/_staff/crm'
     | '/_staff/customers'
@@ -457,8 +481,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   StaffRoute: typeof StaffRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
+  TermsRoute: typeof TermsRoute
   ApiLeadFilesRoute: typeof ApiLeadFilesRouteWithChildren
   ApiPhotosRoute: typeof ApiPhotosRouteWithChildren
   HomeDeviceRoute: typeof HomeDeviceRoute
@@ -489,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -501,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_staff/': {
@@ -811,8 +851,10 @@ const ApiPublicPhotosRouteWithChildren = ApiPublicPhotosRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   StaffRoute: StaffRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
+  TermsRoute: TermsRoute,
   ApiLeadFilesRoute: ApiLeadFilesRouteWithChildren,
   ApiPhotosRoute: ApiPhotosRouteWithChildren,
   HomeDeviceRoute: HomeDeviceRoute,

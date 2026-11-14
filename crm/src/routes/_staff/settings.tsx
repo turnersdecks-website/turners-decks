@@ -16,7 +16,7 @@ import { type CompanySettingsInput, getCompanySettings, updateCompanySettings } 
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { type TemplateKey, templateDef } from '#/lib/email-templates'
 import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
-import { getQboStatus, syncQboNow } from '#/lib/qbo.functions'
+import { disconnectQbo, getQboStatus, syncQboNow } from '#/lib/qbo.functions'
 import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/lib/texting.functions'
 import { prettyPhone } from '#/lib/phone'
 import { cn } from '#/lib/utils'
@@ -451,6 +451,25 @@ function QuickBooksSection() {
                 {st.connected && (
                   <Button size="sm" variant="outline" disabled={busy} onClick={sync}>
                     {busy ? 'Syncing…' : 'Sync now'}
+                  </Button>
+                )}
+                {st.connected && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={async () => {
+                      if (!window.confirm('Disconnect QuickBooks? The CRM stops reading it. Transactions already copied stay.')) return
+                      try {
+                        await disconnectQbo()
+                        toast.success('QuickBooks disconnected')
+                      } catch (error) {
+                        toast.error(await errorMessage(error))
+                      }
+                      await load()
+                    }}
+                  >
+                    Disconnect
                   </Button>
                 )}
               </div>
