@@ -15,6 +15,8 @@ export const contactSchema = z.object({
 });
 
 export const quoteSchema = contactSchema.extend({
+  street: z.string().trim().max(120).optional(),
+  town: z.string().trim().max(60).optional(),
   project_type: z.enum(["New deck", "Deck replacement", "Pool deck"], { message: "Choose a project type" }),
   approx_size: z.string().trim().max(60).optional(),
   material: z.string().trim().max(40).optional(),

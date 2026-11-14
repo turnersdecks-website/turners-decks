@@ -92,7 +92,7 @@ import { PROCESS_STEPS, SITE } from "@/lib/site";
       <div>
         <h2 class="display-2">Ready for a new deck?</h2>
         <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">Get a free on-site estimate. No pressure, no sales pitch.</p>
-        <QuoteForm client:visible onDark />
+        <QuoteForm client:load onDark />
       </div>
       <Photo photo={PHOTO.compositeNew} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
     </div>

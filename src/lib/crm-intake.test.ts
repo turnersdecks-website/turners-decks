@@ -198,3 +198,12 @@ describe("fetchEstimator", () => {
     await expect(fetchEstimator("")).rejects.toThrow("estimator_not_configured");
   });
 });
+
+describe("quoteAddress", () => {
+  it("builds street, town, PA zip only when a street was given", async () => {
+    const { quoteAddress } = await import("./crm-intake");
+    expect(quoteAddress({ street: "12 Main St", town: "Douglassville", zip: "19518" })).toBe("12 Main St, Douglassville, PA 19518");
+    expect(quoteAddress({ street: "12 Main St", zip: "19518" })).toBe("12 Main St, PA 19518");
+    expect(quoteAddress({ town: "Douglassville", zip: "19518" })).toBeUndefined();
+  });
+});
