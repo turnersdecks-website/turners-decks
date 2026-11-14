@@ -2,6 +2,9 @@ import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { requireAdmin, requireStaff } from '#/lib/guards'
 import { record, requiredId } from '#/lib/input'
+import { getDb } from '#/db/client'
+import { kickJobs } from '#/lib/outbox'
+import { queueOwnerText } from '#/lib/texting.server'
 import {
   createPhotoDeviceRecord,
   createPhotoLinkRecord,
@@ -25,10 +28,15 @@ const optionalId = (v: unknown) => (v === undefined || v === null || v === '' ? 
 
 export const createPhotoLink = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
-  .validator((data: { leadId?: string | null; jobId?: string | null; stage: string }) => record(data))
-  .handler(({ data, context: { staff } }) =>
-    createPhotoLinkRecord(env.DB, { leadId: optionalId(data.leadId), jobId: optionalId(data.jobId), stage: data.stage }, staff.id, env.BETTER_AUTH_URL),
-  )
+  .validator((data: { leadId?: string | null; jobId?: string | null; stage: string; textPat?: boolean }) => record(data))
+  .handler(async ({ data, context: { staff } }) => {
+    const link = await createPhotoLinkRecord(env.DB, { leadId: optionalId(data.leadId), jobId: optionalId(data.jobId), stage: data.stage }, staff.id, env.BETTER_AUTH_URL)
+    if (data.textPat !== true) return { ...link, texted: null }
+    // Texted to Pat's cell from the Quo number (docs/adr/0004-quo-texting.md); the link still shows to copy.
+    const sent = await queueOwnerText(getDb(env.DB), env, link.message, `photo_link:${link.id}`)
+    if (sent.queued) kickJobs(env, [sent.jobId])
+    return { ...link, texted: sent.queued ? ('queued' as const) : sent.reason }
+  })
 
 export const revokePhotoLink = createServerFn({ method: 'POST' })
   .middleware([requireStaff])

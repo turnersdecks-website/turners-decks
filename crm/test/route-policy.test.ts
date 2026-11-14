@@ -15,6 +15,8 @@ const PUBLIC_SERVER_ROUTES: Record<string, string[] | '*'> = {
   '/api/public/photos': ['POST'],
   '/api/public/photos/done': ['POST'],
   '/api/public/photos/$id': ['GET', 'HEAD'],
+  // Quo's webhook (docs/adr/0004-quo-texting.md): the Standard Webhooks signature is the credential.
+  '/api/public/quo-webhook': ['POST'],
 }
 
 const routes = Object.values(getRouter().routesById) as AnyRoute[]

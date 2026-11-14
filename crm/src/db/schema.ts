@@ -405,12 +405,38 @@ export const companySettings = sqliteTable(
     timezone: text('timezone').notNull(),
     ownerAlertEmails: text('owner_alert_emails'),
     textingEnabled: integer('texting_enabled', { mode: 'boolean' }).notNull().default(false),
+    /** Pat's own cell (E.164): where the CRM texts photo links from the Quo number. Not the business line. */
+    ownerMobile: text('owner_mobile'),
     /** The Estimate email (FLW-200): `{placeholder}`s, and a first line "Subject: ..." becomes the subject. */
     estimateEmailTemplate: text('estimate_email_template').notNull().default(''),
   },
   // New columns are validated by the server (settings.functions.ts); a CHECK here would force a table rebuild.
   (t) => [check('company_settings_single_row', sql`${t.id} = 1`)],
 )
+
+// Quo (business phone, docs/adr/0004-quo-texting.md): the one connected Quo number and the webhook the CRM made for it.
+// A single row like company_settings. `signing_secret` verifies Quo's webhook deliveries (Standard Webhooks); it is
+// returned by Quo once, when "Connect Quo" creates the webhook, and never leaves the Worker.
+export const quoConnection = sqliteTable(
+  'quo_connection',
+  {
+    id: integer('id').primaryKey().default(1),
+    phoneNumberId: text('phone_number_id').notNull(),
+    phoneNumberE164: text('phone_number_e164').notNull(),
+    webhookId: text('webhook_id').notNull(),
+    signingSecret: text('signing_secret').notNull(),
+    connectedAt: integer('connected_at', { mode: 'timestamp_ms' }).notNull(),
+    connectedBy: text('connected_by').references(() => user.id, { onDelete: 'set null' }),
+  },
+  (t) => [check('quo_connection_single_row', sql`${t.id} = 1`)],
+)
+
+// Quo webhook deliveries already handled, by `webhook-id` header (Quo retries for ~28 hours; swept after 3 days).
+export const quoWebhookEvents = sqliteTable('quo_webhook_events', {
+  webhookId: text('webhook_id').primaryKey(),
+  type: text('type').notNull(),
+  receivedAt: integer('received_at', { mode: 'timestamp_ms' }).notNull(),
+})
 
 // Estimator settings (ADR 0003, FLW-200). The draft is the one document the owner edits; `revision` makes saves and
 // publishes compare-and-swap so two tabs never overwrite each other or publish content nobody reviewed. Published

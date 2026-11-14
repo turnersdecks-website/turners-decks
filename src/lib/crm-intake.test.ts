@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { IntakeError, SubmissionKeys, attributionFrom, estimatorPayload, fetchEstimator, quotePayload, submitToCrm, type IntakePayload } from "./crm-intake";
+import { SMS_CONSENT_VERSION } from "./sms-consent";
 
 const ctx = { submissionKey: "key-1", turnstileToken: "tok", href: "https://turnersdecks.com/estimator?utm_source=google&gclid=abc", referrer: "https://www.google.com/", viewportWidth: 390 };
 const contact = { first_name: " Jane ", last_name: "Doe", email: "jane@example.com", phone: "6105550142", zip: "19518", website: "" };
@@ -45,6 +46,14 @@ describe("payload builders", () => {
       source: "estimator", timing: "Next year", contact_method: "text", wants_financing: false, notes: "Rot.",
       address: "12 Main St, Douglassville, PA", estimator_version: 4, answers: { material: "pvc", features: [] }, defaulted: ["material"],
     });
+  });
+
+  it("a ticked text box sends consent with the wording version; an unticked one sends nothing about texts", () => {
+    const ticked = quotePayload({ ...contact, project_type: "New deck", sms_consent: true }, ctx);
+    expect(ticked).toMatchObject({ sms_consent: true, sms_consent_disclosure: SMS_CONSENT_VERSION });
+    const unticked = estimatorPayload({ ...contact, timing: "Next year", contact_method: "text", wants_financing: false, sms_consent: false }, { version: 1, answers: {}, defaulted: [] }, ctx);
+    expect(unticked).not.toHaveProperty("sms_consent");
+    expect(unticked).not.toHaveProperty("sms_consent_disclosure");
   });
 
   it("device type follows the viewport, and a page without tags has no UTM fields", () => {

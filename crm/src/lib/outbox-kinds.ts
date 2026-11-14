@@ -1,10 +1,11 @@
-import { type SQL, eq } from 'drizzle-orm'
+import { type SQL, eq, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { getDb } from '#/db/client'
-import { estimateSnapshots, formSubmissions, leads } from '#/db/schema'
+import { estimateSnapshots, formSubmissions, leadActivity, leads } from '#/db/schema'
 import type { Email } from '#/lib/email'
 import type { Envelope, Job, JobOutcome, OutboxEnv } from '#/lib/outbox'
 import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from '#/lib/settings.server'
+import { hasTextConsent } from '#/lib/texting.server'
 
 // One entry per notification job kind (src/lib/outbox.ts). `render` builds the email at send time from the job's
 // payload (null = nothing to send, reported as `failed`; a throw is retried). `onOutcome`, optional, hears how the
@@ -14,7 +15,10 @@ import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from
 // links) are wiped once the job is finished.
 export type JobKindContext = { db: ReturnType<typeof getDb>; env: OutboxEnv }
 export type JobKind = {
-  render: (payload: any, ctx: JobKindContext) => Promise<Email | null>
+  /** Email kinds. */
+  render?: (payload: any, ctx: JobKindContext) => Promise<Email | null>
+  /** Text kinds (sent by Quo, src/lib/outbox.ts > sendSmsClaimed): the E.164 number and the message, or null. */
+  renderSms?: (payload: any, ctx: JobKindContext) => Promise<{ to: string; content: string } | null>
   onOutcome?: (outcome: JobOutcome, job: Job, ctx: JobKindContext, fence: SQL) => BatchItem<'sqlite'>[]
   sensitive?: boolean
 }
@@ -86,6 +90,40 @@ export const JOB_KINDS: Record<string, JobKind> = {
 
   // FLW-201: rendered and frozen at intake (src/lib/intake-estimate.ts > estimateEmail); sent exactly as stored.
   estimate_email: { render: async (p: Email) => (p?.to ? p : null) },
+
+  // Texts from the Quo number (docs/adr/0004-quo-texting.md). Payload `{ to, content }` frozen at enqueue.
+  // The instant reply to a website Lead who ticked "Text me about my project". Checked again at send time: the Lead
+  // still exists, is not Do not contact, and the number's latest text consent is a grant (a STOP since revokes it).
+  sms_lead_reply: {
+    async renderSms(p: { lead_id: string; to: string; content: string }, { db }) {
+      const lead = await db.select({ dnc: leads.doNotContact }).from(leads).where(eq(leads.id, p.lead_id)).get()
+      if (!lead || lead.dnc || !p.to || !(await hasTextConsent(db, p.to))) return null
+      return { to: p.to, content: p.content }
+    },
+    // The text shows on the Lead's activity however it ended. Its Quo message id is the dedupe key, so the
+    // message.delivered webhook for the same text adds nothing.
+    onOutcome(outcome, job, { db }, fence) {
+      const p = safeJson(job.payloadJson) as { lead_id?: string; content?: string }
+      if (!p.lead_id) return []
+      const state = outcome.type === 'accepted' ? 'accepted' : outcome.type === 'failed' ? 'failed' : 'unknown'
+      const dedupe = outcome.type === 'accepted' && outcome.resendId ? `quo:${outcome.resendId}` : `job:${job.id}`
+      const body = outcome.type === 'accepted' ? (p.content ?? '') : `Automatic text not sent: ${outcome.error}\n\n${p.content ?? ''}`
+      return [
+        // Columns in table order (as stage-history.server.ts stageMove): id, lead_id, kind, direction, outcome,
+        // duration_min, body, author_id, follow_up_at, follow_up_done_at, dedupe_key, created_at, dispatch_state,
+        // provider_message_id.
+        db
+          .insert(leadActivity)
+          .select(
+            sql`SELECT ${crypto.randomUUID()}, ${leads.id}, 'text', 'outbound', NULL, NULL, ${body.slice(0, 8000)}, NULL, NULL, NULL, ${dedupe},
+              ${Date.now()}, ${state}, ${outcome.type === 'accepted' ? outcome.resendId : null} FROM ${leads} WHERE ${leads.id} = ${p.lead_id} AND ${fence}`,
+          )
+          .onConflictDoNothing(),
+      ]
+    },
+  },
+  // A text to Pat's own cell (Settings > Texting), e.g. a photo link. Staff-made, so no consent check.
+  sms_owner: { renderSms: async (p: { to: string; content: string }) => (p?.to && p.content ? { to: p.to, content: p.content } : null) },
 
   form_ack: {
     async render(payload: LeadJobPayload, { db, env }) {

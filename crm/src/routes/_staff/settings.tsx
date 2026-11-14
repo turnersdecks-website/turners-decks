@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Camera, Mail, Save, UserRound } from 'lucide-react'
+import { Building2, Camera, Mail, MessageSquare, Save, UserRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -17,6 +17,8 @@ import { type CompanySettingsInput, getCompanySettings, updateCompanySettings, u
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { type TemplateKey, templateDef } from '#/lib/email-templates'
 import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
+import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/lib/texting.functions'
+import { prettyPhone } from '#/lib/phone'
 import { cn } from '#/lib/utils'
 
 // Company settings, ported from Pine & Gable's /settings and cut to v1: Your profile and Company (name, contact,
@@ -38,6 +40,7 @@ const SECTIONS = [
   { id: 'profile', title: 'Your profile', icon: UserRound },
   { id: 'company', title: 'Company', icon: Building2 },
   { id: 'email-templates', title: 'Customer email templates', icon: Mail },
+  { id: 'texting', title: 'Texting (Quo)', icon: MessageSquare },
   { id: 'photo-home', title: 'Photo home screen', icon: Camera },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id']
@@ -278,6 +281,7 @@ function AdminSettings() {
       </div>
 
       <EmailTemplatesSection calculatorTemplate={settings.estimateEmailTemplate} />
+      <TextingSection businessNumber={settings.businessNumber} />
       <PhotoHomeSection />
     </>
   )
@@ -437,6 +441,123 @@ function CalculatorEmailCard({ template: saved }: { template: string }) {
 }
 
 type PhotoDevice = Awaited<ReturnType<typeof listPhotoDevices>>[number]
+
+type TextingSettings = Awaited<ReturnType<typeof getTextingSettings>>
+
+/**
+ * Texting (docs/adr/0004-quo-texting.md). Connect Quo makes the webhook, so texts and calls to the Quo number land on
+ * Leads right away. Sending texts (instant reply to website Leads, photo links to Pat) waits for the switch, which
+ * goes on only after Quo shows carrier registration (A2P 10DLC) approved.
+ */
+function TextingSection({ businessNumber }: { businessNumber: string | null }) {
+  const [t, setT] = useState<TextingSettings | null>(null)
+  const [phone, setPhone] = useState(businessNumber ? prettyPhone(businessNumber) : '')
+  const [mobile, setMobile] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const load = async () => {
+    try {
+      const next = await getTextingSettings()
+      setT(next)
+      setMobile(next.ownerMobile ? prettyPhone(next.ownerMobile) : '')
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    }
+  }
+  useEffect(() => {
+    void load()
+  }, [])
+
+  async function run(fn: () => Promise<unknown>, done: string) {
+    setBusy(true)
+    try {
+      await fn()
+      toast.success(done)
+      await load()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ContentSection
+      id="texting"
+      title="Texting (Quo)"
+      description="Texts and calls to the Quo number show up on Leads. Once carrier registration is approved in Quo, the CRM can also send texts."
+    >
+      {!t ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <Card className="shadow-xs">
+          <CardContent className="space-y-6 p-4 sm:p-6">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">1. Connect Quo</p>
+              {!t.hasApiKey ? (
+                <p className="text-sm text-muted-foreground">
+                  Add the Quo API key (Quo › Settings › API) to this CRM in Cloudflare as a secret named QUO_API_KEY, then come back.
+                </p>
+              ) : t.connected ? (
+                <p className="text-sm">
+                  Connected to {prettyPhone(t.connected.phoneNumberE164)} on {new Date(t.connected.connectedAt).toLocaleDateString()}.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Not connected yet.</p>
+              )}
+              {t.hasApiKey && (
+                <form
+                  className="flex flex-col gap-2 sm:flex-row"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void run(() => connectQuoNumber({ data: { phone } }), 'Quo connected')
+                  }}
+                >
+                  <Input aria-label="Quo number" placeholder="(484) 939-3325" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <Button variant="outline" disabled={busy}>
+                    {t.connected ? 'Reconnect' : 'Connect Quo'}
+                  </Button>
+                </form>
+              )}
+              <p className="text-xs text-muted-foreground">Quo sends texts and calls to {t.webhookUrl}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ownerMobile">2. Pat's cell (photo-link texts go here)</Label>
+              <Input id="ownerMobile" type="tel" value={mobile} placeholder="(484) 555-0123" onChange={(e) => setMobile(e.target.value)} />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">3. Send texts from the CRM</p>
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4"
+                  checked={t.textingEnabled}
+                  disabled={busy || (!t.textingEnabled && !(t.hasApiKey && t.connected))}
+                  onChange={(e) => setT({ ...t, textingEnabled: e.target.checked })}
+                />
+                <span>
+                  Texting is on. Turn this on only after Quo › Settings › Trust shows carrier registration approved; carriers block business
+                  texts from unregistered numbers. When on, website Leads who tick “Text me about my project” get an instant text, and photo
+                  links can be texted to Pat.
+                </span>
+              </label>
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={() => run(() => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: mobile } }), 'Texting saved')}
+              >
+                <Save />
+                Save texting
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </ContentSection>
+  )
+}
 
 /** GLOSSARY Photo home screen: a saved link on Pat's phone listing every photo request. The link is shown once. */
 function PhotoHomeSection() {

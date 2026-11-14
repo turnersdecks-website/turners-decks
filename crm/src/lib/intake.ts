@@ -10,6 +10,7 @@ import { type PricedEstimate, estimateEmail, isPricingFailure, priceEstimatorPay
 import { customerIdFor } from '#/lib/customers.server'
 import { leadCreated } from '#/lib/stage-history.server'
 import { verifyTurnstile } from '#/lib/turnstile'
+import { leadReplyText, quoConnected } from '#/lib/texting.server'
 
 // Intake: turns a Form submission into a new or matched Lead (PLAN.md > Intake contract).
 // CORS allowlist -> rate limit -> bounded body -> submission_key lookup -> Turnstile -> store + claim
@@ -448,6 +449,19 @@ async function upsertLead(
       dedupeKey: `estimate_email:${submissionId}`,
       payload: emailOut,
       envelope: { to: [mapped.email], subject: emailOut.subject },
+    })
+    jobIds.push(job.id)
+    writes.push(job.insert)
+  }
+  // Instant text reply (docs/adr/0004-quo-texting.md): a new Lead who ticked the text box, once texting is switched on
+  // (after A2P approval) and Quo is connected. Consent and the gate are checked again when it is sent.
+  if (!existing && payload.sms_consent === true && mapped.phoneE164 && settings.textingEnabled && (await quoConnected(db))) {
+    const content = leadReplyText(mapped.firstName, settings.name)
+    const job = enqueueJob(db, {
+      kind: 'sms_lead_reply',
+      dedupeKey: `sms_lead_reply:${submissionId}`,
+      payload: { lead_id: leadId, to: mapped.phoneE164, content },
+      envelope: { to: [mapped.phoneE164], subject: 'Text: instant reply' },
     })
     jobIds.push(job.id)
     writes.push(job.insert)

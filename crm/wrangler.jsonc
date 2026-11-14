@@ -20,6 +20,10 @@
  * key is set. Optional EMAIL_FROM overrides the sender. The cron below runs src/lib/cron.ts (outbox retries, backlog
  * alarms and Quote file cleanup every 5 minutes); `triggers` is inherited by every env.
  *
+ * Texting (docs/adr/0004-quo-texting.md): QUO_API_KEY is a secret (Quo > Settings > API), optional like RESEND_API_KEY
+ * and declared for env.development only: with no key no text is sent and texts stay queued. It is also what
+ * Settings > Texting uses to connect the Quo number and make the webhook (/api/public/quo-webhook).
+ *
  * Quote files (src/lib/lead-files.server.ts): LEAD_FILES is one private R2 bucket per environment, never public
  * (no r2.dev URL, no custom domain): turners-decks-crm-files (production), -staging, -dev (local; Miniflare simulates
  * it under .wrangler/ and the tests use the top-level binding). Files are served only through /api/lead-files/<id>
@@ -71,7 +75,8 @@
 					"SEED_ADMIN_EMAIL",
 					"SEED_ADMIN_PASSWORD",
 					"TURNSTILE_SECRET_KEY",
-					"RESEND_API_KEY"
+					"RESEND_API_KEY",
+					"QUO_API_KEY"
 				]
 			},
 			"vars": { "ENVIRONMENT": "development", "INTAKE_ALLOWED_ORIGINS": "http://localhost:4321" },

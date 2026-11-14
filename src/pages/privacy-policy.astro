@@ -4,14 +4,26 @@ import PageHero from "@/components/sections/PageHero.astro";
 import { SITE } from "@/lib/site";
 ---
 
-<BaseLayout title="Privacy Policy" description="How Turner's Decks collects and uses the information you share through our website.">
+<BaseLayout title="Privacy Policy" description="How Turner's Decks collects and uses the information you share through our website, by phone and by text.">
   <PageHero title="Privacy Policy"><Fragment /></PageHero>
   <section class="section container-site">
-    {/* [CONTENT] have this reviewed before launch, then add "Last updated: <date>" here */}
+    {/* [CONTENT] have this reviewed before launch. The Text messages section is written for carrier (A2P 10DLC) review of the Quo number: keep it when editing. */}
     <div class="max-w-3xl space-y-6 text-muted-foreground">
-      <p>When you request an estimate or use our price estimator, we collect your name, email, phone number, zip code, and project details.</p>
+      <p>Last updated: November 13, 2026</p>
+
+      <h2 class="text-2xl text-primary">What we collect</h2>
+      <p>When you request an estimate or use our price estimator, we collect your name, email, phone number, ZIP code, and project details. When you call or text us, our phone service keeps a record of the call or message.</p>
+
+      <h2 class="text-2xl text-primary">How we use it</h2>
       <p>We use this information only to contact you about your project. We don't sell your information.</p>
-      <p>Questions? Contact us at {SITE.email} or {SITE.phone}.</p>
+
+      <h2 class="text-2xl text-primary">Text messages</h2>
+      <p>If you check the box to receive texts on one of our forms, or text us first, {SITE.name} may text you at the number you gave about your project: scheduling, estimate follow-ups, and job updates. Message frequency varies, usually 1 to 5 messages per project. Message and data rates may apply. Agreeing to texts is never required to get an estimate.</p>
+      <p>Reply STOP to any message to stop receiving texts. Reply HELP for help, or call us at {SITE.phone}.</p>
+      <p>We do not sell, rent, or share your mobile phone number or text messaging consent with third parties or affiliates for their marketing or promotional purposes. Text messaging opt-in data and consent are never shared with anyone else, except with the service providers who deliver our messages for us.</p>
+
+      <h2 class="text-2xl text-primary">Questions</h2>
+      <p>Contact us at {SITE.email} or {SITE.phone}.</p>
     </div>
   </section>
 </BaseLayout>

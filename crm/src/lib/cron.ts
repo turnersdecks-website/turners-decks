@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm'
 import { getDb } from '#/db/client'
-import { alarmDays, cronRuns, formSubmissions, notificationJobs, submissionProcessing } from '#/db/schema'
+import { alarmDays, cronRuns, formSubmissions, notificationJobs, quoWebhookEvents, submissionProcessing } from '#/db/schema'
 import { sweepDeletedLeadPrefixes } from '#/lib/lead-files.server'
 import { type DispatchDeps, type OutboxEnv, dispatchDueJobs } from '#/lib/outbox'
 
@@ -13,6 +13,7 @@ export const CRON_STALE_AFTER_MS = 15 * 60_000
 /** Backlog alarms (PLAN.md > Observability): jobs failed/dead for over 1 hour, submissions unprocessed over 15 min. */
 export const JOB_ALARM_AFTER_MS = 60 * 60_000
 export const SUBMISSION_ALARM_AFTER_MS = 15 * 60_000
+export const QUO_EVENTS_KEEP_MS = 3 * 24 * 60 * 60_000
 /**
  * Dead jobs and failed submissions stay until purged (400 days), so only those from the last week count: older ones
  * are on the Jobs and Submissions screens, not a banner forever.
@@ -30,6 +31,13 @@ export const CRON_TASKS: Record<string, CronTask[]> = {
     { name: 'backlog-alarms', run: (env, deps) => checkBacklog(env.DB, deps.now?.() ?? Date.now()) },
     // Quote files of deleted Leads (plan 009 decision 15): each deleted Lead's R2 prefix, swept three times.
     { name: 'r2-cleanup', run: (env, deps) => sweepDeletedLeadPrefixes(env, { now: deps.now }) },
+    // Quo retries a delivery for ~28 hours; delivery ids older than 3 days are no longer needed to drop repeats.
+    {
+      name: 'quo-events-sweep',
+      run: async (env, deps) => {
+        await getDb(env.DB).delete(quoWebhookEvents).where(lt(quoWebhookEvents.receivedAt, new Date((deps.now?.() ?? Date.now()) - QUO_EVENTS_KEEP_MS)))
+      },
+    },
   ],
 }
 

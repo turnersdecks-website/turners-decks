@@ -7,7 +7,7 @@ import raw from '../wrangler.jsonc?raw'
 type Env = { secrets?: { required?: string[] } }
 const config = JSON.parse(raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')) as Env & { env: Record<string, Env> }
 
-const OPTIONAL = ['RESEND_API_KEY']
+const OPTIONAL = ['RESEND_API_KEY', 'QUO_API_KEY']
 
 it('local dev declares the optional Resend key so .dev.vars can set it', () => {
   expect(config.env.development.secrets?.required).toEqual(expect.arrayContaining(OPTIONAL))

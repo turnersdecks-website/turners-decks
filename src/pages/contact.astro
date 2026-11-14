@@ -24,7 +24,7 @@ import { localBusinessSchema } from "@/lib/seo";
       <div>
         <Photo photo={PHOTO.groundComposite} sizes="(min-width: 900px) 50vw, 100vw" eager class="aspect-[4/3] w-full rounded-3xl object-cover" />
         <dl class="divided mt-8 text-base md:grid-flow-row md:[&>*]:border-l-0 md:[&>*]:border-t md:[&>*]:px-0 md:[&>*]:py-4 md:[&>:first-child]:border-t-0 md:[&>:first-child]:pt-0">
-          <div><dt class="eyebrow">Call or text</dt><dd><a href={SITE.phoneHref} class="link inline-flex min-h-11 items-center">{SITE.phone}</a></dd></div>
+          <div><dt class="eyebrow">Call or text</dt><dd class="flex flex-wrap gap-x-4"><a href={SITE.phoneHref} class="link inline-flex min-h-11 items-center">{SITE.phoneVanity} ({SITE.phone})</a><a href={SITE.smsHref} class="link inline-flex min-h-11 items-center">Send a text</a></dd></div>
           <div><dt class="eyebrow">Email</dt><dd><a href={`mailto:${SITE.email}`} class="link inline-flex min-h-11 items-center break-all">{SITE.email}</a></dd></div>
           <div><dt class="eyebrow">Where we build</dt><dd class="mt-1">{SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</dd></div>
           <div><dt class="eyebrow">Hours</dt><dd class="mt-1">{SITE.hours}</dd></div>
