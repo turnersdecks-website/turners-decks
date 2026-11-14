@@ -436,3 +436,28 @@ export async function qboStatus(db: Db, env: QboEnv) {
     unassigned: counts?.unassigned ?? 0,
   }
 }
+
+export const REVOKE_URL = 'https://developer.api.intuit.com/v2/oauth2/tokens/revoke'
+
+/**
+ * Settings > Connections > Disconnect: tells Intuit to revoke the tokens (best effort: a token Intuit already dropped
+ * is fine) and deletes them here. Copied transactions and how they were sorted stay until someone asks to delete them.
+ */
+export async function disconnectQuickBooks(db: Db, env: QboEnv, deps: QboDeps = {}) {
+  const conn = await db.select().from(qboConnection).where(eq(qboConnection.id, 1)).get()
+  if (!conn) return { disconnected: false }
+  if (env.QBO_CLIENT_ID && env.QBO_CLIENT_SECRET) {
+    try {
+      await (deps.fetch ?? fetch)(REVOKE_URL, {
+        method: 'POST',
+        headers: { authorization: `Basic ${btoa(`${env.QBO_CLIENT_ID}:${env.QBO_CLIENT_SECRET}`)}`, 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ token: await unseal(env.BETTER_AUTH_SECRET, conn.refreshTokenEnc) }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+    } catch (err) {
+      console.error(JSON.stringify({ level: 'warn', msg: 'quickbooks revoke failed; deleting tokens anyway', error: String(err).slice(0, 200) }))
+    }
+  }
+  await db.delete(qboConnection).where(eq(qboConnection.id, 1))
+  return { disconnected: true }
+}

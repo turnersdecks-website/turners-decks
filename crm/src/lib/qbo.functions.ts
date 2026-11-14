@@ -5,7 +5,7 @@ import { getDb } from '#/db/client'
 import { customers, jobs } from '#/db/schema'
 import { requireAdmin, requireStaff } from '#/lib/guards'
 import { record } from '#/lib/input'
-import { type TxnFilter, assignTransactions, jobFinancials, listTransactions, qboStatus, syncQuickBooks } from '#/lib/qbo.server'
+import { type TxnFilter, assignTransactions, disconnectQuickBooks, jobFinancials, listTransactions, qboStatus, syncQuickBooks } from '#/lib/qbo.server'
 
 // QuickBooks in the CRM (docs/adr/0006-quickbooks-sync.md). The work is in qbo.server.ts.
 
@@ -58,3 +58,8 @@ export const listJobChoices = createServerFn({ method: 'GET' })
       .orderBy(desc(jobs.createdAt))
       .limit(500),
   )
+
+/** Admins: revoke and forget the QuickBooks connection. */
+export const disconnectQbo = createServerFn({ method: 'POST' })
+  .middleware([requireAdmin])
+  .handler(() => disconnectQuickBooks(getDb(env.DB), env))

@@ -6,7 +6,7 @@ import { BASE } from './staff'
 
 // PLAN.md > Architecture > Route policy. Everything not listed here is private.
 // Pat's photo pages (GLOSSARY Photo link, Photo home screen): the token in the URL is the credential.
-const PUBLIC_PAGES = ['/sign-in', '/forgot-password', '/reset-password', '/p/$token', '/home/$device', '/hp/$device/$linkId']
+const PUBLIC_PAGES = ['/sign-in', '/forgot-password', '/reset-password', '/terms', '/privacy', '/p/$token', '/home/$device', '/hp/$device/$linkId']
 const PUBLIC_SERVER_ROUTES: Record<string, string[] | '*'> = {
   '/api/auth/$': '*', // Better Auth authorizes its own endpoints
   '/api/public/intake': ['POST', 'OPTIONS'],

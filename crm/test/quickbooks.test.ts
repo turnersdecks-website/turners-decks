@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getDb } from '#/db/client'
 import { jobTotals } from '#/lib/qbo-vocab'
-import { assignTransactions, completeConnect, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
+import { assignTransactions, completeConnect, disconnectQuickBooks, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
 
 // docs/adr/0006-quickbooks-sync.md: QuickBooks transactions copy into the CRM nightly (read only there), invoices go on
 // their Customer's Job by themselves, costs wait for Staff or Claude with a suggested Job.
@@ -162,5 +162,23 @@ describe("a Job's money", () => {
     await assignTransactions(db(), { ids: ['Purchase:12'], to: 'unassigned' }, 'staff-1')
     expect(await txn('Purchase:12')).toMatchObject({ assignment: null })
     await expect(assignTransactions(db(), { ids: ['Purchase:11'], to: 'job', jobId: 'nope' }, 'staff-1')).rejects.toMatchObject({ status: 404 })
+  })
+})
+
+describe('disconnecting', () => {
+  it('asks Intuit to revoke the token and forgets it; copied transactions stay', async () => {
+    const intuit = fakeIntuit({ query: { Bill: [{ Id: '77', TxnDate: '2026-10-01', TotalAmt: 10 }] } })
+    await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: intuit.fetch, now: () => T0 })
+    await syncQuickBooks(db(), qEnv, { fetch: intuit.fetch, now: () => T0 })
+    const revoked: string[] = []
+    const fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      revoked.push(`${String(input)} ${JSON.parse(String(init?.body)).token}`)
+      return new Response(null, { status: 200 })
+    }) as typeof globalThis.fetch
+
+    expect(await disconnectQuickBooks(db(), qEnv, { fetch })).toEqual({ disconnected: true })
+    expect(revoked).toEqual(['https://developer.api.intuit.com/v2/oauth2/tokens/revoke refresh-1'])
+    expect(await env.DB.prepare('SELECT count(*) AS n FROM qbo_connection').first()).toEqual({ n: 0 })
+    expect(await txn('Bill:77')).toBeTruthy()
   })
 })
