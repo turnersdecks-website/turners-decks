@@ -280,7 +280,7 @@ describe('Settings > Texting', () => {
     const fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const req = new Request(input, init)
       calls.push(`${req.method} ${new URL(req.url).pathname}`)
-      if (req.method === 'GET') return Response.json({ data: [{ id: 'PNother', number: '+16105550000' }, { id: PN, number: OUR_NUMBER }] })
+      if (req.method === 'GET') return Response.json({ data: [{ id: 'PNother', phoneNumber: '+16105550000' }, { id: PN, phoneNumber: OUR_NUMBER }] })
       if (req.method === 'POST') return Response.json({ data: { id: String(++hook), key: SECRET } }, { status: 201 })
       return new Response(null, { status: 204 })
     }) as typeof globalThis.fetch

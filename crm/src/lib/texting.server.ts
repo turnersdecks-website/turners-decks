@@ -4,7 +4,7 @@ import { companySettings, consentEvents, quoConnection } from '#/db/schema'
 import { badRequest } from '#/lib/input'
 import { enqueueJob } from '#/lib/outbox'
 import { toE164 } from '#/lib/phone'
-import { type QuoDeps, type QuoPhoneNumber, createWebhook, deleteWebhook, listPhoneNumbers } from '#/lib/quo'
+import { type QuoDeps, type QuoPhoneNumber, createWebhook, deleteWebhook, listPhoneNumbers, numberOf } from '#/lib/quo'
 
 // When the CRM may send a text from the Quo number (docs/adr/0004-quo-texting.md). All three must hold:
 // 1. Quo is connected (Settings > Texting made the webhook and knows the Quo number's id),
@@ -89,13 +89,13 @@ export async function connectQuo(db: Db, env: TextingEnv & { BETTER_AUTH_URL: st
   }
   const want = wanted ? toE164(wanted) : null
   if (wanted && !want) throw badRequest('That is not a US phone number.')
-  const match = want ? numbers.find((n) => toE164(n.number) === want) : numbers.length === 1 ? numbers[0] : null
+  const match = want ? numbers.find((n) => toE164(numberOf(n)) === want) : numbers.length === 1 ? numbers[0] : null
   if (!match) {
-    const list = numbers.map((n) => n.number).join(', ') || 'none'
+    const list = numbers.map(numberOf).join(', ') || 'none'
     throw badRequest(want ? `Quo has no number ${want}. Numbers in this Quo workspace: ${list}.` : `Pick the number to connect. Numbers in this Quo workspace: ${list}.`)
   }
-  const e164 = toE164(match.number)
-  if (!e164) throw badRequest(`Quo's number ${match.number} is not a US number.`)
+  const e164 = toE164(numberOf(match))
+  if (!e164) throw badRequest(`Quo's number ${numberOf(match)} is not a US number.`)
   const before = await db.select().from(quoConnection).where(eq(quoConnection.id, 1)).get()
   if (before) await deleteWebhook(key, before.webhookId, deps)
   const hook = await createWebhook(key, { url: webhookUrl(env.BETTER_AUTH_URL), phoneNumberId: match.id, label: "Turner's Decks CRM" }, deps)
