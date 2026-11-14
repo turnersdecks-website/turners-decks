@@ -62,9 +62,13 @@ function ProfitLossPage() {
 
         <StatGrid>
           <StatCard label="Revenue" value={formatMoney(revenue) || '$0'} hint={`Invoiced${year === thisYear ? ' so far this year' : ` in ${year}`}; ${formatMoney(paid) || '$0'} paid`} />
-          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint={`Gross profit ${formatMoney(revenue - jobCosts) || '$0'} (${pct(marginPct(revenue, jobCosts))})`} />
-          <StatCard label="Overhead" value={formatMoney(overhead) || '$0'} hint={unsorted ? `Plus ${formatMoney(unsorted)} of costs not sorted yet` : 'All costs sorted'} />
+          <StatCard
+            label="Costs"
+            value={formatMoney(costs) || '$0'}
+            hint={`Jobs ${formatMoney(jobCosts) || '$0'} · Overhead ${formatMoney(overhead) || '$0'} · Not sorted ${formatMoney(unsorted) || '$0'}`}
+          />
           <StatCard label="Profit" value={formatMoney(profit) || '$0'} hint={`${pct(revenue > 0 ? Math.round((100 * profit) / revenue) : null)} margin, after all costs`} />
+          <StatCard label="Gross profit on Jobs" value={formatMoney(revenue - jobCosts) || '$0'} hint={`Revenue minus costs sorted onto Jobs (${pct(marginPct(revenue, jobCosts))})`} />
         </StatGrid>
 
         {unsorted > 0 && (
