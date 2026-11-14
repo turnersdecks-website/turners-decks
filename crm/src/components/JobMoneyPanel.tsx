@@ -5,8 +5,8 @@ import { formatMoney } from '#/lib/customer-vocab'
 import { QBO_ENTITY_LABELS, type QboEntity } from '#/lib/qbo-vocab'
 import { getJobFinancials } from '#/lib/qbo.functions'
 
-// A Job's money from QuickBooks (docs/adr/0006-quickbooks-sync.md): costs (net of credits), invoiced, paid, and what
-// is left, with the transactions on it. Loaded after the page.
+// A Job's money from QuickBooks (docs/adr/0006-quickbooks-sync.md): invoiced, costs (net of credits), profit, margin
+// and paid, with the transactions on it. Loaded after the page.
 
 type Fin = Awaited<ReturnType<typeof getJobFinancials>>
 
@@ -29,12 +29,20 @@ export function JobMoneyPanel({ jobId }: { jobId: string }) {
         <Receipt className="size-4 text-muted-foreground" />
         From QuickBooks
       </h2>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {stat('Costs', t.costCents)}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {stat('Invoiced', t.revenueCents)}
+        {stat('Costs', t.costCents)}
+        {stat('Profit', t.profitCents)}
+        <div>
+          <p className="text-xs text-muted-foreground">Margin</p>
+          <p className="text-lg font-semibold tabular-nums">{t.marginPct === null ? '–' : `${t.marginPct}%`}</p>
+        </div>
         {stat('Paid', t.paidCents)}
-        {stat('Invoiced minus costs', t.profitCents)}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Profit is invoiced minus the costs sorted onto this Job (materials, subcontractors). Our own crew's time is not in it.
+        {t.marginPct === null && ' Margin shows once the Job has both invoices and costs.'}
+      </p>
       {fin.transactions.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No transactions on this Job yet. Sort them on{' '}

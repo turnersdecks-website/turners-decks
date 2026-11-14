@@ -10,6 +10,7 @@ import { ProjectChecklist } from '#/components/ProjectChecklist'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '#/components/ui/sheet'
 import { JOB_STATUSES, JOB_STATUS_LABELS, JOB_STATUS_STYLES, customerName, formatMoney, jobMetrics } from '#/lib/customer-vocab'
 import { listJobs } from '#/lib/customers.functions'
+import { marginPct } from '#/lib/qbo-vocab'
 import { errorMessage } from '#/lib/errors'
 import { PROJECT_STEPS, PROJECT_STEP_LABELS, type ProjectStep } from '#/lib/project-steps'
 import { listProjectBoard, moveJobStep } from '#/lib/projects.functions'
@@ -305,6 +306,11 @@ function JobList({ rows }: { rows: JobRow[] }) {
   const totalQuoted = sum(rows.map((r) => r.job.quotedPriceCents))
   const avgLabor = average(metrics.map((m) => m.laborHoursPer100Sqft))
   const avgMargin = average(metrics.map((m) => m.grossMarginPct))
+  // QuickBooks: profit and margin over the Jobs that have both invoices and costs sorted onto them.
+  const withMoney = rows.filter((r) => marginPct(r.qboRevenueCents, r.qboCostCents) !== null)
+  const qbRevenue = sum(withMoney.map((r) => r.qboRevenueCents))
+  const qbProfit = sum(withMoney.map((r) => r.qboRevenueCents - r.qboCostCents))
+  const qbMargin = marginPct(qbRevenue, qbRevenue - qbProfit)
   const towns = [...new Set(rows.map((r) => r.job.city).filter((v): v is string => !!v))].sort()
   const statuses = [...new Set(rows.map((r) => r.job.status))]
 
@@ -357,15 +363,37 @@ function JobList({ rows }: { rows: JobRow[] }) {
       meta: { label: 'Quoted' },
     },
     {
+      id: 'profit',
+      accessorFn: (r) => (marginPct(r.qboRevenueCents, r.qboCostCents) === null ? Number.NEGATIVE_INFINITY : r.qboRevenueCents - r.qboCostCents),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Profit" />,
+      cell: ({ row }) => {
+        const r = row.original
+        return <span className="tabular-nums">{marginPct(r.qboRevenueCents, r.qboCostCents) === null ? '' : formatMoney(r.qboRevenueCents - r.qboCostCents)}</span>
+      },
+      enableGlobalFilter: false,
+      meta: { label: 'Profit' },
+    },
+    {
       id: 'margin',
-      accessorFn: (r) => jobMetrics(r.job).grossMarginPct ?? -1,
+      accessorFn: (r) => marginPct(r.qboRevenueCents, r.qboCostCents) ?? Number.NEGATIVE_INFINITY,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Margin" />,
+      cell: ({ row }) => {
+        const pct = marginPct(row.original.qboRevenueCents, row.original.qboCostCents)
+        return <span className="tabular-nums">{pct === null ? '' : `${pct}%`}</span>
+      },
+      enableGlobalFilter: false,
+      meta: { label: 'Margin' },
+    },
+    {
+      id: 'estMargin',
+      accessorFn: (r) => jobMetrics(r.job).grossMarginPct ?? -1,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Est. margin" />,
       cell: ({ row }) => {
         const pct = jobMetrics(row.original.job).grossMarginPct
         return <span className="tabular-nums">{pct === null ? '' : `${pct}%`}</span>
       },
       enableGlobalFilter: false,
-      meta: { label: 'Margin' },
+      meta: { label: 'Est. margin' },
     },
   ]
 
@@ -376,7 +404,12 @@ function JobList({ rows }: { rows: JobRow[] }) {
           <StatCard label="Square footage" value={totalSqft.toLocaleString('en-US')} hint="Jobs on this tab" />
           <StatCard label="Quoted" value={formatMoney(totalQuoted) || '$0'} hint="Jobs on this tab" />
           <StatCard label="Labor hours per 100 sq ft" value={avgLabor ?? '–'} hint="Average of Jobs with hours and size" />
-          <StatCard label="Gross margin" value={avgMargin === null ? '–' : `${avgMargin}%`} hint="Average of Jobs with costs filled in" />
+          <StatCard
+            label="Profit"
+            value={withMoney.length ? formatMoney(qbProfit) || '$0' : '–'}
+            hint={withMoney.length ? `${qbMargin}% margin, from QuickBooks (${withMoney.length} Jobs with invoices and costs)` : 'From QuickBooks, once Jobs have invoices and costs'}
+          />
+          <StatCard label="Est. margin" value={avgMargin === null ? '–' : `${avgMargin}%`} hint="Quoted price minus entered costs, average" />
         </StatGrid>
       )}
       <DataTable

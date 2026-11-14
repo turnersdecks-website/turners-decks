@@ -274,6 +274,9 @@ export async function listJobs(db: Db, opts: { status?: JobStatus[] | null; cust
       job: jobs,
       customerFirstName: customers.firstName,
       customerLastName: customers.lastName,
+      // QuickBooks money sorted onto the Job (docs/adr/0006-quickbooks-sync.md; same rules as jobTotals).
+      qboCostCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'cost' THEN t.amount_cents WHEN 'cost_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
+      qboRevenueCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'revenue' THEN t.amount_cents WHEN 'revenue_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
     })
     .from(jobs)
     .innerJoin(customers, eq(customers.id, jobs.customerId))

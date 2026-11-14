@@ -790,7 +790,7 @@ function buildServer(env: Env, staff: Staff) {
     'job_financials',
     {
       title: 'A Job\'s money from QuickBooks',
-      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, invoiced minus costs; plus the transactions.',
+      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, profit (invoiced minus costs) and margin % (null until the Job has both invoices and costs); plus the transactions.',
       inputSchema: { jobId: id },
       annotations: READ,
     },
