@@ -247,7 +247,7 @@ function LeadBoard({
                       )}
                     >
                       <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        {channelLabel(l.channel)} · {reportedSource(l)}
+                        {channelLabel(l.channel)}
                       </p>
                       <h3 className="mt-1 line-clamp-2 text-sm font-semibold">
                         <Link to="/leads/$id" params={{ id: l.id }} className="hover:underline">
