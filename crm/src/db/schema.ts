@@ -440,6 +440,63 @@ export const quoWebhookEvents = sqliteTable('quo_webhook_events', {
   receivedAt: integer('received_at', { mode: 'timestamp_ms' }).notNull(),
 })
 
+// QuickBooks Online (docs/adr/0006-quickbooks-sync.md): the one connected company. Tokens are encrypted with a key
+// derived from BETTER_AUTH_SECRET (qbo.server.ts) and never leave the Worker. Intuit rotates the refresh token on every
+// refresh, so the nightly sync keeps it alive.
+export const qboConnection = sqliteTable(
+  'qbo_connection',
+  {
+    id: integer('id').primaryKey().default(1),
+    realmId: text('realm_id').notNull(),
+    companyName: text('company_name'),
+    accessTokenEnc: text('access_token_enc').notNull(),
+    refreshTokenEnc: text('refresh_token_enc').notNull(),
+    accessExpiresAt: integer('access_expires_at', { mode: 'timestamp_ms' }).notNull(),
+    refreshExpiresAt: integer('refresh_expires_at', { mode: 'timestamp_ms' }).notNull(),
+    connectedAt: integer('connected_at', { mode: 'timestamp_ms' }).notNull(),
+    connectedBy: text('connected_by').references(() => user.id, { onDelete: 'set null' }),
+    /** Set once the first full pull finished; after that the sync asks only for changes (CDC). */
+    backfilledAt: integer('backfilled_at', { mode: 'timestamp_ms' }),
+    lastSyncAt: integer('last_sync_at', { mode: 'timestamp_ms' }),
+    lastSyncError: text('last_sync_error'),
+  },
+  (t) => [check('qbo_connection_single_row', sql`${t.id} = 1`)],
+)
+
+// One QuickBooks transaction, as last synced. `kind` says how it counts on a Job (QBO_KINDS, qbo-vocab.ts). Staff (or
+// Claude through the MCP) put it on a Job or mark it overhead; QuickBooks itself is never changed. `assignment` and
+// `job_id` survive re-syncs; a transaction deleted in QuickBooks keeps its row with `deleted` set.
+export const qboTransactions = sqliteTable(
+  'qbo_transactions',
+  {
+    /** `${entity}:${qbo id}`, e.g. Purchase:123. */
+    id: text('id').primaryKey(),
+    entity: text('entity').notNull(),
+    qboId: text('qbo_id').notNull(),
+    kind: text('kind').notNull(),
+    txnDate: text('txn_date').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    partyName: text('party_name'),
+    partyQboId: text('party_qbo_id'),
+    account: text('account'),
+    memo: text('memo'),
+    docNumber: text('doc_number'),
+    /** [{ account, description, amountCents }] */
+    linesJson: text('lines_json'),
+    deleted: integer('deleted', { mode: 'boolean' }).notNull().default(false),
+    qboUpdatedAt: integer('qbo_updated_at', { mode: 'timestamp_ms' }),
+    syncedAt: integer('synced_at', { mode: 'timestamp_ms' }).notNull(),
+    jobId: text('job_id').references(() => jobs.id, { onDelete: 'set null' }),
+    /** null = not sorted yet; 'job' (job_id set) or 'overhead' (not for a Job). */
+    assignment: text('assignment'),
+    /** Who sorted it: a Staff id, 'auto' (matched by customer name), or 'claude:<staff id>' through the MCP. */
+    assignedBy: text('assigned_by'),
+    assignedAt: integer('assigned_at', { mode: 'timestamp_ms' }),
+    suggestedJobId: text('suggested_job_id').references(() => jobs.id, { onDelete: 'set null' }),
+  },
+  (t) => [index('qbo_txn_job_idx').on(t.jobId), index('qbo_txn_date_idx').on(t.txnDate), index('qbo_txn_assignment_idx').on(t.assignment, t.txnDate)],
+)
+
 // Estimator settings (ADR 0003, FLW-200). The draft is the one document the owner edits; `revision` makes saves and
 // publishes compare-and-swap so two tabs never overwrite each other or publish content nobody reviewed. Published
 // versions are append-only: code never updates or deletes a row. The document JSON is validated by

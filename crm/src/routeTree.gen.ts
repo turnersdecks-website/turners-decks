@@ -23,6 +23,7 @@ import { Route as StaffLeadsRouteImport } from './routes/_staff/leads'
 import { Route as StaffProjectsRouteImport } from './routes/_staff/projects'
 import { Route as StaffSettingsRouteImport } from './routes/_staff/settings'
 import { Route as StaffSubmissionsRouteImport } from './routes/_staff/submissions'
+import { Route as StaffTransactionsRouteImport } from './routes/_staff/transactions'
 import { Route as ApiLeadFilesRouteImport } from './routes/api/lead-files'
 import { Route as ApiPhotosRouteImport } from './routes/api/photos'
 import { Route as HomeDeviceRouteImport } from './routes/home.$device'
@@ -38,6 +39,8 @@ import { Route as ApiPublicEstimatorRouteImport } from './routes/api/public/esti
 import { Route as ApiPublicIntakeRouteImport } from './routes/api/public/intake'
 import { Route as ApiPublicPhotosRouteImport } from './routes/api/public/photos'
 import { Route as ApiPublicQuoWebhookRouteImport } from './routes/api/public/quo-webhook'
+import { Route as ApiQboCallbackRouteImport } from './routes/api/qbo/callback'
+import { Route as ApiQboConnectRouteImport } from './routes/api/qbo/connect'
 import { Route as HpDeviceLinkIdRouteImport } from './routes/hp.$device.$linkId'
 import { Route as ApiPublicPhotosIdRouteImport } from './routes/api/public/photos.$id'
 import { Route as ApiPublicPhotosDoneRouteImport } from './routes/api/public/photos.done'
@@ -109,6 +112,11 @@ const StaffSettingsRoute = StaffSettingsRouteImport.update({
 const StaffSubmissionsRoute = StaffSubmissionsRouteImport.update({
   id: '/submissions',
   path: '/submissions',
+  getParentRoute: () => StaffRoute,
+} as any)
+const StaffTransactionsRoute = StaffTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
   getParentRoute: () => StaffRoute,
 } as any)
 const ApiLeadFilesRoute = ApiLeadFilesRouteImport.update({
@@ -186,6 +194,16 @@ const ApiPublicQuoWebhookRoute = ApiPublicQuoWebhookRouteImport.update({
   path: '/api/public/quo-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiQboCallbackRoute = ApiQboCallbackRouteImport.update({
+  id: '/api/qbo/callback',
+  path: '/api/qbo/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiQboConnectRoute = ApiQboConnectRouteImport.update({
+  id: '/api/qbo/connect',
+  path: '/api/qbo/connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HpDeviceLinkIdRoute = HpDeviceLinkIdRouteImport.update({
   id: '/hp/$device/$linkId',
   path: '/hp/$device/$linkId',
@@ -216,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
+  '/transactions': typeof StaffTransactionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
@@ -231,6 +250,8 @@ export interface FileRoutesByFullPath {
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
   '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
+  '/api/qbo/callback': typeof ApiQboCallbackRoute
+  '/api/qbo/connect': typeof ApiQboConnectRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -248,6 +269,7 @@ export interface FileRoutesByTo {
   '/projects': typeof StaffProjectsRoute
   '/settings': typeof StaffSettingsRoute
   '/submissions': typeof StaffSubmissionsRoute
+  '/transactions': typeof StaffTransactionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
@@ -264,6 +286,8 @@ export interface FileRoutesByTo {
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
   '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
+  '/api/qbo/callback': typeof ApiQboCallbackRoute
+  '/api/qbo/connect': typeof ApiQboConnectRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -283,6 +307,7 @@ export interface FileRoutesById {
   '/_staff/projects': typeof StaffProjectsRoute
   '/_staff/settings': typeof StaffSettingsRoute
   '/_staff/submissions': typeof StaffSubmissionsRoute
+  '/_staff/transactions': typeof StaffTransactionsRoute
   '/api/lead-files': typeof ApiLeadFilesRouteWithChildren
   '/api/photos': typeof ApiPhotosRouteWithChildren
   '/home/$device': typeof HomeDeviceRoute
@@ -299,6 +324,8 @@ export interface FileRoutesById {
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
   '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
+  '/api/qbo/callback': typeof ApiQboCallbackRoute
+  '/api/qbo/connect': typeof ApiQboConnectRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -319,6 +346,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/settings'
     | '/submissions'
+    | '/transactions'
     | '/api/lead-files'
     | '/api/photos'
     | '/home/$device'
@@ -334,6 +362,8 @@ export interface FileRouteTypes {
     | '/api/public/intake'
     | '/api/public/photos'
     | '/api/public/quo-webhook'
+    | '/api/qbo/callback'
+    | '/api/qbo/connect'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -351,6 +381,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/settings'
     | '/submissions'
+    | '/transactions'
     | '/api/lead-files'
     | '/api/photos'
     | '/home/$device'
@@ -367,6 +398,8 @@ export interface FileRouteTypes {
     | '/api/public/intake'
     | '/api/public/photos'
     | '/api/public/quo-webhook'
+    | '/api/qbo/callback'
+    | '/api/qbo/connect'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -385,6 +418,7 @@ export interface FileRouteTypes {
     | '/_staff/projects'
     | '/_staff/settings'
     | '/_staff/submissions'
+    | '/_staff/transactions'
     | '/api/lead-files'
     | '/api/photos'
     | '/home/$device'
@@ -401,6 +435,8 @@ export interface FileRouteTypes {
     | '/api/public/intake'
     | '/api/public/photos'
     | '/api/public/quo-webhook'
+    | '/api/qbo/callback'
+    | '/api/qbo/connect'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -420,6 +456,8 @@ export interface RootRouteChildren {
   ApiPublicIntakeRoute: typeof ApiPublicIntakeRoute
   ApiPublicPhotosRoute: typeof ApiPublicPhotosRouteWithChildren
   ApiPublicQuoWebhookRoute: typeof ApiPublicQuoWebhookRoute
+  ApiQboCallbackRoute: typeof ApiQboCallbackRoute
+  ApiQboConnectRoute: typeof ApiQboConnectRoute
   HpDeviceLinkIdRoute: typeof HpDeviceLinkIdRoute
 }
 
@@ -521,6 +559,13 @@ declare module '@tanstack/react-router' {
       path: '/submissions'
       fullPath: '/submissions'
       preLoaderRoute: typeof StaffSubmissionsRouteImport
+      parentRoute: typeof StaffRoute
+    }
+    '/_staff/transactions': {
+      id: '/_staff/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof StaffTransactionsRouteImport
       parentRoute: typeof StaffRoute
     }
     '/api/lead-files': {
@@ -628,6 +673,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicQuoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/qbo/callback': {
+      id: '/api/qbo/callback'
+      path: '/api/qbo/callback'
+      fullPath: '/api/qbo/callback'
+      preLoaderRoute: typeof ApiQboCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/qbo/connect': {
+      id: '/api/qbo/connect'
+      path: '/api/qbo/connect'
+      fullPath: '/api/qbo/connect'
+      preLoaderRoute: typeof ApiQboConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hp/$device/$linkId': {
       id: '/hp/$device/$linkId'
       path: '/hp/$device/$linkId'
@@ -662,6 +721,7 @@ interface StaffRouteChildren {
   StaffProjectsRoute: typeof StaffProjectsRoute
   StaffSettingsRoute: typeof StaffSettingsRoute
   StaffSubmissionsRoute: typeof StaffSubmissionsRoute
+  StaffTransactionsRoute: typeof StaffTransactionsRoute
   StaffIndexRoute: typeof StaffIndexRoute
   StaffCustomersIdRoute: typeof StaffCustomersIdRoute
   StaffJobsIdRoute: typeof StaffJobsIdRoute
@@ -679,6 +739,7 @@ const StaffRouteChildren: StaffRouteChildren = {
   StaffProjectsRoute: StaffProjectsRoute,
   StaffSettingsRoute: StaffSettingsRoute,
   StaffSubmissionsRoute: StaffSubmissionsRoute,
+  StaffTransactionsRoute: StaffTransactionsRoute,
   StaffIndexRoute: StaffIndexRoute,
   StaffCustomersIdRoute: StaffCustomersIdRoute,
   StaffJobsIdRoute: StaffJobsIdRoute,
@@ -740,6 +801,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicIntakeRoute: ApiPublicIntakeRoute,
   ApiPublicPhotosRoute: ApiPublicPhotosRouteWithChildren,
   ApiPublicQuoWebhookRoute: ApiPublicQuoWebhookRoute,
+  ApiQboCallbackRoute: ApiQboCallbackRoute,
+  ApiQboConnectRoute: ApiQboConnectRoute,
   HpDeviceLinkIdRoute: HpDeviceLinkIdRoute,
 }
 export const routeTree = rootRouteImport

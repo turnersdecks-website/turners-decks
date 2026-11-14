@@ -3,11 +3,15 @@ import { getDb } from '#/db/client'
 import { alarmDays, cronRuns, formSubmissions, notificationJobs, quoWebhookEvents, submissionProcessing } from '#/db/schema'
 import { sweepDeletedLeadPrefixes } from '#/lib/lead-files.server'
 import { type DispatchDeps, type OutboxEnv, dispatchDueJobs } from '#/lib/outbox'
+import { type QboEnv, syncQuickBooks } from '#/lib/qbo.server'
+import { qboConnection } from '#/db/schema'
 
 // Cron Triggers: each schedule in wrangler.jsonc > triggers.crons maps to its tasks here. To add a job, add the
 // schedule to wrangler.jsonc and a task under the same string (e.g. a daily '0 11 * * *').
 
 export const OUTBOX_CRON = '*/5 * * * *'
+/** Nightly, 09:17 UTC: the QuickBooks sync (docs/adr/0006-quickbooks-sync.md). */
+export const NIGHTLY_CRON = '17 9 * * *'
 /** The dashboard banner shows once the 5-minute cron has missed about two runs (PLAN.md > Observability). */
 export const CRON_STALE_AFTER_MS = 15 * 60_000
 /** Backlog alarms (PLAN.md > Observability): jobs failed/dead for over 1 hour, submissions unprocessed over 15 min. */
@@ -20,7 +24,7 @@ export const QUO_EVENTS_KEEP_MS = 3 * 24 * 60 * 60_000
  */
 const ALARM_LOOKBACK_MS = 7 * 24 * 60 * 60_000
 
-export type CronEnv = OutboxEnv & Pick<Env, 'LEAD_FILES'>
+export type CronEnv = OutboxEnv & Pick<Env, 'LEAD_FILES'> & Partial<QboEnv> & { BETTER_AUTH_SECRET?: string }
 /** `fetch` / `now` seams for tests. */
 export type CronDeps = DispatchDeps
 type CronTask = { name: string; run: (env: CronEnv, deps: CronDeps) => Promise<void> }
@@ -36,6 +40,17 @@ export const CRON_TASKS: Record<string, CronTask[]> = {
       name: 'quo-events-sweep',
       run: async (env, deps) => {
         await getDb(env.DB).delete(quoWebhookEvents).where(lt(quoWebhookEvents.receivedAt, new Date((deps.now?.() ?? Date.now()) - QUO_EVENTS_KEEP_MS)))
+      },
+    },
+  ],
+  [NIGHTLY_CRON]: [
+    {
+      name: 'quickbooks-sync',
+      // Only once QuickBooks is connected; a failed sync is recorded on the connection (Settings shows it) and rethrown.
+      run: async (env, deps) => {
+        const db = getDb(env.DB)
+        if (!(await db.select({ id: qboConnection.id }).from(qboConnection).get())) return
+        await syncQuickBooks(db, env as QboEnv, { fetch: deps.fetch, now: deps.now })
       },
     },
   ],

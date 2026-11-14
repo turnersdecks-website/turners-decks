@@ -33,7 +33,10 @@ const parseShow = (v: unknown): Show | undefined => (SHOW_TABS.some((t) => t.id 
 const BOARD_STEPS = PROJECT_STEPS.filter((s) => s !== 'done')
 
 export const Route = createFileRoute('/_staff/jobs')({
-  validateSearch: (s: Record<string, unknown>): { view?: BoardView; show?: Show } => ({ view: parseBoardView(s.view), show: parseShow(s.show) }),
+  validateSearch: (s: Record<string, unknown>): { view?: BoardView; show?: Show; year?: number } => {
+    const y = Number(s.year)
+    return { view: parseBoardView(s.view), show: parseShow(s.show), year: Number.isInteger(y) && y >= 2000 && y <= 2100 ? y : undefined }
+  },
   head: () => ({ meta: [{ title: 'Jobs - Turner’s Decks CRM' }] }),
   beforeLoad: () => ({ defaultView: readDefaultView('jobs') }),
   loader: async () => {
@@ -47,6 +50,8 @@ type JobRow = Awaited<ReturnType<typeof listJobs>>[number]
 type Card = Awaited<ReturnType<typeof listProjectBoard>>[number]
 
 const isOpenStatus = (s: JobRow['job']['status']) => s !== 'done' && s !== 'cancelled'
+/** A Job's year: its start date, else when it was made (won). */
+const yearOf = (r: JobRow) => Number((r.job.startDate ?? new Date(r.job.createdAt).toISOString()).slice(0, 4))
 
 function JobsPage() {
   const { rows, board } = Route.useLoaderData()
@@ -54,12 +59,14 @@ function JobsPage() {
   const search = Route.useSearch()
   const view = search.view ?? defaultView
   const show = search.show ?? 'open'
+  const years = [...new Set(rows.map(yearOf))].sort((a, b) => b - a)
+  const inYear = (r: JobRow) => !search.year || yearOf(r) === search.year
 
   const counts: Record<Show, number> = {
-    open: rows.filter((r) => isOpenStatus(r.job.status)).length,
-    done: rows.filter((r) => r.job.status === 'done').length,
-    cancelled: rows.filter((r) => r.job.status === 'cancelled').length,
-    all: rows.length,
+    open: rows.filter((r) => inYear(r) && isOpenStatus(r.job.status)).length,
+    done: rows.filter((r) => inYear(r) && r.job.status === 'done').length,
+    cancelled: rows.filter((r) => inYear(r) && r.job.status === 'cancelled').length,
+    all: rows.filter(inYear).length,
   }
 
   return (
@@ -74,12 +81,28 @@ function JobsPage() {
         <JobBoard jobs={board} />
       ) : (
         <>
-          <div className="flex min-h-11 items-center border-b px-4 py-1.5 sm:px-6">
+          <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b px-4 py-1.5 sm:px-6">
             <ShowTabs tabs={SHOW_TABS} value={show} counts={counts} />
+            {years.length > 1 && (
+              <div role="tablist" aria-label="Year" className="flex gap-1">
+                {[undefined, ...years].map((y) => (
+                  <Link
+                    key={y ?? 'all'}
+                    to="/jobs"
+                    search={(s: Record<string, unknown>) => ({ ...s, year: y }) as never}
+                    role="tab"
+                    aria-selected={search.year === y}
+                    className={cn('inline-flex h-8 items-center rounded-md border px-3 text-sm', search.year === y ? 'border-primary/40 bg-primary/5 font-semibold' : 'border-transparent text-muted-foreground hover:bg-muted')}
+                  >
+                    {y ?? 'All years'}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
             <p className="mb-4 text-sm text-muted-foreground">A Job is added when a Lead is won, or from a Customer's page.</p>
-            <JobList key={show} rows={rows.filter((r) => show === 'all' || (show === 'open' ? isOpenStatus(r.job.status) : r.job.status === show))} />
+            <JobList key={`${show}-${search.year ?? 'all'}`} rows={rows.filter((r) => inYear(r) && (show === 'all' || (show === 'open' ? isOpenStatus(r.job.status) : r.job.status === show)))} />
           </div>
         </>
       )}

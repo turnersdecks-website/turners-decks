@@ -1,4 +1,4 @@
-import { BarChart3, Building2, Calculator, Hammer, Inbox, KanbanSquare, Users, type LucideIcon } from 'lucide-react'
+import { BarChart3, Building2, Calculator, Hammer, Inbox, KanbanSquare, Receipt, Users, type LucideIcon } from 'lucide-react'
 
 // Sidebar groups ported from the Good Cover CRM (itself from the Lovable app-sidebar), cut to Good Cover v1: the
 // Pipeline, All Leads, Company settings and Submissions. Pine & Gable's other screens come back with their features.
@@ -17,6 +17,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { title: 'Contacts', url: '/contacts', icon: Users },
       { title: 'Leads', url: '/leads', icon: KanbanSquare },
       { title: 'Jobs', url: '/jobs', icon: Hammer },
+      { title: 'Transactions', url: '/transactions', icon: Receipt },
       { title: 'Lead sources', url: '/lead-sources', icon: BarChart3 },
     ],
   },
