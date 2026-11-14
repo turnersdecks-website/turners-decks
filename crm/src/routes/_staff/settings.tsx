@@ -16,7 +16,8 @@ import { type CompanySettingsInput, getCompanySettings, updateCompanySettings } 
 import { createPhotoDevice, listPhotoDevices, revokePhotoDevice } from '#/lib/photos.functions'
 import { type TemplateKey, templateDef } from '#/lib/email-templates'
 import { listEmailTemplates, saveEmailTemplate } from '#/lib/email-templates.functions'
-import { disconnectQbo, getQboStatus, syncQboNow } from '#/lib/qbo.functions'
+import { applyQboRules, disconnectQbo, getQboRules, getQboStatus, saveQboRulesFn, syncQboNow } from '#/lib/qbo.functions'
+import type { VendorRule } from '#/lib/qbo-vocab'
 import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/lib/texting.functions'
 import { prettyPhone } from '#/lib/phone'
 import { cn } from '#/lib/utils'
@@ -91,6 +92,7 @@ function SettingsPage() {
           <>
             <QuoConnectionSection />
             <QuickBooksSection />
+            <QboRulesSection />
           </>
         )}
       </div>
@@ -696,6 +698,107 @@ function PhotoHomeSection() {
           </Button>
         </form>
       </div>
+    </ContentSection>
+  )
+}
+
+// Which QuickBooks costs need sorting (docs/adr/0006-quickbooks-sync.md). New costs in a ticked account land in To sort;
+// the rest arrive Ignored. A vendor rule wins over the account. Invoices and payments always come in to be sorted.
+function QboRulesSection() {
+  const [view, setView] = useState<Awaited<ReturnType<typeof getQboRules>> | null>(null)
+  const [accounts, setAccounts] = useState<string[]>([])
+  const [vendors, setVendors] = useState<VendorRule[]>([])
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    getQboRules().then(
+      (v) => {
+        setView(v)
+        setAccounts(v.rules.sortAccounts)
+        setVendors(v.rules.vendors)
+      },
+      () => setView(null),
+    )
+  }, [])
+  if (!view) return null
+
+  async function save() {
+    setBusy(true)
+    try {
+      const saved = await saveQboRulesFn({ data: { sortAccounts: accounts, vendors: vendors.filter((v) => v.vendor.trim()) } })
+      setAccounts(saved.sortAccounts)
+      setVendors(saved.vendors)
+      toast.success('Rules saved. New transactions follow them from the next sync.')
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function apply() {
+    if (!window.confirm('Apply the saved rules to everything in To sort now? Costs the rules say to ignore move to Ignored.')) return
+    setBusy(true)
+    try {
+      const r = await applyQboRules()
+      toast.success(r.ignored ? `${r.ignored} transactions moved to Ignored.` : 'Nothing in To sort matched an ignore rule.')
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <ContentSection id="quickbooks-rules" title="QuickBooks sorting rules" description="Which new costs need sorting onto a Job. Everything else arrives Ignored, ready to un-ignore if it turns out to be a Job cost.">
+      <Card className="shadow-xs">
+        <CardContent className="space-y-5 p-4 text-sm sm:p-6">
+          <fieldset className="space-y-2">
+            <legend className="font-medium">Job cost accounts</legend>
+            <p className="text-xs text-muted-foreground">Costs booked to these QuickBooks accounts land in To sort.</p>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {view.accounts.map((a) => (
+                <label key={a} className="flex items-center gap-2">
+                  <input type="checkbox" checked={accounts.includes(a)} onChange={(e) => setAccounts((cur) => (e.target.checked ? [...cur, a] : cur.filter((x) => x !== a)))} />
+                  {a}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <Separator />
+          <fieldset className="space-y-2">
+            <legend className="font-medium">Vendor rules</legend>
+            <p className="text-xs text-muted-foreground">Win over the account. Matches the QuickBooks vendor name or the bank description.</p>
+            {vendors.map((v, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2">
+                <Input aria-label="Vendor" value={v.vendor} placeholder="e.g. Harbor Freight" className="h-8 w-56" onChange={(e) => setVendors((cur) => cur.map((x, j) => (j === i ? { ...x, vendor: e.target.value } : x)))} />
+                <select
+                  aria-label="Rule"
+                  value={v.action}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  onChange={(e) => setVendors((cur) => cur.map((x, j) => (j === i ? { ...x, action: e.target.value === 'sort' ? 'sort' : 'ignore' } : x)))}
+                >
+                  <option value="ignore">Always ignore</option>
+                  <option value="sort">Always to sort</option>
+                </select>
+                <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setVendors((cur) => cur.filter((_, j) => j !== i))}>
+                  Remove
+                </button>
+              </div>
+            ))}
+            <Button type="button" size="sm" variant="outline" onClick={() => setVendors((cur) => [...cur, { vendor: '', action: 'ignore' }])}>
+              Add vendor rule
+            </Button>
+          </fieldset>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" disabled={busy} onClick={save}>
+              <Save className="size-4" /> Save rules
+            </Button>
+            <Button size="sm" variant="outline" disabled={busy} onClick={apply}>
+              Apply to To sort now
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </ContentSection>
   )
 }

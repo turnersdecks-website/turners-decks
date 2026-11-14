@@ -1,8 +1,8 @@
 import { env } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getDb } from '#/db/client'
-import { jobTotals } from '#/lib/qbo-vocab'
-import { assignTransactions, completeConnect, profitAndLoss, disconnectQuickBooks, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
+import { DEFAULT_QBO_RULES, jobTotals, ruleFor } from '#/lib/qbo-vocab'
+import { applyQboRulesToUnsorted, assignTransactions, completeConnect, profitAndLoss, saveQboRules, disconnectQuickBooks, jobFinancials, makeState, readState, seal, syncQuickBooks, unseal } from '#/lib/qbo.server'
 
 // docs/adr/0006-quickbooks-sync.md: QuickBooks transactions copy into the CRM nightly (read only there), invoices go on
 // their Customer's Job by themselves, costs wait for Staff or Claude with a suggested Job.
@@ -54,6 +54,7 @@ async function job(first: string, last: string, cols: { start?: string; finish?:
 const txn = (id: string) => env.DB.prepare('SELECT * FROM qbo_transactions WHERE id = ?').bind(id).first<Record<string, any>>()
 
 beforeEach(async () => {
+  await env.DB.prepare('UPDATE company_settings SET qbo_rules = NULL').run()
   await env.DB.prepare('DELETE FROM qbo_transactions').run()
   await env.DB.prepare('DELETE FROM qbo_connection').run()
 })
@@ -89,6 +90,7 @@ describe('the sync', () => {
       },
     })
     await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: intuit.fetch, now: () => T0 })
+    await saveQboRules(db(), { sortAccounts: ['Job Materials'], vendors: [] })
 
     const res = await syncQuickBooks(db(), qEnv, { fetch: intuit.fetch, now: () => T0 })
 
@@ -97,7 +99,7 @@ describe('the sync', () => {
     expect(await txn('Invoice:9')).toMatchObject({ kind: 'revenue', amount_cents: 900000, job_id: smith, assignment: 'job', assigned_by: 'auto' })
     expect(await txn('Payment:10')).toMatchObject({ kind: 'payment', job_id: smith })
     expect(await txn('Purchase:1')).toMatchObject({ kind: 'cost', amount_cents: 123456, account: 'Job Materials', assignment: null, suggested_job_id: smith })
-    expect(await txn('Purchase:2')).toMatchObject({ assignment: null, suggested_job_id: null })
+    expect(await txn('Purchase:2')).toMatchObject({ assignment: 'ignored', assigned_by: 'rule' })
   })
 
   it('later syncs ask only for changes, keep how Staff sorted them, and mark deletions', async () => {
@@ -253,5 +255,36 @@ describe('the P&L', () => {
     expect(pnl.months[2]).toMatchObject({ month: '2026-03', revenueCents: 10000, unsortedCents: 500, paidCents: 10000 })
     expect(pnl.completedJobs).toEqual([expect.objectContaining({ id: jobId, revenueCents: 10000, costCents: 3000 })])
     expect((await profitAndLoss(db(), 2025)).completedJobs).toEqual([])
+  })
+})
+
+describe('sorting rules', () => {
+  it('job cost accounts go to sort, others are ignored, a vendor rule wins, invoices always to sort', () => {
+    const r = { ...DEFAULT_QBO_RULES, vendors: [{ vendor: 'Harbor Freight', action: 'ignore' as const }, { vendor: 'SUNOCO', action: 'sort' as const }] }
+    expect(ruleFor({ kind: 'cost', account: 'Job Supplies', partyName: 'A.D. Moyer' }, r)).toBe('sort')
+    expect(ruleFor({ kind: 'cost', account: 'Taxes & Licenses' }, r)).toBe('sort')
+    expect(ruleFor({ kind: 'cost', account: 'Car & Truck' }, r)).toBe('ignore')
+    expect(ruleFor({ kind: 'cost', account: 'Job Supplies', partyName: 'harbor freight' }, r)).toBe('ignore')
+    expect(ruleFor({ kind: 'cost', account: 'Car & Truck', memo: 'SUNOCO 0500 BIRDSBORO' }, r)).toBe('sort')
+    expect(ruleFor({ kind: 'revenue', account: 'Sales' }, r)).toBe('sort')
+  })
+
+  it('new costs arrive ignored by the rules; what a person sorted is left alone; apply runs over To sort', async () => {
+    const line = (account: string) => [{ Amount: 50, DetailType: 'AccountBasedExpenseLineDetail', AccountBasedExpenseLineDetail: { AccountRef: { name: account } } }]
+    const first = fakeIntuit({ query: { Purchase: [{ Id: '90', TxnDate: '2026-03-01', TotalAmt: 50, Line: line('Car & Truck') }, { Id: '91', TxnDate: '2026-03-01', TotalAmt: 50, Line: line('Job Supplies') }] } })
+    await completeConnect(db(), qEnv, { code: 'c', realmId: 'R', staffId: null as unknown as string }, { fetch: first.fetch, now: () => T0 })
+    await syncQuickBooks(db(), qEnv, { fetch: first.fetch, now: () => T0 })
+    expect(await txn('Purchase:90')).toMatchObject({ assignment: 'ignored', assigned_by: 'rule' })
+    expect(await txn('Purchase:91')).toMatchObject({ assignment: null })
+    // Staff un-ignore 90; an edit to it in QuickBooks does not re-ignore it.
+    await assignTransactions(db(), { ids: ['Purchase:90'], to: 'unassigned' }, 'staff-1')
+    const later = fakeIntuit({ cdc: { Purchase: [{ Id: '90', TxnDate: '2026-03-01', TotalAmt: 60, Line: line('Car & Truck') }] } })
+    await syncQuickBooks(db(), qEnv, { fetch: later.fetch, now: () => T0 + 86_400_000 })
+    expect(await txn('Purchase:90')).toMatchObject({ assignment: null, amount_cents: 6000 })
+    // A vendor rule, applied to To sort.
+    await saveQboRules(db(), { sortAccounts: DEFAULT_QBO_RULES.sortAccounts, vendors: [{ vendor: 'Car', action: 'ignore' }] })
+    expect(await applyQboRulesToUnsorted(db(), 'staff-1')).toEqual({ ignored: 1 })
+    expect(await txn('Purchase:90')).toMatchObject({ assignment: 'ignored' })
+    expect(await txn('Purchase:91')).toMatchObject({ assignment: null })
   })
 })

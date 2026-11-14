@@ -30,6 +30,7 @@ it('has exactly the v1 columns', async () => {
     'texting_enabled',
     'estimate_email_template', // FLW-200
     'owner_mobile', // docs/adr/0004-quo-texting.md: Pat's cell for photo-link texts
+    'qbo_rules', // docs/adr/0006-quickbooks-sync.md: which QuickBooks costs need sorting
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })
