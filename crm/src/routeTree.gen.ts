@@ -35,6 +35,7 @@ import { Route as ApiPhotosIdRouteImport } from './routes/api/photos.$id'
 import { Route as ApiPublicEstimatorRouteImport } from './routes/api/public/estimator'
 import { Route as ApiPublicIntakeRouteImport } from './routes/api/public/intake'
 import { Route as ApiPublicPhotosRouteImport } from './routes/api/public/photos'
+import { Route as ApiPublicQuoWebhookRouteImport } from './routes/api/public/quo-webhook'
 import { Route as HpDeviceLinkIdRouteImport } from './routes/hp.$device.$linkId'
 import { Route as ApiPublicPhotosIdRouteImport } from './routes/api/public/photos.$id'
 import { Route as ApiPublicPhotosDoneRouteImport } from './routes/api/public/photos.done'
@@ -168,6 +169,11 @@ const ApiPublicPhotosRoute = ApiPublicPhotosRouteImport.update({
   path: '/api/public/photos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicQuoWebhookRoute = ApiPublicQuoWebhookRouteImport.update({
+  id: '/api/public/quo-webhook',
+  path: '/api/public/quo-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HpDeviceLinkIdRoute = HpDeviceLinkIdRouteImport.update({
   id: '/hp/$device/$linkId',
   path: '/hp/$device/$linkId',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
+  '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
+  '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/api/public/estimator': typeof ApiPublicEstimatorRoute
   '/api/public/intake': typeof ApiPublicIntakeRoute
   '/api/public/photos': typeof ApiPublicPhotosRouteWithChildren
+  '/api/public/quo-webhook': typeof ApiPublicQuoWebhookRoute
   '/hp/$device/$linkId': typeof HpDeviceLinkIdRoute
   '/api/public/photos/$id': typeof ApiPublicPhotosIdRoute
   '/api/public/photos/done': typeof ApiPublicPhotosDoneRoute
@@ -304,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/public/estimator'
     | '/api/public/intake'
     | '/api/public/photos'
+    | '/api/public/quo-webhook'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/api/public/estimator'
     | '/api/public/intake'
     | '/api/public/photos'
+    | '/api/public/quo-webhook'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/api/public/estimator'
     | '/api/public/intake'
     | '/api/public/photos'
+    | '/api/public/quo-webhook'
     | '/hp/$device/$linkId'
     | '/api/public/photos/$id'
     | '/api/public/photos/done'
@@ -383,6 +395,7 @@ export interface RootRouteChildren {
   ApiPublicEstimatorRoute: typeof ApiPublicEstimatorRoute
   ApiPublicIntakeRoute: typeof ApiPublicIntakeRoute
   ApiPublicPhotosRoute: typeof ApiPublicPhotosRouteWithChildren
+  ApiPublicQuoWebhookRoute: typeof ApiPublicQuoWebhookRoute
   HpDeviceLinkIdRoute: typeof HpDeviceLinkIdRoute
 }
 
@@ -570,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPhotosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/quo-webhook': {
+      id: '/api/public/quo-webhook'
+      path: '/api/public/quo-webhook'
+      fullPath: '/api/public/quo-webhook'
+      preLoaderRoute: typeof ApiPublicQuoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hp/$device/$linkId': {
       id: '/hp/$device/$linkId'
       path: '/hp/$device/$linkId'
@@ -677,6 +697,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEstimatorRoute: ApiPublicEstimatorRoute,
   ApiPublicIntakeRoute: ApiPublicIntakeRoute,
   ApiPublicPhotosRoute: ApiPublicPhotosRouteWithChildren,
+  ApiPublicQuoWebhookRoute: ApiPublicQuoWebhookRoute,
   HpDeviceLinkIdRoute: HpDeviceLinkIdRoute,
 }
 export const routeTree = rootRouteImport

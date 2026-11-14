@@ -8,6 +8,7 @@ import { errorMessage } from '#/lib/errors'
 import { preparePhoto } from '#/lib/photo-prepare'
 import { type LinkStage, PHOTO_LINK_DAYS, PHOTO_STAGES, PHOTO_STAGE_LABELS, type PhotoStage, isLinkStage } from '#/lib/photo-vocab'
 import { createPhotoLink, listPhotoLinks, listPhotos, revokePhotoLink, updatePhoto } from '#/lib/photos.functions'
+import { getTextingReady } from '#/lib/texting.functions'
 import { cn } from '#/lib/utils'
 
 // Photos on a Lead, Job or Customer page (GLOSSARY Photo, Photo link): one box per stage (Before, During, After, AI
@@ -315,11 +316,19 @@ function SendPhotoLink({ target, stage, onSent }: { target: Target; stage: LinkS
   const [open, setOpen] = useState(false)
   const [link, setLink] = useState<NewLink | null>(null)
   const [busy, setBusy] = useState(false)
+  // Quo texting is on (docs/adr/0004-quo-texting.md): the CRM can text the link to Pat's cell itself.
+  const [canText, setCanText] = useState(false)
+  useEffect(() => {
+    if (open) getTextingReady().then((r) => setCanText(r.ready), () => setCanText(false))
+  }, [open])
 
-  async function create() {
+  async function create(textPat = false) {
     setBusy(true)
     try {
-      setLink(await createPhotoLink({ data: { leadId: target.leadId, jobId: target.jobId, stage } }))
+      const made = await createPhotoLink({ data: { leadId: target.leadId, jobId: target.jobId, stage, textPat } })
+      setLink(made)
+      if (made.texted === 'queued') toast.success('Texted to Pat from the Quo number')
+      else if (textPat) toast.error(made.texted === 'no_owner_mobile' ? "Add Pat's cell in Settings > Texting, then try again." : 'Texting is off. Use Text Pat or Copy link.')
       await onSent()
     } catch (error) {
       toast.error(await errorMessage(error))
@@ -358,8 +367,14 @@ function SendPhotoLink({ target, stage, onSent }: { target: Target; stage: LinkS
           </DialogDescription>
         </DialogHeader>
         {!link ? (
-          <DialogFooter>
-            <Button onClick={create} disabled={busy}>
+          <DialogFooter className="gap-2">
+            {canText && (
+              <Button onClick={() => create(true)} disabled={busy}>
+                <MessageSquare />
+                Make the link and text Pat
+              </Button>
+            )}
+            <Button variant={canText ? 'outline' : 'default'} onClick={() => create()} disabled={busy}>
               Make the link
             </Button>
           </DialogFooter>

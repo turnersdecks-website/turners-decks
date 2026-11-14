@@ -57,6 +57,7 @@ describe('changing company settings', () => {
       owner_alert_emails: 'pat@turnersdecks.com, office@turnersdecks.com',
       texting_enabled: 0,
       estimate_email_template: expect.stringContaining('{low}'),
+      owner_mobile: null,
     })
   })
 

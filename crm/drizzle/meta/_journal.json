@@ -57,6 +57,13 @@
       "when": 1793320267814,
       "tag": "0007_email_templates_do_not_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794613405466,
+      "tag": "0008_quo_texting",
+      "breakpoints": true
     }
   ]
 }

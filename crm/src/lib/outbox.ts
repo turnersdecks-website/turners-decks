@@ -5,13 +5,17 @@ import { getDb } from '#/db/client'
 import { notificationJobs } from '#/db/schema'
 import { type Email, type SendEmail, redactEmail } from '#/lib/email'
 import { JOB_KINDS, type JobKindContext } from '#/lib/outbox-kinds'
+import { sendSms } from '#/lib/quo'
+import { textingStatus } from '#/lib/texting.server'
 
 // Notification outbox (PLAN.md > Architecture (Email), ADR 0004). A request commits its data and jobs in one D1
 // batch (`enqueueJob`), then tries the first send right away (`dispatchJob` via `ctx.waitUntil`). The 5-minute
 // cron (`dispatchDueJobs`) re-claims pending, expired-claimed and failed jobs. Claims are atomic leases: only
 // the caller whose UPDATE changed the row sends. Resend gets the job id as its idempotency key.
+// Text kinds (`renderSms`, docs/adr/0004-quo-texting.md) go through the same outbox but are sent by Quo, which has no
+// idempotency key: a text is sent at most once and never repeated unless Quo said 429 (rate limited, nothing sent).
 
-export type OutboxEnv = { DB: D1Database; BETTER_AUTH_URL: string; RESEND_API_KEY?: string; EMAIL_FROM?: string }
+export type OutboxEnv = { DB: D1Database; BETTER_AUTH_URL: string; RESEND_API_KEY?: string; EMAIL_FROM?: string; QUO_API_KEY?: string }
 export type DispatchDeps = { fetch?: typeof globalThis.fetch; now?: () => number }
 type Db = ReturnType<typeof getDb>
 
@@ -97,14 +101,22 @@ export function outboxSendEmail(env: OutboxEnv, kind: string, deps: DispatchDeps
   }
 }
 
+/** The provider key a job kind needs: Quo for texts, Resend for everything else. */
+const isSmsKind = (kind: string) => Boolean(JOB_KINDS[kind]?.renderSms)
+const keyMissing = (env: OutboxEnv, kind: string) =>
+  isSmsKind(kind) ? (env.QUO_API_KEY ? null : 'text not sent: QUO_API_KEY is not set') : env.RESEND_API_KEY ? null : 'email not sent: RESEND_API_KEY is not set'
+
 /**
- * Claims one job and sends it if this caller won the lease. Never throws. Without RESEND_API_KEY nothing is
- * claimed or sent (a redacted warning is logged), so jobs wait and go out once the key exists.
+ * Claims one job and sends it if this caller won the lease. Never throws. Without its provider's key (RESEND_API_KEY
+ * for email, QUO_API_KEY for texts) nothing is claimed or sent (a redacted warning is logged), so jobs wait and go out
+ * once the key exists.
  */
 export async function dispatchJob(env: OutboxEnv, jobId: string, deps: DispatchDeps = {}): Promise<void> {
-  if (!env.RESEND_API_KEY) return log('warn', 'email not sent: RESEND_API_KEY is not set', { job_id: jobId })
   const now = deps.now?.() ?? Date.now()
   const db = getDb(env.DB)
+  const row = await db.select({ kind: notificationJobs.kind }).from(notificationJobs).where(eq(notificationJobs.id, jobId)).get().catch(() => undefined)
+  const missing = row ? keyMissing(env, row.kind) : null
+  if (missing) return log('warn', missing, { job_id: jobId })
   try {
     const job = await claim(db, jobId, now)
     if (job) await sendClaimed({ db, env }, job, now, deps.fetch ?? globalThis.fetch)
@@ -118,15 +130,16 @@ export async function dispatchDueJobs(env: OutboxEnv, deps: DispatchDeps = {}): 
   const now = deps.now?.() ?? Date.now()
   const db = getDb(env.DB)
   const due = await db
-    .select({ id: notificationJobs.id })
+    .select({ id: notificationJobs.id, kind: notificationJobs.kind })
     .from(notificationJobs)
     .where(dueAt(now))
     .orderBy(asc(notificationJobs.nextAttemptAt))
     .limit(SWEEP_LIMIT)
   if (!due.length) return
-  if (!env.RESEND_API_KEY) return log('warn', 'email not sent: RESEND_API_KEY is not set', { due_jobs: due.length })
+  const sendable = due.filter((j) => !keyMissing(env, j.kind))
+  for (const j of due.filter((j) => keyMissing(env, j.kind)).slice(0, 1)) log('warn', keyMissing(env, j.kind)!, { due_jobs: due.length - sendable.length })
   // Each claim reads the clock itself: a lease from the sweep's start would already be spent after slow sends.
-  for (const { id } of due) await dispatchJob(env, id, deps)
+  for (const { id } of sendable) await dispatchJob(env, id, deps)
 }
 
 /** The atomic lease: only one caller sees the row change. */
@@ -153,6 +166,7 @@ const leaseHeld = (job: Job) =>
   and(eq(notificationJobs.id, job.id), eq(notificationJobs.state, 'claimed'), eq(notificationJobs.claimedUntil, job.claimedUntil!))
 
 async function sendClaimed(ctx: JobKindContext, job: Job, now: number, fetch: typeof globalThis.fetch) {
+  if (isSmsKind(job.kind)) return sendSmsClaimed(ctx, job, now, fetch)
   // A resend after Resend's 24-hour idempotency window could duplicate an email that did go out.
   if (job.attempts > 1 && now - (job.firstAttemptAt?.getTime() ?? now) > IDEMPOTENCY_WINDOW_MS) {
     return finish(ctx, job, now, { type: 'dead', error: 'unresolved after 24 h (Resend idempotency window); re-send by hand' })
@@ -167,7 +181,7 @@ async function sendClaimed(ctx: JobKindContext, job: Job, now: number, fetch: ty
   let email: Email | null = null
   let result: SendResult
   try {
-    email = await kind.render(JSON.parse(job.payloadJson), ctx)
+    email = (await kind.render?.(JSON.parse(job.payloadJson), ctx)) ?? null
     if (!email) return finish(ctx, job, now, { type: 'failed', error: 'nothing to send (no recipient)' })
     result = await sendViaResend(ctx.env, job.id, email, fetch)
   } catch (err) {
@@ -194,6 +208,41 @@ async function sendClaimed(ctx: JobKindContext, job: Job, now: number, fetch: ty
     next_attempt_at: nextAttemptAt.toISOString(),
   })
 }
+
+/**
+ * A text job (docs/adr/0004-quo-texting.md). Quo cannot dedupe a repeated send, so a text that may have reached Quo
+ * is never sent again: a second claim is dead unless the first attempt was a 429, and a timeout is dead at once.
+ * The texting gate (connected, key, switched on) is checked at send time; closed = failed, nothing sent.
+ */
+async function sendSmsClaimed(ctx: JobKindContext, job: Job, now: number, fetch: typeof globalThis.fetch) {
+  if (job.attempts > 1 && !(job.lastError ?? '').startsWith('quo 429')) {
+    return finish(ctx, job, now, { type: 'dead', error: 'an earlier attempt may have sent this text; check Quo before re-sending' })
+  }
+  if (job.attempts > MAX_ATTEMPTS) return finish(ctx, job, now, { type: 'dead', error: `rate limited ${MAX_ATTEMPTS} times; re-send by hand` })
+  const kind = JOB_KINDS[job.kind]!
+  let sms: { to: string; content: string } | null
+  try {
+    sms = await kind.renderSms!(JSON.parse(job.payloadJson), ctx)
+  } catch (err) {
+    return finish(ctx, job, now, { type: 'failed', error: redactText(String(err)).slice(0, 500) })
+  }
+  if (!sms) return finish(ctx, job, now, { type: 'failed', error: 'nothing to send (no recipient, or no text consent)' })
+  const gate = await textingStatus(ctx.db, ctx.env)
+  if (!gate.ready) return finish(ctx, job, now, { type: 'failed', error: `texting is not on (${gate.reason})` })
+
+  const result = await sendSms(ctx.env.QUO_API_KEY!, { from: gate.phoneNumberId, to: sms.to, content: sms.content }, { fetch })
+  const to = redactPhone(sms.to)
+  if (result.ok) return finish(ctx, job, now, { type: 'accepted', resendId: result.id }, to)
+  const error = result.error.slice(0, 500)
+  if (result.definite && !result.retry) return finish(ctx, job, now, { type: 'failed', error }, to)
+  if (!result.retry || job.attempts >= MAX_ATTEMPTS) return finish(ctx, job, now, { type: 'dead', error }, to)
+  const nextAttemptAt = new Date(now + BACKOFF_BASE_MS * 2 ** (job.attempts - 1))
+  await ctx.db.update(notificationJobs).set({ state: 'failed', claimedUntil: null, lastError: error, nextAttemptAt }).where(leaseHeld(job))
+  log('warn', 'text job will retry', { job_id: job.id, kind: job.kind, attempts: job.attempts, to, next_attempt_at: nextAttemptAt.toISOString() })
+}
+
+/** "+14845550123" -> "+1484***0123" for logs. */
+const redactPhone = (e164: string) => e164.replace(/^(\+\d{4})\d+(\d{4})$/, '$1***$2')
 
 /**
  * Records how a job ended (only while our lease holds) and logs it. The kind's hook writes go in the same D1 batch,

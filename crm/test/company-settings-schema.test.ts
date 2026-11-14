@@ -29,6 +29,7 @@ it('has exactly the v1 columns', async () => {
     'owner_alert_emails',
     'texting_enabled',
     'estimate_email_template', // FLW-200
+    'owner_mobile', // docs/adr/0004-quo-texting.md: Pat's cell for photo-link texts
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })
