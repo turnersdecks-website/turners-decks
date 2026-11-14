@@ -304,7 +304,12 @@ export async function syncQuickBooks(db: Db, env: QboEnv, deps: QboDeps = {}): P
     }
     // Nothing dated before BACKFILL_FROM is kept, even when CDC reports an edit to an older record. A deletion still
     // applies (it only marks a row we may already hold).
-    const kept = rows.filter((r) => r.deleted || !r.txnDate || r.txnDate >= BACKFILL_FROM)
+    // Owner's pay and personal spending is never copied (OWNER_ACCOUNTS); a record moved into one of those accounts is
+    // removed below.
+    const isOwner = (r: (typeof rows)[number]) => !!r.account && (OWNER_ACCOUNTS as readonly string[]).includes(r.account)
+    const kept = rows.filter((r) => r.deleted || ((!r.txnDate || r.txnDate >= BACKFILL_FROM) && !isOwner(r)))
+    const movedToOwner = rows.filter(isOwner).map((r) => r.id)
+    for (let i = 0; i < movedToOwner.length; i += 90) await db.delete(qboTransactions).where(inArray(qboTransactions.id, movedToOwner.slice(i, i + 90)))
     await saveRows(db, kept)
     if (!conn.companyName) {
       const info = await qboGet<{ CompanyInfo?: { CompanyName?: string } }>(env, conn.realmId, token, `companyinfo/${encodeURIComponent(conn.realmId)}`, {}, deps).catch(() => null)
@@ -485,23 +490,20 @@ export async function disconnectQuickBooks(db: Db, env: QboEnv, deps: QboDeps = 
 // ---------------------------------------------------------------------------
 // Profit and loss for a year (the P&L page). Money is counted by QuickBooks transaction date: revenue is invoiced net of
 // credit memos; costs are net of vendor credits, split by how Staff sorted them (on a Job, overhead, not sorted yet).
-// Owner's pay (OWNER_ACCOUNTS) is shown apart and is not a cost.
 // Payments received are shown apart and never added to revenue. Completed Jobs are those marked done with a finish
 // date in the year; their figures are every transaction sorted onto them, whatever its date.
 
-export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; overheadCents: number; unsortedCents: number; ownerCents: number; paidCents: number }
+export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; overheadCents: number; unsortedCents: number; paidCents: number }
 
 export async function profitAndLoss(db: Db, year: number) {
   const y = String(Math.trunc(year))
-  const isOwner = sql`coalesce(${qboTransactions.account}, '') IN (${sql.join(OWNER_ACCOUNTS.map((a) => sql`${a}`), sql`, `)})`
   const monthRows = await db
     .select({
       month: sql<string>`substr(${qboTransactions.txnDate}, 1, 7)`,
       revenueCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'revenue' THEN ${qboTransactions.amountCents} WHEN 'revenue_credit' THEN -${qboTransactions.amountCents} ELSE 0 END), 0)`,
       jobCostCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'job' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
-      ownerCents: sql<number>`coalesce(sum(CASE WHEN ${isOwner} AND coalesce(${qboTransactions.assignment}, '') <> 'job' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
-      overheadCents: sql<number>`coalesce(sum(CASE WHEN NOT ${isOwner} AND ${qboTransactions.assignment} = 'overhead' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
-      unsortedCents: sql<number>`coalesce(sum(CASE WHEN NOT ${isOwner} AND ${qboTransactions.assignment} IS NULL THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
+      overheadCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} = 'overhead' THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
+      unsortedCents: sql<number>`coalesce(sum(CASE WHEN ${qboTransactions.assignment} IS NULL THEN (CASE ${qboTransactions.kind} WHEN 'cost' THEN ${qboTransactions.amountCents} WHEN 'cost_credit' THEN -${qboTransactions.amountCents} ELSE 0 END) ELSE 0 END), 0)`,
       paidCents: sql<number>`coalesce(sum(CASE ${qboTransactions.kind} WHEN 'payment' THEN ${qboTransactions.amountCents} ELSE 0 END), 0)`,
     })
     .from(qboTransactions)
@@ -511,7 +513,7 @@ export async function profitAndLoss(db: Db, year: number) {
   const months: PnlMonth[] = Array.from({ length: 12 }, (_, i) => {
     const month = `${y}-${String(i + 1).padStart(2, '0')}`
     const m = byMonth.get(month)
-    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, overheadCents: m?.overheadCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, ownerCents: m?.ownerCents ?? 0, paidCents: m?.paidCents ?? 0 }
+    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, overheadCents: m?.overheadCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
   })
   const completedJobs = await db
     .select({
