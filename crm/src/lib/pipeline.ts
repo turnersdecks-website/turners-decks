@@ -11,6 +11,10 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   lost: 'Lost',
 }
 export const STAGES = Object.keys(STAGE_LABELS) as PipelineStage[]
+/** Stages still being worked (the board's columns); won and lost are closed. */
+export const OPEN_STAGES = ['new', 'contacted', 'appointment', 'quoted'] as const satisfies readonly PipelineStage[]
+export const CLOSED_STAGES = ['won', 'lost'] as const satisfies readonly PipelineStage[]
+export const isOpenStage = (s: PipelineStage) => (OPEN_STAGES as readonly PipelineStage[]).includes(s)
 
 // Kit STATUS_STYLES, mapped onto the CRM's brand tokens (light and dark come from the tokens). Pipeline board chips and
 // the Lead page Stage dropdown.

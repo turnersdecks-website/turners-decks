@@ -154,7 +154,7 @@ function CustomerDetail() {
         title="Customer not found."
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to="/customers">Back to Customers</Link>
+            <Link to="/contacts">Back to Contacts</Link>
           </Button>
         }
       />
@@ -172,7 +172,7 @@ function CustomerDetail() {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/customers">Customers</Link>
+                <Link to="/contacts">Contacts</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />

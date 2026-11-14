@@ -57,6 +57,8 @@ export const listPipeline = createServerFn({ method: 'GET' })
         needsReview: leads.needsReview,
         assigneeName: user.name,
         updatedAt: leads.updatedAt,
+        createdAt: leads.createdAt,
+        phoneE164: leads.phoneE164,
       })
       .from(leads)
       .leftJoin(user, eq(user.id, leads.assignedTo))

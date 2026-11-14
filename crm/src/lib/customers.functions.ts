@@ -1,3 +1,4 @@
+import { listContactRows } from '#/lib/contacts.server'
 import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { getDb } from '#/db/client'
@@ -105,3 +106,8 @@ export const updateJob = createServerFn({ method: 'POST' })
     const { jobId, ...edits } = data
     return updateJobRecord(getDb(env.DB), requiredId(jobId), edits)
   })
+
+/** Contacts: every Customer, plus Leads with no Customer, with a worked-out type (contacts.server.ts). */
+export const listContacts = createServerFn({ method: 'GET' })
+  .middleware([requireStaff])
+  .handler(() => listContactRows(getDb(env.DB)))
