@@ -5,9 +5,8 @@ import { marginPct } from '#/lib/qbo-vocab'
 import { getProfitAndLoss } from '#/lib/qbo.functions'
 import { cn } from '#/lib/utils'
 
-// P&L (docs/adr/0006-quickbooks-sync.md): one year from the QuickBooks copy. Totals for the year, a running month by
-// month table, then the Jobs completed that year with their profit and margin. Profit here takes every cost off,
-// sorted or not, so it never looks better because sorting is behind.
+// P&L (docs/adr/0006-quickbooks-sync.md): one year from the QuickBooks copy, Jobs only for now. Revenue minus the costs
+// sorted onto Jobs, month by month with a running total, then each Job completed that year. Overhead comes later.
 
 export const Route = createFileRoute('/_staff/profit-loss')({
   validateSearch: (s: Record<string, unknown>): { year?: number } => {
@@ -31,12 +30,9 @@ function ProfitLossPage() {
   const sum = (k: keyof (typeof months)[number]) => months.reduce((a, m) => a + (m[k] as number), 0)
   const revenue = sum('revenueCents')
   const jobCosts = sum('jobCostCents')
-  const overhead = sum('overheadCents')
   const unsorted = sum('unsortedCents')
   const paid = sum('paidCents')
-  const owner = sum('ownerCents')
-  const costs = jobCosts + overhead + unsorted
-  const profit = revenue - costs
+  const profit = revenue - jobCosts
   const lastMonth = year === thisYear ? new Date().getMonth() + 1 : 12
   let running = 0
 
@@ -44,7 +40,7 @@ function ProfitLossPage() {
 
   return (
     <>
-      <PageHeader title="P&L" description="Profit and loss from QuickBooks, by transaction date. Payments received are shown apart, never added twice." />
+      <PageHeader title="P&L" description="Jobs profit and loss from QuickBooks, by transaction date. Overhead comes later." />
       <div className="space-y-6">
         <div role="tablist" aria-label="Year" className="flex gap-1">
           {yearTabs.map((y) => (
@@ -63,27 +59,18 @@ function ProfitLossPage() {
 
         <StatGrid>
           <StatCard label="Revenue" value={formatMoney(revenue) || '$0'} hint={`Invoiced${year === thisYear ? ' so far this year' : ` in ${year}`}; ${formatMoney(paid) || '$0'} paid`} />
-          <StatCard
-            label="Costs"
-            value={formatMoney(costs) || '$0'}
-            hint={`Jobs ${formatMoney(jobCosts) || '$0'} · Overhead ${formatMoney(overhead) || '$0'} · Not sorted ${formatMoney(unsorted) || '$0'}`}
-          />
-          <StatCard label="Profit" value={formatMoney(profit) || '$0'} hint={`${pct(revenue > 0 ? Math.round((100 * profit) / revenue) : null)} margin, after all costs`} />
-          <StatCard label="Gross profit on Jobs" value={formatMoney(revenue - jobCosts) || '$0'} hint={`Revenue minus costs sorted onto Jobs (${pct(marginPct(revenue, jobCosts))})`} />
+          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint="Materials, subcontractors, permits and dump fees sorted onto Jobs" />
+          <StatCard label="Profit" value={formatMoney(profit) || '$0'} hint="Revenue minus Job costs" />
+          <StatCard label="Margin" value={pct(marginPct(revenue, jobCosts))} hint="Profit as a share of revenue" />
         </StatGrid>
 
-        {owner > 0 && (
-          <p className="text-sm text-muted-foreground">
-            Owner's pay and personal spending ({formatMoney(owner)}, the QuickBooks account Owner's Pay &amp; Personal Expenses) is not a business cost, so it is left out of Costs and Profit.
-          </p>
-        )}
         {unsorted > 0 && (
           <p className="text-sm text-muted-foreground">
-            {formatMoney(unsorted)} of costs are not sorted yet. They are taken off Profit already; sorting them on{' '}
+            Some costs are not sorted yet, so Job costs may still go up. Sort them on{' '}
             <Link to="/transactions" className="underline">
               Transactions
-            </Link>{' '}
-            moves them into Job costs or Overhead.
+            </Link>
+            .
           </p>
         )}
 
@@ -94,27 +81,21 @@ function ProfitLossPage() {
                 <th className="px-3 py-2 text-left font-medium">Month</th>
                 <th className="px-3 py-2 text-right font-medium">Revenue</th>
                 <th className="px-3 py-2 text-right font-medium">Job costs</th>
-                <th className="px-3 py-2 text-right font-medium">Overhead</th>
-                <th className="px-3 py-2 text-right font-medium">Not sorted</th>
                 <th className="px-3 py-2 text-right font-medium">Profit</th>
                 <th className="px-3 py-2 text-right font-medium">Year to date</th>
-                <th className="px-3 py-2 text-right font-medium">Owner's pay</th>
               </tr>
             </thead>
             <tbody className="divide-y tabular-nums">
               {months.slice(0, lastMonth).map((m, i) => {
-                const p = m.revenueCents - m.jobCostCents - m.overheadCents - m.unsortedCents
+                const p = m.revenueCents - m.jobCostCents
                 running += p
                 return (
                   <tr key={m.month}>
                     <td className="px-3 py-1.5">{MONTHS[i]}</td>
                     <td className="px-3 py-1.5 text-right">{money(m.revenueCents)}</td>
                     <td className="px-3 py-1.5 text-right">{money(m.jobCostCents)}</td>
-                    <td className="px-3 py-1.5 text-right">{money(m.overheadCents)}</td>
-                    <td className="px-3 py-1.5 text-right text-muted-foreground">{money(m.unsortedCents)}</td>
                     <td className={cn('px-3 py-1.5 text-right', p < 0 && 'text-destructive')}>{money(p)}</td>
                     <td className={cn('px-3 py-1.5 text-right font-medium', running < 0 && 'text-destructive')}>{money(running)}</td>
-                    <td className="px-3 py-1.5 text-right text-muted-foreground">{money(m.ownerCents)}</td>
                   </tr>
                 )
               })}
@@ -124,11 +105,8 @@ function ProfitLossPage() {
                 <td className="px-3 py-2">Total</td>
                 <td className="px-3 py-2 text-right">{money(revenue)}</td>
                 <td className="px-3 py-2 text-right">{money(jobCosts)}</td>
-                <td className="px-3 py-2 text-right">{money(overhead)}</td>
-                <td className="px-3 py-2 text-right">{money(unsorted)}</td>
                 <td className={cn('px-3 py-2 text-right', profit < 0 && 'text-destructive')}>{money(profit)}</td>
                 <td />
-                <td className="px-3 py-2 text-right">{money(owner)}</td>
               </tr>
             </tfoot>
           </table>
