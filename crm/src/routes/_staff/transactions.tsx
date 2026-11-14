@@ -15,12 +15,12 @@ import { assignQboTransactions, listJobChoices, listQboTransactions } from '#/li
 import { cn } from '#/lib/utils'
 
 // Transactions (docs/adr/0006-quickbooks-sync.md): what the nightly sync copied from QuickBooks. Staff sort each one
-// onto a Job or as overhead; Claude can do the same through the CRM connector. Invoices and payments that name a
+// onto a Job or ignore it (not a Job cost or payment); Claude can do the same through the CRM connector. Invoices and payments that name a
 // Customer are put on their Job automatically; costs show a suggested Job to confirm. QuickBooks is never changed.
 const TABS = [
   { id: 'unassigned', label: 'To sort' },
   { id: 'job', label: 'On a Job' },
-  { id: 'overhead', label: 'Overhead' },
+  { id: 'ignored', label: 'Ignored' },
   { id: 'all', label: 'All' },
 ] as const
 type Show = (typeof TABS)[number]['id']
@@ -54,7 +54,7 @@ function TransactionsPage() {
   const counts: Record<Show, number> = {
     unassigned: rows.filter((r) => !r.assignment).length,
     job: rows.filter((r) => r.assignment === 'job').length,
-    overhead: rows.filter((r) => r.assignment === 'overhead').length,
+    ignored: rows.filter((r) => r.assignment === 'ignored').length,
     all: rows.length,
   }
   const shown = rows.filter((r) => (show === 'all' ? true : show === 'unassigned' ? !r.assignment : r.assignment === show))
@@ -64,7 +64,7 @@ function TransactionsPage() {
     <div>
       <PageHeader
         title="Transactions"
-        description="From QuickBooks, synced every night. Put each one on a Job or mark it overhead; nothing changes in QuickBooks."
+        description="From QuickBooks, synced every night. Put each one on a Job, or Ignore it if it is not a Job cost or payment. Nothing changes in QuickBooks."
       />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <ShowTabs tabs={TABS} value={show} counts={counts} />
@@ -112,7 +112,7 @@ function TxnRow({ r, jobs, job, suggested }: { r: Row; jobs: JobChoice[]; job?: 
   const [busy, setBusy] = useState(false)
   const amount = signed(r)
 
-  async function assign(to: 'job' | 'overhead' | 'unassigned', jobId?: string) {
+  async function assign(to: 'job' | 'ignored' | 'unassigned', jobId?: string) {
     setBusy(true)
     try {
       await assignQboTransactions({ data: { ids: [r.id], to, jobId: jobId ?? null } })
@@ -148,9 +148,9 @@ function TxnRow({ r, jobs, job, suggested }: { r: Row; jobs: JobChoice[]; job?: 
               Change
             </button>
           </span>
-        ) : r.assignment === 'overhead' ? (
+        ) : r.assignment === 'ignored' ? (
           <span className="flex items-center gap-2 text-muted-foreground">
-            Overhead
+            Ignored
             <button type="button" className="text-xs underline" disabled={busy} onClick={() => assign('unassigned')}>
               Change
             </button>
@@ -176,8 +176,8 @@ function TxnRow({ r, jobs, job, suggested }: { r: Row; jobs: JobChoice[]; job?: 
             <Button size="sm" className="h-8" disabled={busy || !pick} onClick={() => assign('job', pick)}>
               Put on Job
             </Button>
-            <Button size="sm" variant="outline" className="h-8" disabled={busy} onClick={() => assign('overhead')}>
-              Overhead
+            <Button size="sm" variant="outline" className="h-8" disabled={busy} onClick={() => assign('ignored')}>
+              Ignore
             </Button>
           </div>
         )}

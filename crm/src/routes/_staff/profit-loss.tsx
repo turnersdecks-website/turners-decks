@@ -6,7 +6,7 @@ import { getProfitAndLoss } from '#/lib/qbo.functions'
 import { cn } from '#/lib/utils'
 
 // P&L (docs/adr/0006-quickbooks-sync.md): one year from the QuickBooks copy, Jobs only for now. Revenue minus the costs
-// sorted onto Jobs, month by month with a running total, then each Job completed that year. Overhead comes later.
+// sorted onto Jobs, month by month with a running total, then each Job completed that year. Ignored transactions are left out.
 
 export const Route = createFileRoute('/_staff/profit-loss')({
   validateSearch: (s: Record<string, unknown>): { year?: number } => {
@@ -40,7 +40,7 @@ function ProfitLossPage() {
 
   return (
     <>
-      <PageHeader title="P&L" description="Jobs profit and loss from QuickBooks, by transaction date. Overhead comes later." />
+      <PageHeader title="P&L" description="Jobs profit and loss from QuickBooks, by transaction date." />
       <div className="space-y-6">
         <div role="tablist" aria-label="Year" className="flex gap-1">
           {yearTabs.map((y) => (

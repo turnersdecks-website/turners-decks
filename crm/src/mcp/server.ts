@@ -758,10 +758,10 @@ function buildServer(env: Env, staff: Staff) {
       title: 'List QuickBooks transactions',
       description:
         'QuickBooks transactions synced into the CRM (expenses, bills, vendor credits, invoices, sales receipts, credit memos, payments), newest first. ' +
-        'show: unassigned (not sorted yet), job, overhead or all; or one Job. Dates are YYYY-MM-DD. search matches vendor/customer, memo, account and line text. ' +
+        'show: unassigned (not sorted yet), job, ignored (not a Job cost or payment) or all; or one Job. Dates are YYYY-MM-DD. search matches vendor/customer, memo, account and line text. ' +
         'suggestedJobId is the CRM\'s guess for an unsorted cost.',
       inputSchema: {
-        show: z.enum(['unassigned', 'job', 'overhead', 'all']).optional(),
+        show: z.enum(['unassigned', 'job', 'ignored', 'all']).optional(),
         jobId: id.optional(),
         from: isoDate.optional(),
         to: isoDate.optional(),
@@ -778,9 +778,9 @@ function buildServer(env: Env, staff: Staff) {
     {
       title: 'Sort QuickBooks transactions',
       description:
-        'Put transactions on a Job (to: job, with jobId), mark them overhead (not for any Job), or unsort them. Only changes the CRM; QuickBooks is never changed. ' +
+        'Put transactions on a Job (to: job, with jobId), ignore them (not a Job cost or payment: gas, insurance, software, personal), or unsort them. Only changes the CRM; QuickBooks is never changed. ' +
         'Use search_leads / get_customer / list_jobs to find the right Job; when unsure which Job a cost belongs to, ask instead of guessing.',
-      inputSchema: { transactionIds: z.array(z.string().max(100)).min(1).max(500), to: z.enum(['job', 'overhead', 'unassigned']), jobId: id.optional() },
+      inputSchema: { transactionIds: z.array(z.string().max(100)).min(1).max(500), to: z.enum(['job', 'ignored', 'unassigned']), jobId: id.optional() },
       annotations: WRITE,
     },
     (a) => run(() => assignTransactions(db, { ids: a.transactionIds, to: a.to, jobId: a.jobId ?? null }, `claude:${staff.id}`)),

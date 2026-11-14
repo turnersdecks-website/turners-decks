@@ -21,11 +21,11 @@ done today. So the CRM keeps its own copy and does the sorting.
 - **Sorting:** customer-side records whose customer name matches one Customer go on that Customer's Job automatically
   (`assigned_by = auto`). Costs get a suggested Job (customer surname in the memo or a line, else the one Job being
   built that day) and wait on the Transactions page, or for Claude (`assign_transactions`), to be put on a Job or marked
-  overhead. Sorting survives re-syncs.
+  ignored (not a Job cost or payment; was "overhead" until 2026-11-14). Sorting survives re-syncs.
 - **Claude:** MCP tools `list_transactions`, `assign_transactions`, `job_financials`, `quickbooks_status`.
 
 ## Consequences
 
 - Intuit's free Builder tier allows 500,000 read calls a month; this uses a few hundred.
-- Splitting one receipt across two Jobs is not supported yet (put it on the main Job, or overhead).
+- Splitting one receipt across two Jobs is not supported yet (put it on the main Job, or ignore it).
 - Job "Actual material cost" stays a hand-entered field for now; the QuickBooks totals show beside it on the Job page.

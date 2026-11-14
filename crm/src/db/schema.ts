@@ -464,7 +464,7 @@ export const qboConnection = sqliteTable(
 )
 
 // One QuickBooks transaction, as last synced. `kind` says how it counts on a Job (QBO_KINDS, qbo-vocab.ts). Staff (or
-// Claude through the MCP) put it on a Job or mark it overhead; QuickBooks itself is never changed. `assignment` and
+// Claude through the MCP) put it on a Job or ignore it; QuickBooks itself is never changed. `assignment` and
 // `job_id` survive re-syncs; a transaction deleted in QuickBooks keeps its row with `deleted` set.
 export const qboTransactions = sqliteTable(
   'qbo_transactions',
@@ -487,7 +487,7 @@ export const qboTransactions = sqliteTable(
     qboUpdatedAt: integer('qbo_updated_at', { mode: 'timestamp_ms' }),
     syncedAt: integer('synced_at', { mode: 'timestamp_ms' }).notNull(),
     jobId: text('job_id').references(() => jobs.id, { onDelete: 'set null' }),
-    /** null = not sorted yet; 'job' (job_id set) or 'overhead' (not for a Job). */
+    /** null = not sorted yet; 'job' (job_id set) or 'ignored' (not a Job cost or payment). */
     assignment: text('assignment'),
     /** Who sorted it: a Staff id, 'auto' (matched by customer name), or 'claude:<staff id>' through the MCP. */
     assignedBy: text('assigned_by'),
