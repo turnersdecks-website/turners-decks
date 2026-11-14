@@ -402,8 +402,12 @@ export async function assignTransactions(db: Db, input: { ids: string[]; to: 'jo
       : input.to === 'overhead'
         ? { assignment: 'overhead', jobId: null, assignedBy: by, assignedAt: new Date() }
         : { assignment: null, jobId: null, assignedBy: null, assignedAt: null }
-  const res = await db.update(qboTransactions).set(set).where(inArray(qboTransactions.id, ids)).returning({ id: qboTransactions.id })
-  return { updated: res.length }
+  // D1 allows 100 bound values per statement: 90 ids plus the 4 set values per update, all in one batch.
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += 90) chunks.push(ids.slice(i, i + 90))
+  const [first, ...rest] = chunks.map((c) => db.update(qboTransactions).set(set).where(inArray(qboTransactions.id, c)).returning({ id: qboTransactions.id }))
+  const res = await db.batch([first!, ...rest])
+  return { updated: res.reduce((n, r) => n + r.length, 0) }
 }
 
 export type TxnFilter = { show?: 'unassigned' | 'job' | 'overhead' | 'all'; jobId?: string | null; from?: string | null; to?: string | null; search?: string | null; limit?: number }

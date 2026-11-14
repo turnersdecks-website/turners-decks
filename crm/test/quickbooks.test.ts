@@ -142,6 +142,16 @@ describe('the sync', () => {
     expect(conn!.company_name).toBe("Turner's Construction")
   })
 
+  it('sorts up to 500 transactions in one go', async () => {
+    const now = Date.now()
+    const stmts = Array.from({ length: 250 }, (_, i) =>
+      env.DB.prepare("INSERT INTO qbo_transactions (id, entity, qbo_id, kind, txn_date, amount_cents, deleted, synced_at) VALUES (?, 'Purchase', ?, 'cost', '2026-02-01', 100, 0, ?)").bind(`Purchase:b${i}`, `b${i}`, now),
+    )
+    await env.DB.batch(stmts)
+    const res = await assignTransactions(db(), { ids: stmts.map((_, i) => `Purchase:b${i}`), to: 'overhead' }, 'staff-1')
+    expect(res.updated).toBe(250)
+  })
+
   it('a revoked or expired refresh token asks Staff to reconnect', async () => {
     let revoked = false
     const intuit = fakeIntuit({ token: () => (revoked ? { error: 'invalid_grant' } : undefined) })
