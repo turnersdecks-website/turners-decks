@@ -39,3 +39,7 @@ export function jobTotals(rows: { kind: string; amountCents: number; deleted?: b
 export function marginPct(revenueCents: number, costCents: number) {
   return revenueCents > 0 && costCents > 0 ? Math.round((100 * (revenueCents - costCents)) / revenueCents) : null
 }
+
+/** QuickBooks accounts that hold the owner's draws and personal spending (and personal income tax). Not a business cost:
+ * the P&L shows them apart as Owner's pay and does not take them off Profit, unless one is sorted onto a Job. */
+export const OWNER_ACCOUNTS = ["Owner's Pay & Personal Expenses"] as const
