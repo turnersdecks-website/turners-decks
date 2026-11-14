@@ -37,7 +37,9 @@ export class QuoApiError extends Error {
   }
 }
 
-export type QuoPhoneNumber = { id: string; number: string; name?: string | null }
+// API 2026-03-30 names the number `phoneNumber`; v1 called it `number`. Read either.
+export type QuoPhoneNumber = { id: string; phoneNumber?: string | null; number?: string | null; name?: string | null }
+export const numberOf = (n: QuoPhoneNumber) => n.phoneNumber ?? n.number ?? ''
 
 /** The workspace's Quo numbers (`PN...` ids with their E.164 numbers). */
 export function listPhoneNumbers(apiKey: string, deps: QuoDeps = {}) {
