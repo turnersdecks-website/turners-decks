@@ -653,7 +653,7 @@ function Result({ est, a, size, done, headingRef }: { est: PublicEstimator; a: A
         <div className="space-y-6">
           <div className="rounded-xl bg-card p-6 shadow-card">
             <h2 className="text-xl font-semibold">Included in this estimate</h2>
-            <ul className="mt-4 space-y-2 text-sm">{est.copy.included.map((x) => <li key={x} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-accent-blue" />{x}</li>)}</ul>
+            <ul className="mt-4 space-y-2 text-sm">{est.copy.included.map((x) => <li key={x} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-accent-blue" /><span>{boldMarked(x)}</span></li>)}</ul>
           </div>
           <div className="rounded-xl bg-card p-6 shadow-card">
             <h2 className="text-xl font-semibold">Final pricing may be affected by</h2>
@@ -669,5 +669,12 @@ function Result({ est, a, size, done, headingRef }: { est: PublicEstimator; a: A
         <Note>{d.material}</Note>
       </div>
     </div>
+  );
+}
+
+/** "**Picture-frame border**" in Estimator settings copy shows bold (the value-adds); anything else is plain text. */
+function boldMarked(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, i) =>
+    /^\*\*[^*]+\*\*$/.test(part) ? <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>,
   );
 }
