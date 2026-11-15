@@ -7,14 +7,15 @@
 
 export const CHANNELS = ['estimator', 'quote_form', 'website', 'text', 'call', 'email', 'manual'] as const
 export type Channel = (typeof CHANNELS)[number]
+// `website` is only a fallback for an older website Lead whose form is unknown; it reads the same as the form.
 export const CHANNEL_LABELS: Record<Channel, string> = {
   estimator: 'Estimator',
   quote_form: 'Website form',
-  website: 'Website',
+  website: 'Website form',
   text: 'Text',
   call: 'Call',
   email: 'Email',
-  manual: 'Entered in CRM',
+  manual: 'Manual',
 }
 
 export const ORIGINS = [
