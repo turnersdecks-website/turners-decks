@@ -20,6 +20,7 @@ import { applyQboRules, disconnectQbo, getQboRules, getQboStatus, saveQboRulesFn
 import type { VendorRule } from '#/lib/qbo-vocab'
 import { connectQuoNumber, getTextingSettings, updateTextingSettings } from '#/lib/texting.functions'
 import { prettyPhone } from '#/lib/phone'
+import { DEFAULT_NEW_LEAD_TEMPLATE, NEW_LEAD_PLACEHOLDERS, renderNewLeadText } from '#/lib/new-lead-text'
 import { cn } from '#/lib/utils'
 
 // Settings (admins), ported from Pine & Gable's /settings and regrouped into three tabs:
@@ -570,7 +571,20 @@ function QuoConnectionSection() {
 function TextingRulesSection() {
   const { t, setT, busy, run } = useTexting()
   const [mobile, setMobile] = useState<string | null>(null)
+  const [to, setTo] = useState<string | null>(null)
+  const [template, setTemplate] = useState<string | null>(null)
   const shownMobile = mobile ?? (t?.ownerMobile ? prettyPhone(t.ownerMobile) : '')
+  const shownTo = to ?? (t ? t.newLeadTextTo.map(prettyPhone).join(', ') : '')
+  const shownTemplate = template ?? t?.newLeadTextTemplate ?? DEFAULT_NEW_LEAD_TEMPLATE
+  const preview = renderNewLeadText(shownTemplate, {
+    how: 'Website',
+    name: 'Jane Smith',
+    town: 'Exeter',
+    project: 'Deck replacement',
+    phone: '(484) 555-0101',
+    email: 'jane@example.com',
+    link: 'crm.turnersdecks.com/leads/…',
+  })
   return (
     <ContentSection id="texting" title="Texting" description="Automatic texts from the Quo number. Connect Quo first, under Connections.">
       {!t ? (
@@ -588,15 +602,37 @@ function TextingRulesSection() {
               />
               <span>
                 Texting is on. Turn this on only after Quo › Settings › Trust shows carrier registration approved; carriers block business texts from
-                unregistered numbers. When on, website Leads who tick “Text me about my project” get an instant text, and photo links can be texted to
-                Pat.
+                unregistered numbers. When on, website Leads who tick “Text me about my project” get an instant text, a new number's first text gets a
+                reply, new Leads are texted to the numbers below, and photo links can be texted to Pat.
               </span>
             </label>
             <div className="space-y-2">
               <Label htmlFor="ownerMobile">Pat's cell (photo-link texts go here)</Label>
               <Input id="ownerMobile" type="tel" value={shownMobile} placeholder="(484) 555-0123" onChange={(e) => setMobile(e.target.value)} />
             </div>
-            <Button size="sm" disabled={busy} onClick={() => run(() => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: shownMobile } }), 'Texting saved')}>
+            <div className="space-y-2">
+              <Label htmlFor="newLeadTextTo">Text new Leads to</Label>
+              <Input id="newLeadTextTo" value={shownTo} placeholder="(484) 555-0123, (610) 555-0199" onChange={(e) => setTo(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Cell numbers, separated by commas. Every new Lead from the website, a text or a call. Left empty, it goes to Pat's cell.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newLeadTextTemplate">New Lead text</Label>
+              <Textarea id="newLeadTextTemplate" rows={3} value={shownTemplate} onChange={(e) => setTemplate(e.target.value)} />
+              <p className="text-xs text-muted-foreground">
+                Fill-ins: {NEW_LEAD_PLACEHOLDERS.map((k) => `{${k}}`).join(' ')}. A blank fill-in drops out with its comma or period.
+              </p>
+              <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-line">{preview}</div>
+            </div>
+            <Button
+              size="sm"
+              disabled={busy}
+              onClick={() =>
+                run(
+                  () => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: shownMobile, newLeadTextTo: shownTo, newLeadTextTemplate: shownTemplate } }),
+                  'Texting saved',
+                )
+              }
+            >
               <Save />
               Save texting
             </Button>

@@ -10,6 +10,7 @@ import { type PricedEstimate, estimateEmail, isPricingFailure, priceEstimatorPay
 import { customerIdFor } from '#/lib/customers.server'
 import { leadCreated } from '#/lib/stage-history.server'
 import { verifyTurnstile } from '#/lib/turnstile'
+import { newLeadRecipients } from '#/lib/new-lead-text'
 import { leadReplyText, quoConnected } from '#/lib/texting.server'
 
 // Intake: turns a Form submission into a new or matched Lead (PLAN.md > Intake contract).
@@ -467,11 +468,14 @@ async function upsertLead(
     jobIds.push(job.id)
     writes.push(job.insert)
   }
-  // Pat's heads-up text for a new Lead (sms_new_lead), when texting is on and his cell is set.
-  if (!existing && settings.textingEnabled && settings.ownerMobile && (await quoConnected(db))) {
-    const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}`, payload: { lead_id: leadId }, envelope: { to: [settings.ownerMobile], subject: 'Text: new Lead to Pat' } })
-    jobIds.push(job.id)
-    writes.push(job.insert)
+  // The new Lead heads-up text (sms_new_lead) to each recipient in Settings, when texting is on.
+  const headsUp = existing || !settings.textingEnabled ? [] : newLeadRecipients(settings)
+  if (headsUp.length && (await quoConnected(db))) {
+    for (const to of headsUp) {
+      const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}:${to}`, payload: { lead_id: leadId, to }, envelope: { to: [to], subject: 'Text: new Lead heads-up' } })
+      jobIds.push(job.id)
+      writes.push(job.insert)
+    }
   }
   // Fenced: when our claim no longer holds (it expired and another processor took over), the state CASE yields
   // a value the CHECK refuses and the whole batch (Lead, activity, consent, jobs) rolls back; the caller then

@@ -21,7 +21,7 @@ export const connectQuoNumber = createServerFn({ method: 'POST' })
 /** Admins: texting on or off (on only after A2P approval), and Pat's cell. */
 export const updateTextingSettings = createServerFn({ method: 'POST' })
   .middleware([requireAdmin])
-  .validator((data: { textingEnabled: boolean; ownerMobile: string }) => record(data))
+  .validator((data: { textingEnabled: boolean; ownerMobile: string; newLeadTextTo?: string; newLeadTextTemplate?: string }) => record(data))
   .handler(({ data }) => saveTextingSettings(getDb(env.DB), env, data))
 
 /** Any Staff: whether the CRM can text right now (shows "Text Pat from Quo" on photo links). */

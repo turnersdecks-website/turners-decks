@@ -411,6 +411,10 @@ export const companySettings = sqliteTable(
     ownerMobile: text('owner_mobile'),
     /** The Estimate email (FLW-200): `{placeholder}`s, and a first line "Subject: ..." becomes the subject. */
     estimateEmailTemplate: text('estimate_email_template').notNull().default(''),
+    /** Who gets the new Lead heads-up text (comma-separated E.164); null = Pat's cell (ownerMobile). */
+    newLeadTextTo: text('new_lead_text_to'),
+    /** The new Lead heads-up wording with {placeholders} (new-lead-text.ts); null = the default. */
+    newLeadTextTemplate: text('new_lead_text_template'),
     /** QuickBooks sorting rules (QboRules in qbo-vocab.ts) as JSON; null = the defaults. */
     qboRules: text('qbo_rules'),
   },

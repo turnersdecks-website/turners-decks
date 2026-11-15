@@ -8,6 +8,7 @@ import { type OutboxEnv, enqueueJob, kickJobs } from '#/lib/outbox'
 import { prettyPhone, toE164 } from '#/lib/phone'
 import { START_WORDS, STOP_WORDS, keywordOf, verifyQuoSignature } from '#/lib/quo'
 import { leadCreated, stageMove } from '#/lib/stage-history.server'
+import { newLeadRecipients } from '#/lib/new-lead-text'
 import { firstTextReplyText } from '#/lib/texting.server'
 
 // POST /api/public/quo-webhook (docs/adr/0004-quo-texting.md). Quo calls it for the connected number:
@@ -188,13 +189,19 @@ async function writesFor(
 
 type FoundLead = { id: string; writes: BatchItem<'sqlite'>[] }
 
-/** Queues Pat's heads-up text for a Lead this delivery creates (sms_new_lead), when texting is on and his cell is set. */
+/** Queues the new Lead heads-up (sms_new_lead) to each recipient in Settings, for a Lead this delivery creates. */
 async function newLeadHeadsUp(db: Db, leadId: string, jobIds: string[], writes: BatchItem<'sqlite'>[]) {
-  const s = await db.select({ on: companySettings.textingEnabled, to: companySettings.ownerMobile }).from(companySettings).where(eq(companySettings.id, 1)).get()
-  if (!s?.on || !s.to) return
-  const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}`, payload: { lead_id: leadId }, envelope: { to: [s.to], subject: 'Text: new Lead to Pat' } })
-  writes.push(job.insert)
-  jobIds.push(job.id)
+  const s = await db
+    .select({ on: companySettings.textingEnabled, ownerMobile: companySettings.ownerMobile, newLeadTextTo: companySettings.newLeadTextTo })
+    .from(companySettings)
+    .where(eq(companySettings.id, 1))
+    .get()
+  if (!s?.on) return
+  for (const to of newLeadRecipients(s)) {
+    const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}:${to}`, payload: { lead_id: leadId, to }, envelope: { to: [to], subject: 'Text: new Lead heads-up' } })
+    writes.push(job.insert)
+    jobIds.push(job.id)
+  }
 }
 
 async function leadByPhone(db: Db, phone: string): Promise<FoundLead | null> {
