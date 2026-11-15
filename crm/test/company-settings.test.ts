@@ -58,6 +58,8 @@ describe('changing company settings', () => {
       texting_enabled: 0,
       estimate_email_template: expect.stringContaining('{low}'),
       owner_mobile: null,
+      new_lead_text_to: null,
+      new_lead_text_template: null,
       qbo_rules: null,
     })
   })

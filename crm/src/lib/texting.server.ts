@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
 import { companySettings, consentEvents, quoConnection } from '#/db/schema'
 import { badRequest } from '#/lib/input'
+import { DEFAULT_NEW_LEAD_TEMPLATE, newLeadRecipients } from '#/lib/new-lead-text'
 import { enqueueJob } from '#/lib/outbox'
 import { toE164 } from '#/lib/phone'
 import { type QuoDeps, type QuoPhoneNumber, createWebhook, deleteWebhook, listPhoneNumbers, numberOf } from '#/lib/quo'
@@ -64,7 +65,11 @@ export function firstTextReplyText(company: string) {
 export async function readTextingSettings(db: Db, env: TextingEnv & { BETTER_AUTH_URL: string }) {
   const [conn, settings, status] = await Promise.all([
     db.select().from(quoConnection).where(eq(quoConnection.id, 1)).get(),
-    db.select({ on: companySettings.textingEnabled, ownerMobile: companySettings.ownerMobile }).from(companySettings).where(eq(companySettings.id, 1)).get(),
+    db
+      .select({ on: companySettings.textingEnabled, ownerMobile: companySettings.ownerMobile, newLeadTextTo: companySettings.newLeadTextTo, newLeadTextTemplate: companySettings.newLeadTextTemplate })
+      .from(companySettings)
+      .where(eq(companySettings.id, 1))
+      .get(),
     textingStatus(db, env),
   ])
   return {
@@ -72,6 +77,8 @@ export async function readTextingSettings(db: Db, env: TextingEnv & { BETTER_AUT
     connected: conn ? { phoneNumberE164: conn.phoneNumberE164, connectedAt: conn.connectedAt.getTime() } : null,
     textingEnabled: Boolean(settings?.on),
     ownerMobile: settings?.ownerMobile ?? null,
+    newLeadTextTo: settings ? newLeadRecipients(settings) : [],
+    newLeadTextTemplate: settings?.newLeadTextTemplate?.trim() ? settings.newLeadTextTemplate : DEFAULT_NEW_LEAD_TEMPLATE,
     ready: status.ready,
     webhookUrl: webhookUrl(env.BETTER_AUTH_URL),
   }
@@ -123,7 +130,19 @@ export async function saveTextingSettings(db: Db, env: TextingEnv, data: Record<
     if (!env.QUO_API_KEY) throw badRequest('Add the Quo API key first.')
     if (!(await quoConnected(db))) throw badRequest('Connect Quo first.')
   }
-  await db.update(companySettings).set({ textingEnabled: data.textingEnabled, ownerMobile }).where(eq(companySettings.id, 1))
+  const set: Partial<typeof companySettings.$inferInsert> = { textingEnabled: data.textingEnabled, ownerMobile }
+  if (typeof data.newLeadTextTo === 'string') {
+    const parts = data.newLeadTextTo.split(/[,\n;]/).map((p) => p.trim()).filter(Boolean)
+    const bad = parts.find((p) => !toE164(p))
+    if (bad) throw badRequest(`"${bad}" is not a US phone number.`)
+    const list = [...new Set(parts.map((p) => toE164(p)!))].slice(0, 10)
+    set.newLeadTextTo = list.length ? list.join(',') : ''
+  }
+  if (typeof data.newLeadTextTemplate === 'string') {
+    const t = data.newLeadTextTemplate.trim().slice(0, 600)
+    set.newLeadTextTemplate = t && t !== DEFAULT_NEW_LEAD_TEMPLATE ? t : null
+  }
+  await db.update(companySettings).set(set).where(eq(companySettings.id, 1))
   return { textingEnabled: data.textingEnabled, ownerMobile }
 }
 

@@ -31,6 +31,8 @@ it('has exactly the v1 columns', async () => {
     'estimate_email_template', // FLW-200
     'owner_mobile', // docs/adr/0004-quo-texting.md: Pat's cell for photo-link texts
     'qbo_rules', // docs/adr/0006-quickbooks-sync.md: which QuickBooks costs need sorting
+    'new_lead_text_to', // docs/adr/0004-quo-texting.md: who gets the new Lead heads-up text
+    'new_lead_text_template', // and its wording
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })

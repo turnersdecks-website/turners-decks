@@ -79,11 +79,28 @@ describe('Quo webhook', () => {
     expect(await headsUps((await leadByPhone(quiet))!.id)).toBe(0)
   })
 
-  it('the heads-up reads plainly with a link to the Lead', async () => {
-    const { newLeadText } = await import('#/lib/outbox-kinds')
-    expect(newLeadText({ id: 'L1', channel: 'quote_form', firstName: 'Jane', lastName: 'Smith', city: 'Exeter', serviceType: 'Deck replacement', phoneE164: '+14845550101' }, 'https://crm.example/')).toBe(
-      'New Lead (Website): Jane Smith, Exeter. Deck replacement. (484) 555-0101\nhttps://crm.example/leads/L1',
+  it('the heads-up reads plainly with a link to the Lead, from the default or an edited template', async () => {
+    const { newLeadVars, renderNewLeadText, newLeadRecipients } = await import('#/lib/new-lead-text')
+    const lead = { id: 'L1', channel: 'quote_form', firstName: 'Jane', lastName: 'Smith', city: 'Exeter', serviceType: 'Deck replacement', phoneE164: '+14845550101' }
+    expect(renderNewLeadText(null, newLeadVars(lead, 'https://crm.example/'))).toBe('New Lead (Website): Jane Smith, Exeter. Deck replacement. (484) 555-0101\nhttps://crm.example/leads/L1')
+    // Blank fill-ins drop out with their punctuation.
+    expect(renderNewLeadText(null, newLeadVars({ ...lead, city: null, serviceType: null, channel: 'text', firstName: null, lastName: null }, 'https://crm.example'))).toBe(
+      'New Lead (Text): Unknown name. (484) 555-0101\nhttps://crm.example/leads/L1',
     )
+    expect(renderNewLeadText('🔔 {name} ({how}) {phone}\n{link}', newLeadVars(lead, 'https://crm.example'))).toBe('🔔 Jane Smith (Website) (484) 555-0101\nhttps://crm.example/leads/L1')
+    expect(newLeadRecipients({ newLeadTextTo: null, ownerMobile: '+14845550199' })).toEqual(['+14845550199'])
+    expect(newLeadRecipients({ newLeadTextTo: '+14845550199,+16105550188,+14845550199', ownerMobile: null })).toEqual(['+14845550199', '+16105550188'])
+  })
+
+  it('every number in "Text new Leads to" gets the heads-up', async () => {
+    await connect(true)
+    await env.DB.prepare("UPDATE company_settings SET owner_mobile = '+14845550199', new_lead_text_to = '+14845550199,+16105550188' WHERE id = 1").run()
+    const texter = e164(quoPhone())
+    await textFrom(texter, 'Hi')
+    const id = (await leadByPhone(texter))!.id
+    const jobs = await env.DB.prepare("SELECT payload_json FROM notification_jobs WHERE kind = 'sms_new_lead' AND payload_json LIKE ?").bind(`%${id}%`).all<Record<string, any>>()
+    expect(jobs.results.map((j) => JSON.parse(j.payload_json).to).sort()).toEqual(['+14845550199', '+16105550188'])
+    await env.DB.prepare('UPDATE company_settings SET new_lead_text_to = NULL WHERE id = 1').run()
   })
 
   it('a new number\'s first text gets one automatic reply when texting is on; not when off, not after STOP, not for a known Lead', async () => {
