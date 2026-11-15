@@ -329,6 +329,22 @@ describe('texting from the CRM', () => {
     await postIntake(estimatorPayload({ phone: unticked }))
     expect(await queued()).toEqual([expect.objectContaining({ to: e164(on), content: expect.stringMatching(/^Hi Jane, this is .*We'll be in touch.*Reply STOP to opt out\.$/) })])
   })
+
+  it('a known Lead sending the form again gets the instant reply, and the heads-up says repeat request', async () => {
+    mockSiteverify()
+    await connect(true)
+    await env.DB.prepare("UPDATE company_settings SET owner_mobile = '+14845550199', new_lead_text_to = NULL WHERE id = 1").run()
+    const phone = randomPhone()
+    await postIntake(estimatorPayload({ phone, first_name: 'Ann', sms_consent: true, sms_consent_disclosure: '2026-11-13' }))
+    await postIntake(estimatorPayload({ phone, first_name: 'Ann', notes: 'Also a pergola', sms_consent: true, sms_consent_disclosure: '2026-11-13' }))
+    const jobs = await env.DB.prepare("SELECT kind, payload_json FROM notification_jobs WHERE kind IN ('sms_lead_reply', 'sms_new_lead') AND payload_json LIKE ?")
+      .bind(`%${(await leadByPhone(e164(phone)))!.id}%`)
+      .all<{ kind: string; payload_json: string }>()
+    const replies = (await env.DB.prepare("SELECT payload_json FROM notification_jobs WHERE kind = 'sms_lead_reply' AND payload_json LIKE ?").bind(`%${e164(phone)}%`).all()).results
+    expect(replies).toHaveLength(2)
+    const heads = jobs.results.filter((j) => j.kind === 'sms_new_lead').map((j) => JSON.parse(j.payload_json))
+    expect(heads).toEqual([expect.not.objectContaining({ repeat: true }), expect.objectContaining({ repeat: true })])
+  })
 })
 
 describe('Settings > Texting', () => {

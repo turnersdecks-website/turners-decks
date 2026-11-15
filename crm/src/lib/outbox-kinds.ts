@@ -126,14 +126,16 @@ export const JOB_KINDS: Record<string, JobKind> = {
   // A heads-up to each new-Lead recipient (Settings > Texting; Pat's cell by default) for every new Lead from the website, a text or a call.
   // Written when it is sent, from the Lead as it is then, with a link to it. Pat's own phone, so no consent check.
   sms_new_lead: {
-    async renderSms(p: { lead_id: string; to?: string }, { db, env }) {
+    async renderSms(p: { lead_id: string; to?: string; repeat?: boolean }, { db, env }) {
       const [lead, s] = await Promise.all([
         db.select().from(leads).where(eq(leads.id, p.lead_id)).get(),
         db.select({ to: companySettings.ownerMobile, template: companySettings.newLeadTextTemplate }).from(companySettings).where(eq(companySettings.id, 1)).get(),
       ])
       const to = p.to ?? s?.to
       if (!lead || !to) return null
-      return { to, content: renderNewLeadText(s?.template, newLeadVars(lead, env.BETTER_AUTH_URL)) }
+      const text = renderNewLeadText(s?.template, newLeadVars(lead, env.BETTER_AUTH_URL))
+      // A known Lead sent the form again: say so instead of "New Lead".
+      return { to, content: p.repeat ? (/^New Lead\b/.test(text) ? text.replace(/^New Lead\b/, 'Repeat request') : `Repeat request: ${text}`) : text }
     },
   },
   // A text to Pat's own cell (Settings > Texting), e.g. a photo link. Staff-made, so no consent check.
