@@ -577,12 +577,18 @@ function TextingRulesSection() {
   const shownTo = to ?? (t ? t.newLeadTextTo.map(prettyPhone).join(', ') : '')
   const shownTemplate = template ?? t?.newLeadTextTemplate ?? DEFAULT_NEW_LEAD_TEMPLATE
   const preview = renderNewLeadText(shownTemplate, {
-    how: 'Website',
+    how: 'Estimator',
     name: 'Jane Smith',
-    town: 'Exeter',
     project: 'Deck replacement',
+    size: '320 sq ft',
+    material: 'Composite',
+    estimate: '$15,000 to $18,500',
+    timeframe: 'Ready to start soon',
+    address: '12 Main St, Exeter',
+    town: 'Exeter',
     phone: '(484) 555-0101',
     email: 'jane@example.com',
+    notes: 'Want to replace the old deck before summer.',
     link: 'crm.turnersdecks.com/leads/…',
   })
   return (
@@ -617,9 +623,9 @@ function TextingRulesSection() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="newLeadTextTemplate">New Lead text</Label>
-              <Textarea id="newLeadTextTemplate" rows={3} value={shownTemplate} onChange={(e) => setTemplate(e.target.value)} />
+              <Textarea id="newLeadTextTemplate" rows={10} value={shownTemplate} onChange={(e) => setTemplate(e.target.value)} />
               <p className="text-xs text-muted-foreground">
-                Fill-ins: {NEW_LEAD_PLACEHOLDERS.map((k) => `{${k}}`).join(' ')}. A blank fill-in drops out with its comma or period.
+                Fill-ins: {NEW_LEAD_PLACEHOLDERS.map((k) => `{${k}}`).join(' ')}. A blank fill-in drops out with its comma or period, and a line like “Size: {'{size}'}” drops out when there is no size.
               </p>
               <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-line">{preview}</div>
             </div>

@@ -4,10 +4,11 @@ import { prettyPhone, toE164 } from '#/lib/phone'
 // The new Lead heads-up text (docs/adr/0004-quo-texting.md): who gets it and what it says. Safe for the browser
 // (Settings shows the placeholders and a preview).
 
-export const NEW_LEAD_PLACEHOLDERS = ['how', 'name', 'town', 'project', 'phone', 'email', 'link'] as const
+export const NEW_LEAD_PLACEHOLDERS = ['how', 'name', 'project', 'size', 'material', 'estimate', 'timeframe', 'address', 'town', 'phone', 'email', 'notes', 'link'] as const
 export type NewLeadVars = Record<(typeof NEW_LEAD_PLACEHOLDERS)[number], string>
 
-export const DEFAULT_NEW_LEAD_TEMPLATE = 'New Lead ({how}): {name}, {town}. {project}. {phone}\n{link}'
+// One fact per line; a line whose fill-in is blank drops out.
+export const DEFAULT_NEW_LEAD_TEMPLATE = ['New Lead ({how})', '{name}', '{project}', 'Size: {size}', 'Material: {material}', 'Estimate: {estimate}', 'When: {timeframe}', '{address}', '{phone}', '{link}'].join('\n')
 
 /** Fills the placeholders; a blank one takes its punctuation with it ("Jane, ." -> "Jane."). */
 export function renderNewLeadText(template: string | null | undefined, v: NewLeadVars) {
@@ -21,6 +22,7 @@ export function renderNewLeadText(template: string | null | undefined, v: NewLea
         .replace(/\.\s*\./g, '.')
         .replace(/\(\s*\)/g, '')
         .replace(/^[\s.,]+/, '')
+        .replace(/^[^:\n]{1,20}:\s*$/, '')
         .replace(/\s{2,}/g, ' ')
         .trim(),
     )
@@ -29,17 +31,41 @@ export function renderNewLeadText(template: string | null | undefined, v: NewLea
     .slice(0, 1600)
 }
 
-export function newLeadVars(
-  l: { id: string; channel: string | null; firstName: string | null; lastName: string | null; city: string | null; serviceType: string | null; phoneE164: string | null; email?: string | null },
-  base: string,
-): NewLeadVars {
+export type NewLeadLead = {
+  id: string
+  channel: string | null
+  firstName: string | null
+  lastName: string | null
+  street?: string | null
+  city: string | null
+  serviceType: string | null
+  phoneE164: string | null
+  email?: string | null
+  preferredMaterial?: string | null
+  timeframe?: string | null
+  message?: string | null
+}
+
+/** Extra facts from the Lead's latest form: the quote form's rough size, or the estimator's square feet and range. */
+export type NewLeadExtra = { approxSize?: string | null; sqft?: number | null; low?: number | null; high?: number | null }
+
+const usd = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`
+
+export function newLeadVars(l: NewLeadLead, base: string, x: NewLeadExtra = {}): NewLeadVars {
+  const notes = (l.message ?? '').replace(/\s+/g, ' ').trim()
   return {
     how: channelLabel(l.channel),
     name: [l.firstName, l.lastName].filter(Boolean).join(' ') || 'Unknown name',
-    town: l.city ?? '',
     project: l.serviceType ?? '',
+    size: x.sqft ? `${Math.round(x.sqft)} sq ft` : (x.approxSize ?? ''),
+    material: l.preferredMaterial ?? '',
+    estimate: x.low && x.high ? `${usd(x.low)} to ${usd(x.high)}` : '',
+    timeframe: l.timeframe ?? '',
+    address: [l.street, l.city].filter(Boolean).join(', '),
+    town: l.city ?? '',
     phone: l.phoneE164 ? prettyPhone(l.phoneE164) : '',
     email: l.email ?? '',
+    notes: notes.length > 140 ? `${notes.slice(0, 139)}…` : notes,
     link: `${base.replace(/\/+$/, '')}/leads/${l.id}`,
   }
 }

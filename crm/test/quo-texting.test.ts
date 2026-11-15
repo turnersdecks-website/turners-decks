@@ -79,15 +79,17 @@ describe('Quo webhook', () => {
     expect(await headsUps((await leadByPhone(quiet))!.id)).toBe(0)
   })
 
-  it('the heads-up reads plainly with a link to the Lead, from the default or an edited template', async () => {
+  it('the heads-up has one fact per line; blank lines drop out; an edited template works too', async () => {
     const { newLeadVars, renderNewLeadText, newLeadRecipients } = await import('#/lib/new-lead-text')
-    const lead = { id: 'L1', channel: 'quote_form', firstName: 'Jane', lastName: 'Smith', city: 'Exeter', serviceType: 'Deck replacement', phoneE164: '+14845550101' }
-    expect(renderNewLeadText(null, newLeadVars(lead, 'https://crm.example/'))).toBe('New Lead (Website): Jane Smith, Exeter. Deck replacement. (484) 555-0101\nhttps://crm.example/leads/L1')
-    // Blank fill-ins drop out with their punctuation.
-    expect(renderNewLeadText(null, newLeadVars({ ...lead, city: null, serviceType: null, channel: 'text', firstName: null, lastName: null }, 'https://crm.example'))).toBe(
-      'New Lead (Text): Unknown name. (484) 555-0101\nhttps://crm.example/leads/L1',
+    const lead = { id: 'L1', channel: 'estimator', firstName: 'Jane', lastName: 'Smith', street: '12 Main St', city: 'Exeter', serviceType: 'Deck replacement', phoneE164: '+14845550101', preferredMaterial: 'Composite' }
+    expect(renderNewLeadText(null, newLeadVars(lead, 'https://crm.example/', { sqft: 320, low: 15000, high: 18500 }))).toBe(
+      ['New Lead (Estimator)', 'Jane Smith', 'Deck replacement', 'Size: 320 sq ft', 'Material: Composite', 'Estimate: $15,000 to $18,500', '12 Main St, Exeter', '(484) 555-0101', 'https://crm.example/leads/L1'].join('\n'),
     )
-    expect(renderNewLeadText('🔔 {name} ({how}) {phone}\n{link}', newLeadVars(lead, 'https://crm.example'))).toBe('🔔 Jane Smith (Website) (484) 555-0101\nhttps://crm.example/leads/L1')
+    // A text Lead with almost nothing: only the lines that have something.
+    expect(renderNewLeadText(null, newLeadVars({ id: 'L2', channel: 'text', firstName: null, lastName: null, city: null, serviceType: null, phoneE164: '+14845550101' }, 'https://crm.example'))).toBe(
+      'New Lead (Text)\nUnknown name\n(484) 555-0101\nhttps://crm.example/leads/L2',
+    )
+    expect(renderNewLeadText('🔔 {name} ({how}), {town}. {phone}', newLeadVars({ ...lead, city: null }, 'https://crm.example'))).toBe('🔔 Jane Smith (Estimator). (484) 555-0101')
     expect(newLeadRecipients({ newLeadTextTo: null, ownerMobile: '+14845550199' })).toEqual(['+14845550199'])
     expect(newLeadRecipients({ newLeadTextTo: '+14845550199,+16105550188,+14845550199', ownerMobile: null })).toEqual(['+14845550199', '+16105550188'])
   })
