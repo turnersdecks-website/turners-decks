@@ -1,11 +1,11 @@
 import { type SQL, eq, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { getDb } from '#/db/client'
-import { companySettings, estimateSnapshots, formSubmissions, leadActivity, leads } from '#/db/schema'
+import { companySettings, estimateSnapshots, formSubmissions, leadActivity, leads, submissionProcessing } from '#/db/schema'
 import type { Email } from '#/lib/email'
 import type { Envelope, Job, JobOutcome, OutboxEnv } from '#/lib/outbox'
 import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from '#/lib/settings.server'
-import { newLeadVars, renderNewLeadText } from '#/lib/new-lead-text'
+import { type NewLeadExtra, newLeadVars, renderNewLeadText } from '#/lib/new-lead-text'
 import { hasTextConsent } from '#/lib/texting.server'
 
 // One entry per notification job kind (src/lib/outbox.ts). `render` builds the email at send time from the job's
@@ -133,9 +133,9 @@ export const JOB_KINDS: Record<string, JobKind> = {
       ])
       const to = p.to ?? s?.to
       if (!lead || !to) return null
-      const text = renderNewLeadText(s?.template, newLeadVars(lead, env.BETTER_AUTH_URL))
+      const text = renderNewLeadText(s?.template, newLeadVars(lead, env.BETTER_AUTH_URL, await newLeadExtra(db, lead.id)))
       // A known Lead sent the form again: say so instead of "New Lead".
-      return { to, content: p.repeat ? (/^New Lead\b/.test(text) ? text.replace(/^New Lead\b/, 'Repeat request') : `Repeat request: ${text}`) : text }
+      return { to, content: p.repeat ? (/New Lead\b/.test(text) ? text.replace(/New Lead\b/, 'Repeat request') : `Repeat request: ${text}`) : text }
     },
   },
   // A text to Pat's own cell (Settings > Texting), e.g. a photo link. Staff-made, so no consent check.
@@ -180,3 +180,27 @@ function safeJson(s: string): Record<string, unknown> {
   }
 }
 const line = (label: string, value: string | null) => (value ? `${label}: ${value}` : null)
+
+/** The size and estimate for the new Lead text: the latest estimate, else the latest quote form's rough size. */
+async function newLeadExtra(db: JobKindContext['db'], leadId: string): Promise<NewLeadExtra> {
+  const snap = await db
+    .select({ sqft: estimateSnapshots.sqft, low: estimateSnapshots.low, high: estimateSnapshots.high })
+    .from(estimateSnapshots)
+    .where(eq(estimateSnapshots.leadId, leadId))
+    .orderBy(sql`${estimateSnapshots.createdAt} DESC`)
+    .get()
+  if (snap) return snap
+  const sub = await db
+    .select({ raw: formSubmissions.rawBody })
+    .from(submissionProcessing)
+    .innerJoin(formSubmissions, eq(formSubmissions.id, submissionProcessing.submissionId))
+    .where(eq(submissionProcessing.leadId, leadId))
+    .orderBy(sql`${formSubmissions.receivedAt} DESC`)
+    .get()
+  try {
+    const size = sub ? (JSON.parse(sub.raw) as { approx_size?: unknown }).approx_size : null
+    return { approxSize: typeof size === 'string' && size.trim() ? size.trim().slice(0, 60) : null }
+  } catch {
+    return {}
+  }
+}
