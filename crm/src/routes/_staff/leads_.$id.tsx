@@ -1,4 +1,5 @@
-import { ORIGIN_LABELS, channelLabel } from '#/lib/lead-origin'
+import { ChannelPill } from '#/components/ChannelPill'
+import { ORIGIN_LABELS } from '#/lib/lead-origin'
 import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { SearchX, Trash2, UserRound } from 'lucide-react'
 import { useState, type ComponentType, type ReactNode } from 'react'
@@ -329,7 +330,9 @@ function LeadDetail() {
 
             <aside className="min-w-0 self-start overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xs xl:sticky xl:top-6">
               <RailSection label="Lead details">
-                <RailRow label="Came in by">{channelLabel(lead.channel)}</RailRow>
+                <RailRow label="Came in by">
+                  <ChannelPill channel={lead.channel} />
+                </RailRow>
                 <RailRow label="Found us via">{ORIGIN_LABELS[origin]}</RailRow>
                 {lead.howFound && <RailRow label="They said">{lead.howFound}</RailRow>}
                 {firstPage && <RailRow label="First page">{firstPage}</RailRow>}

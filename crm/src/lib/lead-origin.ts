@@ -7,11 +7,11 @@
 
 export const CHANNELS = ['estimator', 'quote_form', 'website', 'text', 'call', 'email', 'manual'] as const
 export type Channel = (typeof CHANNELS)[number]
-// `website` is only a fallback for an older website Lead whose form is unknown; it reads the same as the form.
+// `website` is only a fallback for an older website Lead whose form is unknown; it reads the same as the form (Website).
 export const CHANNEL_LABELS: Record<Channel, string> = {
   estimator: 'Estimator',
-  quote_form: 'Website form',
-  website: 'Website form',
+  quote_form: 'Website',
+  website: 'Website',
   text: 'Text',
   call: 'Call',
   email: 'Email',

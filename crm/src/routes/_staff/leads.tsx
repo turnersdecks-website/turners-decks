@@ -19,6 +19,7 @@ import { errorMessage } from '#/lib/errors'
 import { createLead, listPipeline, moveLeadStage } from '#/lib/leads.functions'
 import { CLOSED_STAGES, OPEN_STAGES, STAGES, STAGE_LABELS, STAGE_STYLES, isOpenStage, leadName } from '#/lib/pipeline'
 import { getCompanySettings } from '#/lib/settings.functions'
+import { ChannelPill } from '#/components/ChannelPill'
 import { channelLabel, reportedSource } from '#/lib/lead-origin'
 import { cn } from '#/lib/utils'
 import { readDefaultView } from '#/lib/view-pref.functions'
@@ -246,9 +247,7 @@ function LeadBoard({
                         dragId === l.id && 'scale-[0.98] opacity-55',
                       )}
                     >
-                      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        {channelLabel(l.channel)}
-                      </p>
+                      <ChannelPill channel={l.channel} />
                       <h3 className="mt-1 line-clamp-2 text-sm font-semibold">
                         <Link to="/leads/$id" params={{ id: l.id }} className="hover:underline">
                           {leadName(l)}
@@ -340,7 +339,7 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
       cell: ({ row }) => <Badge variant={row.original.stage === 'won' ? 'success' : 'secondary'}>{STAGE_LABELS[row.original.stage]}</Badge>,
       enableGlobalFilter: false,
     },
-    { id: 'channel', accessorFn: (l) => channelLabel(l.channel), header: 'Came in by', enableGlobalFilter: false },
+    { id: 'channel', accessorFn: (l) => channelLabel(l.channel), header: 'Came in by', cell: ({ row }) => <ChannelPill channel={row.original.channel} />, enableGlobalFilter: false },
     { id: 'foundVia', accessorFn: (l) => reportedSource(l), header: 'Found us via', enableGlobalFilter: false },
     // Hidden; there for the Year filter (company timezone).
     { id: 'year', accessorFn: (l) => yearOf(l.createdAt), header: 'Year', enableGlobalFilter: false, enableHiding: false },
