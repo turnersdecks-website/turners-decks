@@ -455,9 +455,10 @@ async function upsertLead(
     jobIds.push(job.id)
     writes.push(job.insert)
   }
-  // Instant text reply (docs/adr/0004-quo-texting.md): a new Lead who ticked the text box, once texting is switched on
+  // Instant text reply (docs/adr/0004-quo-texting.md): anyone who sends the form with the text box ticked (a known Lead
+  // sending it again too: it answers this request), once texting is switched on
   // (after A2P approval) and Quo is connected. Consent and the gate are checked again when it is sent.
-  if (!existing && payload.sms_consent === true && mapped.phoneE164 && settings.textingEnabled && (await quoConnected(db))) {
+  if (payload.sms_consent === true && mapped.phoneE164 && settings.textingEnabled && (await quoConnected(db))) {
     const content = leadReplyText(mapped.firstName, settings.name)
     const job = enqueueJob(db, {
       kind: 'sms_lead_reply',
@@ -469,10 +470,16 @@ async function upsertLead(
     writes.push(job.insert)
   }
   // The new Lead heads-up text (sms_new_lead) to each recipient in Settings, when texting is on.
-  const headsUp = existing || !settings.textingEnabled ? [] : newLeadRecipients(settings)
+  // A known Lead sending the form again gets a heads-up too, marked as a repeat request.
+  const headsUp = settings.textingEnabled ? newLeadRecipients(settings) : []
   if (headsUp.length && (await quoConnected(db))) {
     for (const to of headsUp) {
-      const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}:${to}`, payload: { lead_id: leadId, to }, envelope: { to: [to], subject: 'Text: new Lead heads-up' } })
+      const job = enqueueJob(db, {
+        kind: 'sms_new_lead',
+        dedupeKey: existing ? `sms_new_lead:${leadId}:${to}:${submissionId}` : `sms_new_lead:${leadId}:${to}`,
+        payload: { lead_id: leadId, to, ...(existing ? { repeat: true } : {}) },
+        envelope: { to: [to], subject: 'Text: new Lead heads-up' },
+      })
       jobIds.push(job.id)
       writes.push(job.insert)
     }
