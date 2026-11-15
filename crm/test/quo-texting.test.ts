@@ -60,6 +60,32 @@ const consentOf = (phone: string) =>
 beforeEach(() => connect())
 
 describe('Quo webhook', () => {
+  it('a new Lead from a text or a call sends Pat a heads-up when texting is on and his cell is set', async () => {
+    const headsUps = (leadId: string) =>
+      env.DB.prepare("SELECT id FROM notification_jobs WHERE kind = 'sms_new_lead' AND payload_json LIKE ?").bind(`%${leadId}%`).all().then((r) => r.results.length)
+    await connect(true)
+    await env.DB.prepare("UPDATE company_settings SET owner_mobile = '+14845550199' WHERE id = 1").run()
+    const texter = e164(quoPhone())
+    await textFrom(texter, 'Hi there')
+    expect(await headsUps((await leadByPhone(texter))!.id)).toBe(1)
+    await textFrom(texter, 'Me again')
+    expect(await headsUps((await leadByPhone(texter))!.id)).toBe(1)
+    const caller = e164(quoPhone())
+    await callWith(caller, { direction: 'incoming', status: 'answered', duration: 95 })
+    expect(await headsUps((await leadByPhone(caller))!.id)).toBe(1)
+    await env.DB.prepare('UPDATE company_settings SET owner_mobile = NULL WHERE id = 1').run()
+    const quiet = e164(quoPhone())
+    await textFrom(quiet, 'hello')
+    expect(await headsUps((await leadByPhone(quiet))!.id)).toBe(0)
+  })
+
+  it('the heads-up reads plainly with a link to the Lead', async () => {
+    const { newLeadText } = await import('#/lib/outbox-kinds')
+    expect(newLeadText({ id: 'L1', channel: 'quote_form', firstName: 'Jane', lastName: 'Smith', city: 'Exeter', serviceType: 'Deck replacement', phoneE164: '+14845550101' }, 'https://crm.example/')).toBe(
+      'New Lead (Website): Jane Smith, Exeter. Deck replacement. (484) 555-0101\nhttps://crm.example/leads/L1',
+    )
+  })
+
   it('a new number\'s first text gets one automatic reply when texting is on; not when off, not after STOP, not for a known Lead', async () => {
     const replies = (phone: string) =>
       env.DB.prepare("SELECT payload_json FROM notification_jobs WHERE kind = 'sms_lead_reply' AND payload_json LIKE ?").bind(`%${phone}%`).all<Record<string, any>>().then((r) => r.results.map((x) => JSON.parse(x.payload_json)))

@@ -467,6 +467,12 @@ async function upsertLead(
     jobIds.push(job.id)
     writes.push(job.insert)
   }
+  // Pat's heads-up text for a new Lead (sms_new_lead), when texting is on and his cell is set.
+  if (!existing && settings.textingEnabled && settings.ownerMobile && (await quoConnected(db))) {
+    const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}`, payload: { lead_id: leadId }, envelope: { to: [settings.ownerMobile], subject: 'Text: new Lead to Pat' } })
+    jobIds.push(job.id)
+    writes.push(job.insert)
+  }
   // Fenced: when our claim no longer holds (it expired and another processor took over), the state CASE yields
   // a value the CHECK refuses and the whole batch (Lead, activity, consent, jobs) rolls back; the caller then
   // answers whatever the other processor stored.

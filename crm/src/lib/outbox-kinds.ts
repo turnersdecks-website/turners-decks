@@ -1,10 +1,12 @@
 import { type SQL, eq, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import type { getDb } from '#/db/client'
-import { estimateSnapshots, formSubmissions, leadActivity, leads } from '#/db/schema'
+import { companySettings, estimateSnapshots, formSubmissions, leadActivity, leads } from '#/db/schema'
 import type { Email } from '#/lib/email'
 import type { Envelope, Job, JobOutcome, OutboxEnv } from '#/lib/outbox'
 import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from '#/lib/settings.server'
+import { channelLabel } from '#/lib/lead-origin'
+import { prettyPhone } from '#/lib/phone'
 import { hasTextConsent } from '#/lib/texting.server'
 
 // One entry per notification job kind (src/lib/outbox.ts). `render` builds the email at send time from the job's
@@ -122,6 +124,18 @@ export const JOB_KINDS: Record<string, JobKind> = {
       ]
     },
   },
+  // A heads-up to Pat's cell (Settings > Texting > Pat's cell) for every new Lead from the website, a text or a call.
+  // Written when it is sent, from the Lead as it is then, with a link to it. Pat's own phone, so no consent check.
+  sms_new_lead: {
+    async renderSms(p: { lead_id: string }, { db, env }) {
+      const [lead, s] = await Promise.all([
+        db.select().from(leads).where(eq(leads.id, p.lead_id)).get(),
+        db.select({ to: companySettings.ownerMobile }).from(companySettings).where(eq(companySettings.id, 1)).get(),
+      ])
+      if (!lead || !s?.to) return null
+      return { to: s.to, content: newLeadText(lead, env.BETTER_AUTH_URL) }
+    },
+  },
   // A text to Pat's own cell (Settings > Texting), e.g. a photo link. Staff-made, so no consent check.
   sms_owner: { renderSms: async (p: { to: string; content: string }) => (p?.to && p.content ? { to: p.to, content: p.content } : null) },
 
@@ -164,3 +178,15 @@ function safeJson(s: string): Record<string, unknown> {
   }
 }
 const line = (label: string, value: string | null) => (value ? `${label}: ${value}` : null)
+
+/** "New Lead (Website): Jane Smith, Exeter. Deck replacement. (484) 555-0101\nhttps://crm.../leads/ID" */
+export function newLeadText(
+  l: { id: string; channel: string | null; firstName: string | null; lastName: string | null; city: string | null; serviceType: string | null; phoneE164: string | null },
+  base: string,
+) {
+  const who = [l.firstName, l.lastName].filter(Boolean).join(' ') || 'Unknown name'
+  const parts = [`New Lead (${channelLabel(l.channel)}): ${who}${l.city ? `, ${l.city}` : ''}.`]
+  if (l.serviceType) parts.push(`${l.serviceType}.`)
+  if (l.phoneE164) parts.push(prettyPhone(l.phoneE164))
+  return `${parts.join(' ')}\n${base.replace(/\/+$/, '')}/leads/${l.id}`
+}

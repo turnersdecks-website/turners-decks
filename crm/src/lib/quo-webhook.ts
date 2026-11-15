@@ -113,6 +113,7 @@ async function writesFor(
         jobIds.push(job.id)
       }
     }
+    if (lead && lead.writes.length) await newLeadHeadsUp(db, lead.id, jobIds, writes)
     return writes
   }
 
@@ -140,6 +141,7 @@ async function writesFor(
     if (!lead && incoming && answered && (seconds ?? 0) >= MIN_NEW_LEAD_CALL_S) {
       lead = await newLead(db, { phone, source: 'phone', at, ctx })
       writes.push(...lead.writes)
+      await newLeadHeadsUp(db, lead.id, jobIds, writes)
     }
     if (!lead) return []
     const outcome = answered ? 'Connected' : r.hasVoicemail ? 'Left voicemail' : 'No answer'
@@ -163,9 +165,12 @@ async function writesFor(
     const phone = toE164(String(r.from ?? ''))
     if (!phone || phone === ours) return []
     const lead = (await leadByPhone(db, phone)) ?? (await newLead(db, { phone, source: 'phone', at, ctx }))
+    const extra: BatchItem<'sqlite'>[] = []
+    if (lead.writes.length) await newLeadHeadsUp(db, lead.id, jobIds, extra)
     const transcript = typeof r.transcript === 'string' && r.transcript.trim() ? r.transcript.trim() : null
     return [
       ...lead.writes,
+      ...extra,
       activity(db, {
         leadId: lead.id,
         kind: 'call',
@@ -182,6 +187,15 @@ async function writesFor(
 }
 
 type FoundLead = { id: string; writes: BatchItem<'sqlite'>[] }
+
+/** Queues Pat's heads-up text for a Lead this delivery creates (sms_new_lead), when texting is on and his cell is set. */
+async function newLeadHeadsUp(db: Db, leadId: string, jobIds: string[], writes: BatchItem<'sqlite'>[]) {
+  const s = await db.select({ on: companySettings.textingEnabled, to: companySettings.ownerMobile }).from(companySettings).where(eq(companySettings.id, 1)).get()
+  if (!s?.on || !s.to) return
+  const job = enqueueJob(db, { kind: 'sms_new_lead', dedupeKey: `sms_new_lead:${leadId}`, payload: { lead_id: leadId }, envelope: { to: [s.to], subject: 'Text: new Lead to Pat' } })
+  writes.push(job.insert)
+  jobIds.push(job.id)
+}
 
 async function leadByPhone(db: Db, phone: string): Promise<FoundLead | null> {
   const row = await db.select({ id: leads.id }).from(leads).where(eq(leads.phoneE164, phone)).get()

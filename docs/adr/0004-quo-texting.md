@@ -40,3 +40,9 @@ When texting is on, the first text from a number with no Lead gets one automatic
 for your text! We got it and will get back to you soon. Reply STOP to opt out." It goes through the outbox as an
 `sms_lead_reply` job (dedupe `sms_first_text_reply:{quo message id}`), so the consent and Do not contact checks run at
 send time. A STOP as the first text makes no Lead and gets no reply (Quo's own STOP confirmation still applies).
+
+## New Lead heads-up to Pat (2026-11-14)
+
+Every new Lead from the website, a text or a call queues an `sms_new_lead` job to Pat's cell (Settings > Texting),
+when texting is on and the cell is set. Rendered at send time from the Lead: "New Lead (Website): Jane Smith, Exeter.
+Deck replacement. (484) 555-0101" plus a link to the Lead. Leads added by hand don't send one.
