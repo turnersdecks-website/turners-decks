@@ -7,3 +7,10 @@
 /wp-content/*                /gallery                301
 /feed                        /                       301
 /feed/*                      /                       301
+/sitemap.xml                 /sitemap-index.xml      301
+/sitemap_index.xml           /sitemap-index.xml      301
+/wp-sitemap.xml              /sitemap-index.xml      301
+/page-sitemap.xml            /sitemap-index.xml      301
+/elementor-hf/*              /                       301
+/contact-us                  /contact                301
+/home                        /                       301
