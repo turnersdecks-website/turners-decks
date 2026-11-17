@@ -22,7 +22,7 @@ export const SITE = {
 
 export const SERVICES = [
   {
-    slug: "new-decks",
+    slug: "new-deck-construction",
     title: "New Decks",
     short: "A new deck built from scratch, designed around how you use your yard.",
   },

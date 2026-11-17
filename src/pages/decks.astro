@@ -1,0 +1,106 @@
+---
+// /decks: the old site's hub page ("Our Decks"), now also the Services hub.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import ServiceCards from "@/components/sections/ServiceCards.astro";
+import FinancingBlock from "@/components/sections/FinancingBlock.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PHOTO } from "@/lib/photos";
+import { PROJECT_LIST } from "@/lib/old-pages";
+
+const KINDS = [
+  {
+    title: "Composite and PVC Decks",
+    photo: PHOTO.brownComposite,
+    items: [
+      ["Color & texture options", "Composite and PVC decking is available in a wide range of hues and finishes to complement your home’s exterior and personal style."],
+      ["Design flexibility", "Composite decking allows for curved elements, custom inlays, and intricate patterns, making it ideal for creative and modern deck designs."],
+      ["Accessories & enhancements", "Homeowners can choose from a variety of railings, lighting, and other add-ons to complete the deck’s look and improve functionality."],
+    ],
+  },
+  {
+    title: "Wood Decks",
+    photo: PHOTO.mahoganyPorch,
+    items: [
+      ["Natural appearance", "Wood decking offers a warm, classic look with natural grain patterns that bring character and charm to outdoor spaces."],
+      ["Material options", "Pressure-treated lumber, cedar, and mahogany provide different price points, durability levels, and visual appeal."],
+      ["Custom details", "Wood decks can be finished with decorative railings, stairs, and built-in features to match your home’s style."],
+    ],
+  },
+  {
+    title: "Pool & Elevated Decks",
+    photo: PHOTO.ptPool[1],
+    items: [
+      ["Structural design", "Elevated and pool decks are engineered to safely support height changes, slopes, and complex layouts."],
+      ["Safety features", "Railings, gates, and slip-resistant materials are carefully selected to improve safety around pools and elevated areas."],
+      ["Integrated access", "Custom stairs, landings, and transitions create smooth access between your home, yard, and pool area."],
+    ],
+  },
+  {
+    title: "Covered Decks & Porches",
+    photo: PHOTO.coveredPorch,
+    items: [
+      ["Weather protection", "Covered decks provide shade and protection from rain, extending the usability of your outdoor space."],
+      ["Roof integration", "Designs can tie into existing rooflines or feature standalone structures for a seamless look."],
+      ["Added comfort", "Ceiling finishes, lighting, fans, and heaters help create a comfortable outdoor living area in multiple seasons."],
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Our Deck Projects | Custom Decks | Deck Builder in Berks County, PA"
+  description="Explore our completed custom decks featuring custom composite and wood decks. Built with expert craftsmanship and designed for real homes across Berks, Montgomery and Chester County, Pennsylvania."
+>
+  <PageHero
+    photo={PHOTO.limerick[0]}
+    eyebrow="Our Decks"
+    title="Deck Design & Construction Services"
+    intro="Turner’s Decks designs and builds custom decks for homeowners throughout Southeastern Pennsylvania. From composite and PVC decking to traditional wood options, we focus on craftsmanship, durability, and thoughtful design that fits your home and lifestyle."
+  />
+
+  <section class="section container-site"><ServiceCards level={2} /></section>
+
+  {
+    KINDS.map((k, i) => (
+      <section class:list={["section", { "bg-secondary": i % 2 === 0 }]}>
+        <div class="container-site split">
+          <div class:list={{ "md:order-2": i % 2 === 1 }}>
+            <h2 class="display-2">{k.title}</h2>
+            <ul class="mt-8 grid gap-5">
+              {k.items.map(([label, text]) => (
+                <li class="text-[1.0625rem] leading-relaxed text-muted-foreground">
+                  <span class="font-medium text-primary">{label}:</span> {text}
+                </li>
+              ))}
+            </ul>
+            {i === 0 && <Button href="/contact" variant="outline" size="lg" class="mt-8">Contact Us for More Details</Button>}
+          </div>
+          <Photo photo={k.photo} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="section container-site">
+    <SectionHeading eyebrow="Project spotlights" title="Recent decks, start to finish" />
+    <div class="mt-10 grid gap-7 md:grid-cols-3">
+      {PROJECT_LIST.map((p) => (
+        <a href={`/${p.slug}`} class="group block">
+          <Photo photo={p.hero} class="aspect-[4/3] w-full rounded-2xl object-cover" />
+          <p class="mt-4 text-xl font-medium leading-snug text-primary group-hover:underline">{p.card}</p>
+        </a>
+      ))}
+    </div>
+    <div class="mt-10 flex flex-wrap gap-3">
+      <Button href="/gallery" variant="outline" size="lg">See More Photos</Button>
+      <Button href="/deck-materials-guide" variant="outline" size="lg">Deck Materials Guide</Button>
+    </div>
+    <div class="mt-12"><FinancingBlock /></div>
+  </section>
+
+  <CtaBand />
+</BaseLayout>

@@ -23,7 +23,7 @@ const launchCheck = {
 // Fully static site. Lead forms post from the browser to the CRM's public intake (crm/, src/lib/crm-intake.ts).
 export default defineConfig({
   site: "https://turnersdecks.com",
-  // URLs without a trailing slash (/services/pool-decks), same as the Lovable site.
+  // URLs without a trailing slash (/pool-decks), same as the Lovable site.
   trailingSlash: "never",
   build: { format: "file" },
   integrations: [react(), sitemap(), launchCheck],

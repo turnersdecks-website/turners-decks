@@ -1,6 +1,6 @@
 import { SITE } from "./site";
 
-export const fullTitle = (title: string) => (title.includes(SITE.name) ? title : `${title} | ${SITE.name}`);
+export const fullTitle = (title: string) => (title.replace(/’/g, "'").includes(SITE.name) ? title : `${title} | ${SITE.name}`);
 
 export function faqSchema(faqs: { q: string; a: string }[]) {
   return {

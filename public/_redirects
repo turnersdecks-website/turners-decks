@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects. The live site keeps the old WordPress addresses; these catch
+# the interim /services URLs and old WordPress media links so nothing 404s after launch.
+/services/new-decks          /new-deck-construction  301
+/services/deck-replacement   /deck-replacement       301
+/services/pool-decks         /pool-decks             301
+/services                    /decks                  301
+/wp-content/*                /gallery                301
+/feed                        /                       301
+/feed/*                      /                       301

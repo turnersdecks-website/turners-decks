@@ -1,0 +1,29 @@
+---
+// One block of carried-over page copy: heading, paragraphs, bullet lists, closing lines, optional link.
+import type { Block } from "@/lib/old-pages";
+interface Props { block: Block; class?: string }
+const { block: b, class: className } = Astro.props;
+const H = b.level === 2 ? "h2" : "h3";
+---
+
+<div class:list={["max-w-3xl", className]}>
+  <H class={b.level === 2 ? "display-2" : "text-[1.625rem] font-medium leading-tight text-primary"}>{b.heading}</H>
+  {b.body?.map((t) => <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">{t}</p>)}
+  {
+    b.lists?.map((l) => (
+      <>
+        {l.label && <p class="mt-5 font-medium text-primary">{l.label}</p>}
+        <ul class="mt-4 grid gap-2.5 text-[1.0625rem] leading-snug">
+          {l.items.map((it) => (
+            <li class="flex items-baseline gap-3">
+              <span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+              {it}
+            </li>
+          ))}
+        </ul>
+      </>
+    ))
+  }
+  {b.after?.map((t) => <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">{t}</p>)}
+  {b.link && <a href={b.link.href} class="link mt-5 inline-flex min-h-11 items-center">{b.link.label}</a>}
+</div>
