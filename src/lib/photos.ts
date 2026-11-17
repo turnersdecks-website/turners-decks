@@ -28,6 +28,15 @@ import hero from "@/assets/images/modern-composite-deck-hero.jpg";
 export type Photo = { src: ImageMetadata; alt: string };
 const p = (src: ImageMetadata, alt: string): Photo => ({ src, alt });
 
+// Photos from the old WordPress site's project pages (GPS and camera data stripped).
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/images/*.jpg", { eager: true });
+const img = (name: string): ImageMetadata => {
+  const f = files[`../assets/images/${name}.jpg`];
+  if (!f) throw new Error(`Missing photo: ${name}.jpg`);
+  return f.default;
+};
+const series = (prefix: string, alts: string[]) => alts.map((alt, i) => p(img(`${prefix}-${String(i + 1).padStart(2, "0")}`), alt));
+
 export const HERO = p(hero, "Modern composite backyard deck with railing at dusk");
 
 export const PHOTO = {
@@ -52,6 +61,60 @@ export const PHOTO = {
   framing: p(d4, "Deck framing with posts and beams during construction"),
   poolStairsBefore: p(e1, "Old pool deck stairs before replacement"),
   poolStairsAfter: p(e2, "Pool deck and stairs with white vinyl railing after replacement"),
+  ptPool: series("pt-pool-deck-exeter", [
+    "Pressure-treated pool deck around an above-ground pool in Exeter Township, PA",
+    "Pool deck with horizontal wood railings and a wide walkway beside the pool",
+    "Pressure-treated deck boards running up to the pool steps",
+    "Deck walkway from the house to the pool with wood railings",
+    "Ground-level pool deck with wood railings and the pool filter beside it",
+    "Side view of the finished pool deck and railings",
+    "Pool deck seen from the house, with the pool equipment pad in front",
+    "Pool deck connecting to the steps of the home's existing deck",
+    "New pressure-treated pool deck boards with the existing deck behind",
+    "Pool deck walkway boards installed along the pool wall",
+    "Pool deck framing on blocks beside the above-ground pool",
+  ]),
+  limerick: series("trex-deck-limerick", [
+    "Elevated Trex composite deck with white vinyl railing and black balusters in Limerick Township, PA",
+    "Composite deck with white PVC skirting and stairs to the yard",
+    "Rear view of the 520-square-foot Pebble Grey composite deck",
+    "Pebble Grey Trex decking across the full width of the deck",
+    "Composite deck surface looking toward the outdoor dining area",
+    "Outdoor dining set on the new composite deck",
+    "Composite deck beside the home's arched window",
+    "Composite deck with horizontal white PVC skirting, seen from the yard",
+    "Composite deck stairs with white railing and black balusters",
+    "Composite deck and stairs at sunset",
+    "Side stairs off the composite deck toward the fence gate",
+    "Side view of the deck, stairs, and white skirting",
+    "White PVC skirting and fascia below the composite deck",
+    "New deck framing built over the old patio area",
+    "Pressure-treated joists for the new composite deck",
+  ]),
+  woodToTrex: series("wood-to-trex-exeter", [
+    "Trex composite deck with black railing that replaced an old wood deck in Exeter Township, PA",
+    "Trex composite deck surface with black aluminum railing",
+    "New composite deck looking out over the backyard",
+    "Composite deck stairs with landscaping below",
+    "Side view of the replacement deck and stairs",
+    "Composite deck with black railing and a covered grill",
+    "Composite stairs with black aluminum railing",
+    "Composite deck boards going down during the replacement",
+  ]),
+  woodToTrexBefore: p(img("wood-to-trex-exeter-before"), "Old wood deck with lattice skirting before replacement"),
+  woodToTrexTearout: p(img("wood-to-trex-exeter-tearout"), "House wall after the old wood deck was torn out"),
+  grayPool: series("gray-composite-pool-deck", [
+    "Gray composite pool deck around an above-ground pool",
+    "Composite pool deck meeting a covered patio",
+    "Composite pool deck walkway along the patio",
+    "Stairs with white railing up to the composite pool deck",
+    "Work area by the house during a pool deck project",
+  ]),
+  brownComposite: p(img("brown-composite-deck-black-railing"), "Brown composite deck with black aluminum railing"),
+  brownCompositeStairs: p(img("brown-composite-deck-black-railing-stairs"), "Brown composite deck and stairs with black railing"),
+  mahoganyPorch: p(img("mahogany-porch-floor"), "Mahogany porch floor with a herringbone corner pattern"),
+  coveredPorch: p(img("covered-porch-mahogany-white-railing"), "Covered porch with mahogany decking and white railing"),
+  grayPatioDeck: p(img("gray-composite-deck-patio-furniture"), "Gray composite deck with patio furniture and an umbrella"),
 };
 
 export type Project = { title: string; type: string; photos: Photo[]; before?: Photo; after?: Photo };
@@ -65,7 +128,7 @@ export const PROJECTS: Project[] = [
 ];
 
 export const SERVICE_IMAGES: Record<string, Photo> = {
-  "new-decks": PHOTO.groundComposite,
+  "new-deck-construction": PHOTO.groundComposite,
   "deck-replacement": PHOTO.replacementDeck,
   "pool-decks": PHOTO.poolDeck,
 };

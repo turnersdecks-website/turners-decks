@@ -1,0 +1,83 @@
+---
+// Service pages at the old site's addresses: /new-deck-construction, /deck-replacement, /pool-decks.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import StepList from "@/components/sections/StepList.astro";
+import FinancingBlock from "@/components/sections/FinancingBlock.astro";
+import ContentBlock from "@/components/sections/ContentBlock.astro";
+import QuoteForm from "@/components/islands/QuoteForm";
+import { PERMIT_STEPS } from "@/lib/site";
+import { PHOTO } from "@/lib/photos";
+import { PROJECT_PAGES, SERVICE_PAGES, type ServicePageSlug } from "@/lib/old-pages";
+
+interface Props { slug: ServicePageSlug }
+const c = SERVICE_PAGES[Astro.props.slug];
+const project = PROJECT_PAGES[c.recent.project];
+const [first, second, ...rest] = c.blocks;
+---
+
+<BaseLayout title={c.metaTitle} description={c.metaDesc}>
+  <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1} intro={c.intro} note="Your request goes straight to our team.">
+    <Button href="#quote" variant="light" size="lg">Get a Free Estimate</Button>
+    <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
+  </PageHero>
+
+  <section class="section container-site split items-start">
+    <div class="grid gap-12">
+      <ContentBlock block={first} />
+      {second && <ContentBlock block={second} />}
+    </div>
+    <div class="grid gap-6">
+      <Photo photo={c.photos[0]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+      <Photo photo={c.photos[1]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+
+  {
+    rest.length > 0 && (
+      <section class="section bg-secondary">
+        <div class="container-site grid gap-12">
+          {rest.map((b) => <ContentBlock block={b} />)}
+          <div class="grid gap-6 sm:grid-cols-2">
+            {c.photos.slice(2).map((ph) => <Photo photo={ph} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}
+          </div>
+          <FinancingBlock />
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section container-site split">
+    <div>
+      <SectionHeading eyebrow="Recent project" title={c.recent.heading} intro={c.recent.body} />
+      <Button href={`/${project.slug}`} variant="outline" size="lg" class="mt-8">See the {project.card.split(",")[0].toLowerCase()}</Button>
+    </div>
+    <a href={`/${project.slug}`} class="block">
+      <Photo photo={project.hero} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </a>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site split">
+      <div>
+        <SectionHeading eyebrow="Permits" title="We handle the permit, start to finish" />
+        <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
+      </div>
+      <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+
+  <section id="quote" class="section on-dark scroll-mt-4 bg-primary">
+    <div class="container-site split items-start">
+      <div>
+        <h2 class="display-2">Get a free on-site estimate</h2>
+        <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">No pressure, no sales pitch.</p>
+        <QuoteForm client:load onDark defaultProject={c.formValue} />
+      </div>
+      <Photo photo={PHOTO.compositeBorder} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,78 @@
+---
+// Project spotlight pages at the old site's addresses (one per finished job). Town and county only:
+// never a customer's name or street address.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import ContentBlock from "@/components/sections/ContentBlock.astro";
+import BeforeAfterSlider from "@/components/sections/BeforeAfterSlider.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PROJECT_PAGES, PROJECT_LIST, SERVICE_PAGES, type ProjectSlug } from "@/lib/old-pages";
+
+interface Props { slug: ProjectSlug }
+const c = PROJECT_PAGES[Astro.props.slug];
+const service = SERVICE_PAGES[c.service];
+const others = PROJECT_LIST.filter((p) => p.slug !== c.slug);
+---
+
+<BaseLayout title={c.metaTitle} description={c.metaDesc}>
+  <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1}>
+    <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+    <Button href={`/${service.slug}`} variant="outline-light" size="lg">About {service.title.toLowerCase()}</Button>
+  </PageHero>
+
+  <section class="section container-site split items-start">
+    <div>
+      <dl class="grid gap-x-6 gap-y-3 rounded-3xl bg-secondary p-7 sm:grid-cols-[auto_1fr]">
+        {c.specs.map(([k, v]) => (
+          <>
+            <dt class="font-medium text-primary">{k}</dt>
+            <dd class="text-muted-foreground">{v}</dd>
+          </>
+        ))}
+      </dl>
+      {c.intro.map((t) => <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">{t}</p>)}
+    </div>
+    <div class="grid gap-12">
+      {c.blocks.map((b) => <ContentBlock block={b} />)}
+    </div>
+  </section>
+
+  {
+    c.before && (
+      <section class="section container-site">
+        <h2 class="display-2">Before and after</h2>
+        <div class="mt-8 max-w-4xl">
+          <BeforeAfterSlider before={c.before} after={c.hero} alt={c.card} />
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <h2 class="display-2">Project photos</h2>
+      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {c.photos.map((ph) => <Photo photo={ph} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section container-site split items-start">
+    <ContentBlock block={{ ...c.cost, level: 2 }} />
+    <div class="max-w-xl">
+      <p class="text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Want a ballpark for your own deck? The price estimator gives a preliminary range in a couple of minutes.
+      </p>
+      <Button href="/estimator" variant="outline" size="lg" class="mt-6">Try the Price Estimator</Button>
+      <h2 class="mt-12 text-[1.625rem] font-medium leading-tight text-primary">More projects</h2>
+      <ul class="mt-4 grid gap-2">
+        {others.map((p) => <li><a href={`/${p.slug}`} class="link inline-flex min-h-11 items-center">{p.card}</a></li>)}
+        <li><a href="/decks" class="link inline-flex min-h-11 items-center">All our decks</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <CtaBand title="Planning a project like this?" />
+</BaseLayout>

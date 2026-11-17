@@ -11,7 +11,7 @@ const H = `h${level}` as const;
 <div class="grid gap-x-7 gap-y-10 md:grid-cols-3">
   {
     SERVICES.map((s) => (
-      <a href={`/services/${s.slug}`} class="group block">
+      <a href={`/${s.slug}`} class="group block">
         <Photo
           photo={SERVICE_IMAGES[s.slug]}
           alt={s.title}

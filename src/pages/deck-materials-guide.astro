@@ -1,0 +1,116 @@
+---
+// /deck-materials-guide, carried over from the old site (docs/old-site-copy.md).
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import ContentBlock from "@/components/sections/ContentBlock.astro";
+import CtaBand from "@/components/sections/CtaBand.astro";
+import { PHOTO } from "@/lib/photos";
+import type { Block } from "@/lib/old-pages";
+
+const why: Block = {
+  heading: "Why Decking Material Choice Matters",
+  level: 2,
+  body: [
+    "Decking materials aren’t one-size-fits-all. The right choice depends on how you use your deck, your maintenance preferences, and your long-term goals.",
+    "Material selection affects:",
+  ],
+  lists: [{ items: ["Durability and lifespan", "Maintenance requirements", "Appearance over time", "Cost and long-term value", "Performance in moisture and sun exposure"] }],
+};
+
+const MATERIALS = [
+  {
+    block: {
+      heading: "Composite & PVC Decking",
+      level: 2,
+      body: ["Composite and PVC decking are popular for homeowners who want a low-maintenance solution with long-term durability."],
+      lists: [
+        { label: "Best for:", items: ["Minimal upkeep", "Consistent appearance", "High-traffic decks", "Pool decks and moisture-prone areas"] },
+        { label: "Considerations:", items: ["Higher upfront cost than wood", "Heat retention varies by color", "Limited structural flexibility compared to wood"] },
+      ],
+      after: ["Commonly used for: new decks, replacement decks, pool decks"],
+    } satisfies Block,
+    photo: PHOTO.limerick[2],
+  },
+  {
+    block: {
+      heading: "Pressure-Treated Lumber",
+      level: 2,
+      body: ["Pressure-treated lumber remains a widely used option due to its affordability and versatility."],
+      lists: [
+        { label: "Best for:", items: ["Budget-conscious projects", "Structural framing", "Homeowners comfortable with routine maintenance"] },
+        { label: "Considerations:", items: ["Requires sealing or staining", "Prone to warping or cracking over time", "Shorter lifespan than composite options"] },
+      ],
+      after: ["Commonly used for: framing and budget-friendly deck builds"],
+    } satisfies Block,
+    photo: PHOTO.ptPool[0],
+  },
+  {
+    block: {
+      heading: "Cedar & Mahogany Decking",
+      level: 2,
+      body: ["Natural wood decking offers warmth, character, and a premium look that many homeowners prefer."],
+      lists: [
+        { label: "Best for:", items: ["Natural aesthetics", "Custom designs", "Homeowners willing to maintain wood surfaces"] },
+        { label: "Considerations:", items: ["Requires regular maintenance", "Higher cost than pressure-treated lumber", "Natural weathering without proper care"] },
+      ],
+      after: ["Commonly used for: custom decks, design-forward projects"],
+    } satisfies Block,
+    photo: PHOTO.mahoganyPorch,
+  },
+  {
+    block: {
+      heading: "Deck Railings & Accessories",
+      level: 2,
+      body: ["Deck railings play a major role in safety and appearance.", "Common options include:"],
+      lists: [{ items: ["Composite and PVC railings", "Wood railings", "Cable railing systems", "Metal and aluminum railings"] }],
+      after: ["Railing choice depends on code requirements, safety needs, and visual preference."],
+    } satisfies Block,
+    photo: PHOTO.woodToTrex[6],
+  },
+];
+
+const choosing: Block = {
+  heading: "Choosing the Right Material for Your Project",
+  level: 2,
+  body: ["The best decking material depends on:"],
+  lists: [{ items: ["How often you use the deck", "Exposure to sun, shade, and moisture", "Desired maintenance level", "Budget range", "Design goals"] }],
+  after: ["During your consultation, we’ll help you weigh these factors and recommend materials that align with your priorities."],
+};
+---
+
+<BaseLayout
+  title="Deck Materials Guide | Composite, PVC, Wood & More"
+  description="Explore the most popular deck materials including composite, PVC, pressure treated wood, cedar, and mahogany. Learn pros, cons, costs, and which option is best for your home."
+>
+  <PageHero
+    photo={PHOTO.grayPatioDeck}
+    eyebrow="Decking Materials Guide"
+    title="Decking Materials: How to Choose the Right Option for Your Home"
+    intro="Choosing the right decking material impacts maintenance, longevity, appearance, and cost. This guide walks through the most common decking materials we use and what to consider when deciding which option is best for your space."
+  />
+
+  <section class="section container-site"><ContentBlock block={why} /></section>
+
+  {
+    MATERIALS.map((m, i) => (
+      <section class:list={["section", { "bg-secondary": i % 2 === 0 }]}>
+        <div class="container-site split items-start">
+          <div class:list={{ "md:order-2": i % 2 === 1 }}><ContentBlock block={m.block} /></div>
+          <Photo photo={m.photo} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="section container-site">
+    <ContentBlock block={choosing} />
+    <div class="mt-8 flex flex-wrap gap-3">
+      <Button href="/estimator" variant="outline" size="lg">See how material choice impacts project cost</Button>
+      <Button href="/decks" variant="outline" size="lg">Our Decks</Button>
+    </div>
+  </section>
+
+  <CtaBand />
+</BaseLayout>
