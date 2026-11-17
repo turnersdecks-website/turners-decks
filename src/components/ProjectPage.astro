@@ -8,6 +8,7 @@ import PageHero from "@/components/sections/PageHero.astro";
 import ContentBlock from "@/components/sections/ContentBlock.astro";
 import BeforeAfterSlider from "@/components/sections/BeforeAfterSlider.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
+import { breadcrumbSchema } from "@/lib/seo";
 import { PROJECT_PAGES, PROJECT_LIST, SERVICE_PAGES, type ProjectSlug } from "@/lib/old-pages";
 
 interface Props { slug: ProjectSlug }
@@ -16,7 +17,11 @@ const service = SERVICE_PAGES[c.service];
 const others = PROJECT_LIST.filter((p) => p.slug !== c.slug);
 ---
 
-<BaseLayout title={c.metaTitle} description={c.metaDesc}>
+<BaseLayout
+  title={c.metaTitle}
+  description={c.metaDesc}
+  schema={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Our Decks", path: "/decks" }, { name: c.card, path: `/${c.slug}` }])}
+>
   <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1}>
     <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
     <Button href={`/${service.slug}`} variant="outline-light" size="lg">About {service.title.toLowerCase()}</Button>

@@ -1,6 +1,31 @@
 import { SITE } from "./site";
 
-export const fullTitle = (title: string) => (title.replace(/’/g, "'").includes(SITE.name) ? title : `${title} | ${SITE.name}`);
+// Adds the brand unless the title already has it, or it would push the title past what Google shows (~65 chars).
+export const fullTitle = (title: string) => {
+  if (title.replace(/’/g, "'").includes(SITE.name)) return title;
+  const withBrand = `${title} | ${SITE.name}`;
+  return withBrand.length <= 65 ? withBrand : title;
+};
+
+export function breadcrumbSchema(items: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: new URL(it.path, SITE.url).href })),
+  };
+}
+
+export function serviceSchema(name: string, description: string, path: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name,
+    description,
+    url: new URL(path, SITE.url).href,
+    provider: { "@type": "HomeAndConstructionBusiness", name: SITE.name, url: SITE.url, telephone: SITE.phone },
+    areaServed: ["Berks County, PA", "Montgomery County, PA", "Chester County, PA"],
+  };
+}
 
 export function faqSchema(faqs: { q: string; a: string }[]) {
   return {
