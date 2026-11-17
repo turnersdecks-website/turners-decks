@@ -528,8 +528,6 @@ Eyebrow: Project spotlight
 
 ### Wood-to-Trex Deck Replacement in Exeter Township, PA
 
-(The old page's main heading also read "Upgrading an Old Wood Deck in Exeter Township, PA".)
-
 - Project Type: Deck Replacement
 - Primary Service: Replacement Decks
 - Location: Exeter Township, Berks County, PA
