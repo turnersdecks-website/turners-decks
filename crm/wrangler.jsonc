@@ -113,7 +113,7 @@
 			// Placeholder origin until the staging Pages project exists (FLW-204).
 			"vars": {
 				"ENVIRONMENT": "staging",
-				"INTAKE_ALLOWED_ORIGINS": "https://turners-decks-staging.pages.dev"
+				"INTAKE_ALLOWED_ORIGINS": "https://turners-decks-staging.pages.dev,https://turnersdecks.com,https://www.turnersdecks.com"
 			},
 			"ratelimits": [
 				{ "name": "INTAKE_RATE_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } },
