@@ -3,6 +3,11 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/sections/PageHero.astro";
 import ServiceAreasList from "@/components/sections/ServiceAreasList.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import StepList from "@/components/sections/StepList.astro";
+import Photo from "@/components/sections/Photo.astro";
+import { PERMIT_STEPS } from "@/lib/site";
+import { PHOTO } from "@/lib/photos";
 ---
 
 <BaseLayout
@@ -12,7 +17,27 @@ import CtaBand from "@/components/sections/CtaBand.astro";
   <PageHero eyebrow="Service areas" title="Where we build" intro="Based in Douglassville, we build decks within about 30 miles across Berks, Montgomery, and Chester Counties." />
   <section class="section container-site">
     <ServiceAreasList level={2} />
-    <p class="mt-12 text-muted-foreground">Don't see your town? If you're within about 30 miles of Douglassville, reach out. We may still be able to help.</p>
+    <p class="mt-12 text-muted-foreground">We also build in nearby communities like Phoenixville and Wyomissing. Don't see your town? If you're within about 30 miles of Douglassville, reach out. We're happy to confirm availability.</p>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site split">
+      <div class="max-w-3xl">
+        <SectionHeading eyebrow="Southeastern Pennsylvania" title="Building decks across Berks, Montgomery, and Chester Counties" />
+        <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">
+          Our shop is in the Douglassville area, and we regularly build decks throughout Berks, Montgomery, and Chester Counties. Our process is designed to make working with a local deck builder simple, whether your home is five minutes away or a bit farther out. We handle design, permitting, and construction with the same care on every project.
+        </p>
+        <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+          Every township and borough has its own permit office, zoning rules, and inspection schedule, and many neighborhoods have HOA guidelines too. We work with them all the time, so you don't have to figure out setbacks, drawings, or inspection dates on your own.
+        </p>
+      </div>
+      <Photo photo={PHOTO.limerick[9]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading eyebrow="Permits" title="How we handle your township's permit" />
+    <div class="mt-8 max-w-3xl"><StepList steps={PERMIT_STEPS} /></div>
   </section>
   <CtaBand />
 </BaseLayout>

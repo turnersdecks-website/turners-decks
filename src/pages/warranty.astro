@@ -1,11 +1,47 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import ContentBlock from "@/components/sections/ContentBlock.astro";
+import Photo from "@/components/sections/Photo.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
+import { PHOTO } from "@/lib/photos";
+import { SITE } from "@/lib/site";
+import type { Block } from "@/lib/old-pages";
 
 const items = [
   { title: "12-month workmanship warranty", body: "Covers our work on your deck for the first 12 months after the build." },
   { title: "Manufacturer warranties up to 50 years", body: "Decking materials carry their own manufacturer warranty. Length depends on the material you choose." },
+];
+
+// General care guidance (not warranty terms). Always follow the manufacturer's care guide for your boards.
+const care: Block[] = [
+  {
+    heading: "Composite and PVC decks",
+    lists: [
+      {
+        items: [
+          "Rinse and wash a couple of times a year with mild soap, warm water, and a soft-bristle brush",
+          "Clear leaves and debris so water can drain between the boards",
+          "Use a plastic shovel for snow; skip metal blades and rock salt that can scratch the surface",
+          "Check your manufacturer's care guide before using any cleaner or pressure washer",
+        ],
+      },
+    ],
+  },
+  {
+    heading: "Pressure-treated and natural wood decks",
+    lists: [
+      {
+        items: [
+          "Let new pressure-treated lumber dry out before the first stain or sealer",
+          "Clean and re-seal or re-stain every couple of years, or when water stops beading",
+          "Keep planters and furniture off the same spot for long periods so boards dry evenly",
+          "Watch for loose fasteners or splinters and take care of them early",
+        ],
+      },
+    ],
+  },
 ];
 ---
 
@@ -13,7 +49,8 @@ const items = [
   title="Deck Warranty"
   description="Every Turner's Decks build includes a 12-month workmanship warranty, plus manufacturer material warranties of up to 50 years."
 >
-  <PageHero eyebrow="Why us · Warranty" title="We stand behind our work" intro="Two layers of coverage on every deck." />
+  <PageHero photo={PHOTO.woodToTrex[1]} eyebrow="Why us · Warranty" title="We stand behind our work" intro="Two layers of coverage on every deck." />
+
   <section class="section container-site">
     <div class="divided">
       {items.map(({ title, body }) => (
@@ -23,7 +60,32 @@ const items = [
         </div>
       ))}
     </div>
-    {/* [CONTENT] full warranty terms */}
   </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site split items-start">
+      <div class="max-w-3xl">
+        <SectionHeading eyebrow="How it works" title="Two kinds of coverage" />
+        <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">
+          Our workmanship warranty covers how we built your deck. The manufacturer's warranty covers the decking boards and other materials themselves, and its length depends on the product you choose. Many composite and PVC lines carry warranties of 25 to 50 years.
+        </p>
+        <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+          Every deck we build is permitted and inspected by the township, so the framing, footings, and railings are checked against code before you start using it.
+        </p>
+        <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+          If something doesn't look right, call or text us at <a href={SITE.phoneHref} class="link">{SITE.phone}</a> and we'll take a look. Have your build date handy if you have it.
+        </p>
+      </div>
+      <Photo photo={PHOTO.limerick[13]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading eyebrow="Deck care" title="Keep your deck looking new" intro="A little care goes a long way. These are general tips; your material's care guide comes first." />
+    <div class="mt-12 grid gap-10 md:grid-cols-2">
+      {care.map((b) => <ContentBlock block={b} />)}
+    </div>
+  </section>
+
   <CtaBand />
 </BaseLayout>
