@@ -4,12 +4,26 @@ import PageHero from "@/components/sections/PageHero.astro";
 import FinancingBlock from "@/components/sections/FinancingBlock.astro";
 import Estimator from "@/components/islands/Estimator";
 import { SITE } from "@/lib/site";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import Faq from "@/components/sections/Faq.astro";
+import Button from "@/components/Button.astro";
+import { faqSchema } from "@/lib/seo";
+
+const faqs = [
+  { q: "How accurate is the online estimate?", a: "It gives a realistic preliminary range for early budgeting. Your final price comes from a free on-site estimate, where we measure and look at site conditions, structure, access, and permit requirements." },
+  { q: "What affects the price of a deck the most?", a: "Size, decking material, how high the deck sits off the ground, railings, and stairs. Site access, existing conditions, and township requirements matter too." },
+  { q: "Does the range include permits?", a: "The range includes a standard permit allowance. We handle the permit application, township approval, and inspections for you." },
+  { q: "Does it include removing my old deck?", a: "If you tell the estimator you're replacing a deck, removal and disposal of the old deck are included in the range." },
+  { q: "What happens after I get my range?", a: "If you send us your answers, our team reaches out to book a free on-site estimate. Want to talk sooner? Call or text us any time." },
+  { q: "Do you offer financing?", a: "Yes, through Acorn Finance. Checking your rate won't affect your credit score." },
+];
 ---
 
 <BaseLayout
   title="Deck Price Estimator | Turner's Decks"
   description="Plan your deck budget. Answer a few questions about size, materials, railings, and stairs to see a realistic preliminary price range from Turner's Decks."
   chip="call"
+  schema={faqSchema(faqs)}
 >
   <PageHero eyebrow="Price estimator" title="Deck price estimator">
     <p class="text-sm">Rather talk it through? <a href={SITE.phoneHref} class="link">Call {SITE.phone}</a></p>
@@ -19,6 +33,26 @@ import { SITE } from "@/lib/site";
       {/* The intro, questions and prices come from the CRM's Published version (the island loads them). */}
       <Estimator client:load />
       <div class="mt-8"><FinancingBlock level={2} /></div>
+    </div>
+  </section>
+
+  <section class="section container-site split items-start">
+    <div class="max-w-3xl">
+      <SectionHeading eyebrow="How it works" title="A realistic range in a couple of minutes" />
+      <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Answer a few questions about your project: the type of deck, roughly how big, the decking material, how high it sits, and whether you want railings and stairs. The estimator uses pricing from real decks we've built in Berks, Montgomery, and Chester Counties to give you a preliminary price range.
+      </p>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        It's a planning tool, not a quote. When you're ready, we'll come out for a free on-site estimate, measure, and confirm the price.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <Button href="/deck-materials-guide" variant="outline" size="lg">Compare Materials</Button>
+        <Button href="/gallery" variant="outline" size="lg">See Our Projects</Button>
+      </div>
+    </div>
+    <div>
+      <h2 class="display-2">Questions</h2>
+      <Faq faqs={faqs} />
     </div>
   </section>
 </BaseLayout>

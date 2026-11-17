@@ -2,9 +2,35 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/sections/PageHero.astro";
 import WhyUsGrid from "@/components/sections/WhyUsGrid.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import ContentBlock from "@/components/sections/ContentBlock.astro";
+import Photo from "@/components/sections/Photo.astro";
+import Button from "@/components/Button.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
 import { PHOTO } from "@/lib/photos";
 import { SITE } from "@/lib/site";
+import type { Block } from "@/lib/old-pages";
+
+// Story copy adapted from the old site's About page (founder story kept; no promise that Pat
+// personally runs every job, since the plan is to move him out of the field).
+const options: Block[] = [
+  {
+    heading: "Composite and PVC decking",
+    body: ["Industry-leading brands like Trex and TimberTech give you a durable, low-maintenance deck that keeps its color and never needs staining. A good fit for families who want long-term performance without the upkeep."],
+  },
+  {
+    heading: "Wood decking",
+    body: ["Pressure-treated lumber is the durable, budget-friendly choice. For a natural look with more warmth and character, cedar and mahogany are available too."],
+  },
+  {
+    heading: "Railings",
+    body: ["Aluminum, composite, cable, or vinyl railings, in sleek modern profiles or traditional looks, chosen for safety and to match your home."],
+  },
+  {
+    heading: "Deck lighting",
+    body: ["Step lights, post-cap lights, or integrated LED systems for safety and nighttime atmosphere."],
+  },
+];
 ---
 
 <BaseLayout
@@ -12,9 +38,68 @@ import { SITE } from "@/lib/site";
   description="Turner's Decks was founded in 2018 by professional carpenter Pat Turner in Douglassville, PA. New decks, replacements, and pool decks, permits handled."
 >
   <PageHero photo={PHOTO.elevatedStairs} eyebrow="Why us · About" title="A local deck company, started by a carpenter" intro={`${SITE.owner} founded Turner's Decks in Douglassville in ${SITE.since}. We build decks, and that's all we do.`} />
-  <section class="section container-site">
-    <WhyUsGrid title="What sets us apart" cta={{ href: "/our-process", label: "See Our Process" }} />
-    {/* [CONTENT] a short story about Pat and the team, plus a team photo */}
+
+  <section class="section container-site split items-start">
+    <div class="max-w-3xl">
+      <SectionHeading eyebrow="Our story" title="About Turner's Decks" />
+      <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Turner's Decks is a locally owned deck building company based in Douglassville, PA, founded by professional carpenter {SITE.owner}. After years working as a general contractor, Pat chose to focus only on deck design and construction: the part of the work he enjoys most, and where he can give homeowners the most value.
+      </p>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        By specializing in decks, we bring a higher level of craftsmanship, attention to detail, and expertise to every project. We build with composite, PVC, pressure-treated, and hardwood materials to create outdoor spaces that fit each home and how it's used.
+      </p>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        What sets us apart is doing things the right way, never the fastest or cheapest way. That means sturdy framing built to code, clean finishes, permits handled from application to final inspection, and clear communication from the first conversation to the final walkthrough. No sales team in the middle.
+      </p>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        We proudly serve homeowners throughout Berks, Montgomery, and Chester Counties, and we're committed to building decks that are functional, well built, and made to last.
+      </p>
+    </div>
+    <Photo photo={PHOTO.limerick[2]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
   </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <WhyUsGrid title="What sets us apart" cta={{ href: "/our-process", label: "See Our Process" }} />
+    </div>
+  </section>
+
+  <section class="section container-site">
+    <SectionHeading
+      eyebrow="Materials & options"
+      title="Built with materials that fit your home"
+      intro="Your deck should fit your style, your budget, and the way your family lives outside. We'll guide you through every choice so your new deck looks good and performs for years."
+    />
+    <div class="mt-12 grid gap-10 md:grid-cols-2">
+      {options.map((b) => <ContentBlock block={b} />)}
+    </div>
+    <div class="mt-10 flex flex-wrap gap-3">
+      <Button href="/deck-materials-guide" variant="outline" size="lg">Deck Materials Guide</Button>
+      <Button href="/gallery" variant="outline" size="lg">See Our Projects</Button>
+    </div>
+  </section>
+
+  <section class="section bg-secondary">
+    <div class="container-site split">
+      <div>
+        <SectionHeading eyebrow="What to expect" title="Working with us" />
+        <ul class="mt-8 grid gap-3 text-[1.0625rem] leading-snug">
+          {[
+            "Clear, honest guidance from the first conversation",
+            "Thoughtful design that fits your home and lifestyle",
+            "Quality materials selected for long-term performance",
+            "Permits, drawings, and inspections handled for you",
+            "A clean, organized job site",
+            `A 12-month workmanship warranty, plus manufacturer warranties on materials`,
+          ].map((t) => (
+            <li class="flex items-baseline gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />{t}</li>
+          ))}
+        </ul>
+        <p class="mt-6 text-sm text-muted-foreground">PA Home Improvement Contractor #{SITE.hic}</p>
+      </div>
+      <Photo photo={PHOTO.coveredPorch} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </div>
+  </section>
+
   <CtaBand />
 </BaseLayout>

@@ -130,15 +130,15 @@ export const PHOTO = {
   secondStory: p(img("second-story-deck-white-railing-stairs"), "Second-story deck with white railing and stairs"),
 };
 
-export type Project = { title: string; type: string; photos: Photo[]; before?: Photo; after?: Photo };
+export type Project = { title: string; type: string; blurb?: string; photos: Photo[]; before?: Photo; after?: Photo };
 
 export const PROJECTS: Project[] = [
-  { title: "Composite pool deck replacement", type: "Pool deck", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide, PHOTO.poolTowardHouse, PHOTO.poolCorner] },
-  { title: "Composite deck replacement with white railing", type: "Deck replacement", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck, PHOTO.replacementLattice] },
-  { title: "Ground-level composite deck", type: "New deck", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew, PHOTO.groundSide, PHOTO.wrappedSteps] },
-  { title: "Elevated pressure-treated deck by the pond", type: "New deck", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.elevatedTrees, PHOTO.elevatedRail, PHOTO.framing] },
-  { title: "Stained pressure-treated deck with horizontal railings", type: "New deck", photos: [PHOTO.stainedPt, PHOTO.stainedPtSeating, PHOTO.stainedPtYard, PHOTO.stainedPtStairs] },
-  { title: "Pool deck stair replacement", type: "Pool deck", before: PHOTO.poolStairsBefore, after: PHOTO.poolStairsAfter, photos: [] },
+  { title: "Composite pool deck replacement", type: "Pool deck", blurb: "An old wood pool deck replaced with gray composite decking, white vinyl railing, and black balusters, with plenty of room to lounge around an above-ground pool.", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide, PHOTO.poolTowardHouse, PHOTO.poolCorner] },
+  { title: "Composite deck replacement with white railing", type: "Deck replacement", blurb: "A worn wood deck torn out and rebuilt with brown composite decking and white vinyl railing, keeping the original footprint.", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck, PHOTO.replacementLattice] },
+  { title: "Ground-level composite deck", type: "New deck", blurb: "A new gray composite deck close to the ground, with wrapped steps on every side and a picture-frame border.", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew, PHOTO.groundSide, PHOTO.wrappedSteps] },
+  { title: "Elevated pressure-treated deck by the pond", type: "New deck", blurb: "A tall, freestanding pressure-treated deck with a long staircase, built among willow trees to overlook a pond.", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.elevatedTrees, PHOTO.elevatedRail, PHOTO.framing] },
+  { title: "Stained pressure-treated deck with horizontal railings", type: "New deck", blurb: "A compact, budget-friendly pressure-treated deck finished with stain and horizontal wood railings.", photos: [PHOTO.stainedPt, PHOTO.stainedPtSeating, PHOTO.stainedPtYard, PHOTO.stainedPtStairs] },
+  { title: "Pool deck stair replacement", type: "Pool deck", blurb: "Old pool deck stairs replaced with composite treads and white vinyl railing.", before: PHOTO.poolStairsBefore, after: PHOTO.poolStairsAfter, photos: [] },
 ];
 
 export const SERVICE_IMAGES: Record<string, Photo> = {

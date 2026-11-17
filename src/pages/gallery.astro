@@ -18,6 +18,16 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
 >
   <PageHero photo={PHOTO.replacementAfter} eyebrow="Our projects" title="Recent decks we've built" intro="Real projects from across Berks, Montgomery, and Chester Counties." />
   <section class="section container-site">
+    <div class="max-w-3xl">
+      <p class="text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Every photo here is a deck our team built: new decks, deck replacements, and pool decks in composite, PVC, and pressure-treated wood. You'll see the details that come standard on our decks, like picture-frame borders, joist protection tape, and color-matched or white fascia, plus the railings and stairs homeowners chose to finish them off.
+      </p>
+      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
+        Want to know what a deck like one of these would cost? Try the <a href="/estimator" class="link">price estimator</a> for a preliminary range, or read the project spotlights below for sizes and cost ranges on three recent builds.
+      </p>
+    </div>
+  </section>
+  <section class="section container-site">
     <SectionHeading eyebrow="Before & after" title="See the difference" intro="Drag each slider to compare." />
     <div class="mt-12 grid gap-x-7 gap-y-10 lg:grid-cols-2">
       {pairs.map((p) => (
@@ -26,6 +36,7 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
           <figcaption class="mt-4">
             <p class="eyebrow">{p.type}</p>
             <p class="mt-1 text-xl font-medium leading-snug text-primary">{p.title}</p>
+            {p.blurb && <p class="mt-2 text-muted-foreground">{p.blurb}</p>}
           </figcaption>
         </figure>
       ))}
@@ -47,7 +58,7 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
   {withPhotos.map((p, i) => (
     <section class:list={["section", { "bg-secondary": i % 2 === 1 }]}>
       <div class="container-site">
-        <SectionHeading eyebrow={p.type} title={p.title} />
+        <SectionHeading eyebrow={p.type} title={p.title} intro={p.blurb} />
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {p.photos.map((ph) => <Photo photo={ph} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}
         </div>
