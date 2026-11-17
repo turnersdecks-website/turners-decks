@@ -1,0 +1,7 @@
+# Keep the Cloudflare Pages copies (staging and preview builds) out of Google.
+# turnersdecks.com itself is not affected.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex

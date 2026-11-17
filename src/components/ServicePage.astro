@@ -10,6 +10,7 @@ import FinancingBlock from "@/components/sections/FinancingBlock.astro";
 import ContentBlock from "@/components/sections/ContentBlock.astro";
 import QuoteForm from "@/components/islands/QuoteForm";
 import { PERMIT_STEPS } from "@/lib/site";
+import { breadcrumbSchema, serviceSchema } from "@/lib/seo";
 import { PHOTO } from "@/lib/photos";
 import { PROJECT_PAGES, SERVICE_PAGES, type ServicePageSlug } from "@/lib/old-pages";
 
@@ -19,7 +20,14 @@ const project = PROJECT_PAGES[c.recent.project];
 const [first, second, ...rest] = c.blocks;
 ---
 
-<BaseLayout title={c.metaTitle} description={c.metaDesc}>
+<BaseLayout
+  title={c.metaTitle}
+  description={c.metaDesc}
+  schema={[
+    serviceSchema(c.title, c.metaDesc, `/${c.slug}`),
+    breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Our Decks", path: "/decks" }, { name: c.title, path: `/${c.slug}` }]),
+  ]}
+>
   <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1} intro={c.intro} note="Your request goes straight to our team.">
     <Button href="#quote" variant="light" size="lg">Get a Free Estimate</Button>
     <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
