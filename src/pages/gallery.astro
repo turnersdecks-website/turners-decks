@@ -6,6 +6,7 @@ import BeforeAfterSlider from "@/components/sections/BeforeAfterSlider.astro";
 import Photo from "@/components/sections/Photo.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
 import { PHOTO, PROJECTS } from "@/lib/photos";
+import { PROJECT_LIST } from "@/lib/old-pages";
 
 const pairs = PROJECTS.filter((p) => p.before && p.after);
 const withPhotos = PROJECTS.filter((p) => p.photos.length);
@@ -30,8 +31,21 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
       ))}
     </div>
   </section>
+  <section class="section bg-secondary">
+    <div class="container-site">
+      <SectionHeading eyebrow="Project spotlights" title="The full story, with sizes and cost ranges" />
+      <div class="mt-10 grid gap-7 md:grid-cols-3">
+        {PROJECT_LIST.map((p) => (
+          <a href={`/${p.slug}`} class="group block">
+            <Photo photo={p.hero} class="aspect-[4/3] w-full rounded-2xl object-cover" />
+            <p class="mt-4 text-xl font-medium leading-snug text-primary group-hover:underline">{p.card}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
   {withPhotos.map((p, i) => (
-    <section class:list={["section", { "bg-secondary": i % 2 === 0 }]}>
+    <section class:list={["section", { "bg-secondary": i % 2 === 1 }]}>
       <div class="container-site">
         <SectionHeading eyebrow={p.type} title={p.title} />
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

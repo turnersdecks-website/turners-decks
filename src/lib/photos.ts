@@ -115,15 +115,29 @@ export const PHOTO = {
   mahoganyPorch: p(img("mahogany-porch-floor"), "Mahogany porch floor with a herringbone corner pattern"),
   coveredPorch: p(img("covered-porch-mahogany-white-railing"), "Covered porch with mahogany decking and white railing"),
   grayPatioDeck: p(img("gray-composite-deck-patio-furniture"), "Gray composite deck with patio furniture and an umbrella"),
+  // From the 2026 job folders (Drive), names and addresses left out.
+  stainedPt: p(img("stained-pt-deck-horizontal-railing"), "Stained pressure-treated deck with horizontal wood railings and stairs"),
+  stainedPtSeating: p(img("stained-pt-deck-horizontal-railing-seating"), "Stained pressure-treated deck with outdoor seating"),
+  stainedPtYard: p(img("stained-pt-deck-horizontal-railing-yard"), "Stained pressure-treated deck and stairs seen from the yard"),
+  stainedPtStairs: p(img("stained-pt-deck-stairs-closeup"), "Stained wood stairs with horizontal railings"),
+  poolTowardHouse: p(img("composite-pool-deck-toward-house"), "Composite pool deck looking back toward the house"),
+  poolCorner: p(img("composite-pool-deck-corner-railing"), "Corner of a composite pool deck with white railing and black balusters"),
+  groundSide: p(img("ground-level-composite-deck-side"), "Side view of a ground-level gray composite deck"),
+  wrappedSteps: p(img("composite-deck-wrapped-steps-closeup"), "Wrapped composite steps with a picture-frame border"),
+  elevatedTrees: p(img("elevated-pt-deck-under-trees"), "Elevated pressure-treated deck under willow trees"),
+  elevatedRail: p(img("elevated-deck-railing-pond-view"), "View of the pond from an elevated deck railing"),
+  replacementLattice: p(img("composite-deck-white-railing-lattice"), "Composite deck with white railing and lattice skirting"),
+  secondStory: p(img("second-story-deck-white-railing-stairs"), "Second-story deck with white railing and stairs"),
 };
 
 export type Project = { title: string; type: string; photos: Photo[]; before?: Photo; after?: Photo };
 
 export const PROJECTS: Project[] = [
-  { title: "Composite pool deck replacement", type: "Pool deck", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide] },
-  { title: "Composite deck replacement with white railing", type: "Deck replacement", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck] },
-  { title: "Ground-level composite deck", type: "New deck", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew] },
-  { title: "Elevated pressure-treated deck by the pond", type: "New deck", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.framing] },
+  { title: "Composite pool deck replacement", type: "Pool deck", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide, PHOTO.poolTowardHouse, PHOTO.poolCorner] },
+  { title: "Composite deck replacement with white railing", type: "Deck replacement", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck, PHOTO.replacementLattice] },
+  { title: "Ground-level composite deck", type: "New deck", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew, PHOTO.groundSide, PHOTO.wrappedSteps] },
+  { title: "Elevated pressure-treated deck by the pond", type: "New deck", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.elevatedTrees, PHOTO.elevatedRail, PHOTO.framing] },
+  { title: "Stained pressure-treated deck with horizontal railings", type: "New deck", photos: [PHOTO.stainedPt, PHOTO.stainedPtSeating, PHOTO.stainedPtYard, PHOTO.stainedPtStairs] },
   { title: "Pool deck stair replacement", type: "Pool deck", before: PHOTO.poolStairsBefore, after: PHOTO.poolStairsAfter, photos: [] },
 ];
 
