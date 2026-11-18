@@ -3,7 +3,7 @@
 // back (docs/adr/0003). This file is only the UI; no prices live on the site.
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Phone, Plus, Trash2 } from "lucide-react";
-import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, DeadlineFields, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { IntakeError, SubmissionKeys, estimatorPayload, fetchEstimator, submitToCrm, type EstimatorContact } from "@/lib/crm-intake";
 import {
@@ -266,6 +266,8 @@ function Wizard({ est }: { est: PublicEstimator }) {
       ...parsed.data,
       website: fd.website ?? "",
       timing: fd.timing ?? "",
+      deadline_reason: fd.deadline_reason,
+      deadline_date: fd.deadline_date,
       contact_method: fd.contact_method === "text" || fd.contact_method === "email" ? fd.contact_method : "phone",
       wants_financing: fd.financing === "on",
       sms_consent: fd.sms_consent === "on",
@@ -584,6 +586,7 @@ function ContactStep({ draft, errors, sending, serverError, onSubmit }: {
             <option>As soon as possible</option><option>Within 3 months</option><option>3–6 months</option><option>Next year</option><option>Just planning</option>
           </select>
         </div>
+        <DeadlineFields idPrefix="e" selectClassName="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base" inputClassName="mt-1.5" defaults={{ deadline_reason: d.deadline_reason, deadline_date: d.deadline_date }} />
         <div className="sm:col-span-2">
           <Label htmlFor="e-notes">Anything else we should know? (optional)</Label>
           <Textarea id="e-notes" name="notes" maxLength={2000} rows={3} defaultValue={d.notes} className="mt-1.5" />

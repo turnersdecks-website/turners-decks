@@ -46,9 +46,24 @@ export type ContactFields = {
   sms_consent?: boolean;
 };
 
-export type QuoteFields = ContactFields & { street?: string; town?: string; project_type: string; approx_size?: string; material?: string; notes?: string };
+/** "Need it done by a date?" on both forms: why, and the target date (YYYY-MM-DD). Both optional. */
+export type DeadlineFields = { deadline_reason?: string; deadline_date?: string };
 
-export type EstimatorContact = ContactFields & {
+export const DEADLINE_REASONS = ["A party or special event", "Selling the house", "Pool opening", "Before summer", "Other"] as const;
+
+/** One line for the CRM's timeframe ("Selling the house, by Apr 20, 2027"), or undefined when nothing was given. Pure. */
+export function deadlineText(f: DeadlineFields): string | undefined {
+  const reason = f.deadline_reason?.trim();
+  const iso = f.deadline_date?.trim();
+  const m = iso && /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const date = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : undefined;
+  if (!reason && !date) return undefined;
+  return trimmed([reason, date && `by ${date}`].filter(Boolean).join(", "), 100);
+}
+
+export type QuoteFields = ContactFields & DeadlineFields & { street?: string; town?: string; project_type: string; approx_size?: string; material?: string; notes?: string };
+
+export type EstimatorContact = ContactFields & DeadlineFields & {
   timing: string;
   contact_method: "phone" | "text" | "email";
   wants_financing: boolean;
@@ -116,6 +131,7 @@ export function quotePayload(f: QuoteFields, ctx: PayloadContext) {
     project_type: trimmed(f.project_type, 60),
     approx_size: trimmed(f.approx_size, 60),
     material: trimmed(f.material, 40),
+    timeframe: deadlineText(f),
     notes: trimmed(f.notes, 2000),
     address: quoteAddress(f),
   };
@@ -137,6 +153,7 @@ export function estimatorPayload(f: EstimatorContact, e: EstimatorAnswers, ctx: 
     ...envelope(ctx),
     ...contactPart(f),
     timing: trimmed(f.timing, 40),
+    timeframe: trimmed([trimmed(f.timing, 40), deadlineText(f)].filter(Boolean).join("; "), 100),
     contact_method: f.contact_method,
     wants_financing: f.wants_financing,
     notes: trimmed(f.notes, 2000),

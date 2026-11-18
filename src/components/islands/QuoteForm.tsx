@@ -1,7 +1,7 @@
 // "Get a free estimate" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
 import { useEffect, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Button, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, DeadlineFields, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
 import { fieldErrors, quoteSchema } from "@/lib/quote";
@@ -119,10 +119,11 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
             <option>Not sure</option>
           </select>
         </div>
+        <DeadlineFields idPrefix="q" selectClassName={`mt-1.5 ${selectCls} ${tone.field}`} inputClassName={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} />
       </div>
       <div>
         <Label htmlFor="notes">Notes (optional)</Label>
-        <Textarea id="notes" name="notes" rows={4} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, timeline, or anything else." />
+        <Textarea id="notes" name="notes" rows={4} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, or anything else." />
       </div>
       <SmsConsent id="q-sms_consent" />
       <TurnstileBox boxRef={turnstile.ref} />
