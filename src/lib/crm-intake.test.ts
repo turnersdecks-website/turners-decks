@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IntakeError, SubmissionKeys, attributionFrom, estimatorPayload, fetchEstimator, quotePayload, submitToCrm, type IntakePayload } from "./crm-intake";
+import { IntakeError, SubmissionKeys, attributionFrom, deadlineText, estimatorPayload, fetchEstimator, quotePayload, submitToCrm, type IntakePayload } from "./crm-intake";
 import { SMS_CONSENT_VERSION } from "./sms-consent";
 
 const ctx = { submissionKey: "key-1", turnstileToken: "tok", href: "https://turnersdecks.com/estimator?utm_source=google&gclid=abc", referrer: "https://www.google.com/", viewportWidth: 390 };
@@ -205,5 +205,23 @@ describe("quoteAddress", () => {
     expect(quoteAddress({ street: "12 Main St", town: "Douglassville", zip: "19518" })).toBe("12 Main St, Douglassville, PA 19518");
     expect(quoteAddress({ street: "12 Main St", zip: "19518" })).toBe("12 Main St, PA 19518");
     expect(quoteAddress({ town: "Douglassville", zip: "19518" })).toBeUndefined();
+  });
+});
+
+describe("deadlineText", () => {
+  it("joins the reason and a readable date", () => {
+    expect(deadlineText({ deadline_reason: "Selling the house", deadline_date: "2027-04-20" })).toBe("Selling the house, by Apr 20, 2027");
+  });
+  it("works with only one of the two, and is undefined with neither", () => {
+    expect(deadlineText({ deadline_reason: "Pool opening" })).toBe("Pool opening");
+    expect(deadlineText({ deadline_date: "2027-06-14" })).toBe("by Jun 14, 2027");
+    expect(deadlineText({ deadline_reason: " ", deadline_date: "not a date" })).toBeUndefined();
+    expect(deadlineText({})).toBeUndefined();
+  });
+  it("goes to the CRM as timeframe on both forms", () => {
+    const q = quotePayload({ ...contact, project_type: "New deck", deadline_reason: "A party or special event", deadline_date: "2027-06-14" }, ctx);
+    expect(q.timeframe).toBe("A party or special event, by Jun 14, 2027");
+    const e = estimatorPayload({ ...contact, timing: "Within 3 months", contact_method: "phone", wants_financing: false, deadline_reason: "Selling the house" }, { version: 1, answers: {}, defaulted: [] }, ctx);
+    expect(e.timeframe).toBe("Within 3 months; Selling the house");
   });
 });

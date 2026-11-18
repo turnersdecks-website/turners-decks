@@ -21,6 +21,8 @@ export const quoteSchema = contactSchema.extend({
   approx_size: z.string().trim().max(60).optional(),
   material: z.string().trim().max(40).optional(),
   notes: z.string().trim().max(2000).optional(),
+  deadline_reason: z.string().trim().max(60).optional(),
+  deadline_date: z.string().trim().max(10).optional(),
 });
 
 /** Field errors from a failed parse, first message per field. */
