@@ -6,7 +6,6 @@ import ContentBlock from "@/components/sections/ContentBlock.astro";
 import Photo from "@/components/sections/Photo.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
 import { PHOTO } from "@/lib/photos";
-import { SITE } from "@/lib/site";
 import type { Block } from "@/lib/old-pages";
 
 const items = [
@@ -71,9 +70,6 @@ const care: Block[] = [
         </p>
         <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
           Every deck we build is permitted and inspected by the township, so the framing, footings, and railings are checked against code before you start using it.
-        </p>
-        <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
-          If something doesn't look right, call or text us at <a href={SITE.phoneHref} class="link">{SITE.phone}</a> and we'll take a look. Have your build date handy if you have it.
         </p>
       </div>
       <Photo photo={PHOTO.limerick[13]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
