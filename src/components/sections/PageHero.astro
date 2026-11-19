@@ -17,7 +17,7 @@ const { eyebrow, title, intro, photo, note, tall = false } = Astro.props;
           alt={photo.alt}
           widths={[640, 1024, 1600, 1920]}
           sizes="100vw"
-          formats={["webp"]}
+          formats={["avif", "webp"]}
           loading="eager"
           fetchpriority="high"
           class="absolute inset-0 -z-10 h-full w-full object-cover"
