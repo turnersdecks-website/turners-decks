@@ -1,0 +1,16 @@
+---
+// Review mode only (/review pages): a thumbs up/down chip and note on one proposed section.
+// Votes stay in the reviewer's browser; the page's bar copies them all for pasting back to Claude.
+interface Props { id: string; label: string; status?: "new" | "changed" | "same" }
+const { id, label, status = "new" } = Astro.props;
+---
+
+<div class="review-section relative" data-vote={id} data-label={label}>
+  <div class="review-chip">
+    <span class="review-tag">{status === "new" ? "New" : status === "changed" ? "Changed" : "Same as now"} · {label}</span>
+    <button type="button" data-v="up" aria-label={`Thumbs up: ${label}`}>👍</button>
+    <button type="button" data-v="down" aria-label={`Thumbs down: ${label}`}>👎</button>
+    <button type="button" data-v="note" aria-label={`Add a note: ${label}`}>Note</button>
+  </div>
+  <slot />
+</div>

@@ -26,7 +26,7 @@ export default defineConfig({
   // URLs without a trailing slash (/pool-decks), same as the Lovable site.
   trailingSlash: "never",
   build: { format: "file" },
-  integrations: [react(), sitemap(), launchCheck],
+  integrations: [react(), sitemap({ filter: (page) => !page.includes("/review/") }), launchCheck],
   vite: {
     plugins: [tailwindcss()],
   },
