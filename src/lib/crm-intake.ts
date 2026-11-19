@@ -259,13 +259,12 @@ export async function submitToCrm(payload: IntakePayload, opts: SubmitOptions = 
 type Attempt = { kind: "retry"; code: string } | { kind: "answer"; status: number; json: Record<string, unknown> };
 
 async function postOnce(doFetch: Fetch, url: string, body: string, timeoutMs: number): Promise<Attempt> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const signal = AbortSignal.timeout(timeoutMs);
   try {
     const res = await doFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
-      signal: controller.signal,
+      signal,
       body,
     });
     if (res.status >= 500) return { kind: "retry", code: `http_${res.status}` };
@@ -284,9 +283,7 @@ async function postOnce(doFetch: Fetch, url: string, body: string, timeoutMs: nu
     }
     return { kind: "answer", status: res.status, json: json as Record<string, unknown> };
   } catch {
-    return { kind: "retry", code: controller.signal.aborted ? "timeout" : "network_error" };
-  } finally {
-    clearTimeout(timer);
+    return { kind: "retry", code: signal.aborted ? "timeout" : "network_error" };
   }
 }
 
@@ -297,17 +294,11 @@ const isStringMap = (x: unknown): x is Record<string, string> =>
 export async function fetchEstimator(baseUrl: string = CRM_URL, doFetch: Fetch = (input, init) => fetch(input, init)): Promise<PublicEstimator> {
   const base = baseUrl.replace(/\/+$/, "");
   if (!base) throw new Error("estimator_not_configured");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const res = await doFetch(`${base}/api/public/estimator`, { headers: { Accept: "application/json" }, signal: controller.signal });
-    if (!res.ok) throw new Error(`estimator_http_${res.status}`);
-    const doc = parsePublicEstimator(await res.json().catch(() => null));
-    if (!doc) throw new Error("estimator_invalid");
-    return doc;
-  } finally {
-    clearTimeout(timer);
-  }
+  const res = await doFetch(`${base}/api/public/estimator`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (!res.ok) throw new Error(`estimator_http_${res.status}`);
+  const doc = parsePublicEstimator(await res.json().catch(() => null));
+  if (!doc) throw new Error("estimator_invalid");
+  return doc;
 }
 
 /** Keeps one submission_key per logical submission: a new one whenever the answers change. */
