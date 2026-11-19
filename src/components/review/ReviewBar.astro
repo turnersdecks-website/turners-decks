@@ -1,0 +1,67 @@
+---
+// Review mode only: styles for the vote chips, a sticky bar with the count, and "Copy my votes".
+interface Props { page: string }
+const { page } = Astro.props;
+---
+
+<div id="review-bar" data-page={page}>
+  <span><strong>Review mode</strong> · <span id="review-count">0</span> sections rated</span>
+  <button type="button" id="review-copy">Copy my votes</button>
+</div>
+
+<style is:global>
+  .review-section { outline: 2px dashed transparent; outline-offset: -6px; }
+  .review-section:hover { outline-color: #c9a227; }
+  .review-section[data-state="up"] { outline-color: #2e7d32; }
+  .review-section[data-state="down"] { outline-color: #c62828; }
+  .review-chip { position: absolute; top: 10px; right: 10px; z-index: 30; display: flex; gap: 4px; align-items: center;
+    background: #fff; color: #1d3058; border: 1px solid #d6d9e0; border-radius: 999px; padding: 4px 6px; font: 600 13px/1 Inter, sans-serif; box-shadow: 0 2px 8px rgb(0 0 0 / .12); }
+  .review-tag { padding: 0 6px; }
+  .review-chip button { border-radius: 999px; padding: 6px 9px; background: #f2f3f6; cursor: pointer; }
+  .review-chip button[aria-pressed="true"] { background: #1d3058; color: #fff; }
+  #review-bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60; display: flex; gap: 12px; align-items: center;
+    background: #1d3058; color: #fff; border-radius: 999px; padding: 10px 12px 10px 18px; font: 14px/1.2 Inter, sans-serif; box-shadow: 0 4px 16px rgb(0 0 0 / .25); }
+  #review-bar button { background: #fff; color: #1d3058; border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+</style>
+
+<script is:inline>
+  (() => {
+    const bar = document.getElementById("review-bar");
+    const key = "td-review:" + bar.dataset.page;
+    let votes = {};
+    try { votes = JSON.parse(localStorage.getItem(key) || "{}"); } catch {}
+    const save = () => { try { localStorage.setItem(key, JSON.stringify(votes)); } catch {} };
+    const paint = () => {
+      document.querySelectorAll("[data-vote]").forEach((s) => {
+        const v = votes[s.dataset.vote] || {};
+        s.dataset.state = v.vote || "";
+        s.querySelector('[data-v="up"]').setAttribute("aria-pressed", String(v.vote === "up"));
+        s.querySelector('[data-v="down"]').setAttribute("aria-pressed", String(v.vote === "down"));
+        s.querySelector('[data-v="note"]').textContent = v.note ? "Note ✓" : "Note";
+      });
+      document.getElementById("review-count").textContent = Object.values(votes).filter((v) => v.vote || v.note).length;
+    };
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest(".review-chip button");
+      if (!b) return;
+      const s = b.closest("[data-vote]");
+      const v = (votes[s.dataset.vote] ||= { label: s.dataset.label });
+      if (b.dataset.v === "note") {
+        const n = prompt("Note for: " + s.dataset.label, v.note || "");
+        if (n !== null) v.note = n.trim();
+      } else v.vote = v.vote === b.dataset.v ? "" : b.dataset.v;
+      save(); paint();
+    });
+    document.getElementById("review-copy").addEventListener("click", async () => {
+      const lines = [...document.querySelectorAll("[data-vote]")].map((s) => {
+        const v = votes[s.dataset.vote] || {};
+        const mark = v.vote === "up" ? "👍" : v.vote === "down" ? "👎" : "–";
+        return `${mark} ${s.dataset.label}${v.note ? ": " + v.note : ""}`;
+      });
+      const text = "Website review (" + bar.dataset.page + ")\n" + lines.join("\n");
+      try { await navigator.clipboard.writeText(text); document.getElementById("review-copy").textContent = "Copied, paste it to Claude"; }
+      catch { prompt("Copy this and paste it to Claude:", text); }
+    });
+    paint();
+  })();
+</script>

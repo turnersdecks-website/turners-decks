@@ -1,0 +1,196 @@
+---
+// Proposed home page, review mode (thumbs up/down per section). Not linked, not indexed, not in the sitemap.
+// Once sections are approved they move into src/pages/index.astro and this page goes away.
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
+import Photo from "@/components/sections/Photo.astro";
+import PageHero from "@/components/sections/PageHero.astro";
+import SectionHeading from "@/components/sections/SectionHeading.astro";
+import GoogleReviews from "@/components/sections/GoogleReviews.astro";
+import QuoteForm from "@/components/islands/QuoteForm";
+import Vote from "@/components/review/Vote.astro";
+import ReviewBar from "@/components/review/ReviewBar.astro";
+import { HERO, PHOTO } from "@/lib/photos";
+import { PROJECT_LIST } from "@/lib/old-pages";
+import { SITE } from "@/lib/site";
+
+const pains = [
+  "Soft boards, and a railing you don't trust with the kids",
+  "Staining every spring, and it still looks tired",
+  "Three contractors called, one called back",
+  "Quotes that don't add up the same way twice",
+];
+
+const avatars = [
+  { title: "Replacing an old deck", body: "Never stain again, on a frame built to last.", href: "/deck-replacement", photo: PHOTO.woodToTrexBefore },
+  { title: "A first deck for a newer home", body: "For the sliding door with nothing outside it.", href: "/new-deck-construction", photo: PHOTO.groundComposite },
+  { title: "Getting ready to sell", body: "A permitted, inspected deck before the listing photos.", href: "/deck-replacement", photo: PHOTO.limerick[2] },
+  { title: "A pool deck", body: "Safe, slip-resistant, and easy to keep clean.", href: "/pool-decks", photo: PHOTO.grayPool[0] },
+];
+
+const offer = [
+  { title: "Know your price before anyone visits", items: ["A price range in about 2 minutes, online", "Your estimate at the visit or the same day", "A picture of your deck, in your color"] },
+  { title: "You'll never wonder what's happening", items: ["A reply as soon as you reach out", "A text before every step", "A photo at the end of each build day"] },
+  { title: "Every piece of paperwork, handled", items: ["Plans, permit and inspections", "The closed permit, for your records", "Your HOA packet, if you need one"] },
+  { title: "Pay as we build", items: ["Nothing big up front", "Payments follow the work you can see", "The last payment waits until we've walked it together"] },
+  { title: "The clean finish", items: ["Your old deck hauled away", "A magnet sweep for screws", "Your deck packet, with the warranty registered for you"] },
+];
+
+const packages = [
+  { name: "The Solid Start Deck", tag: "Good", items: ["Pressure-treated or entry composite", "Standard vinyl or wood railing", "The Built-Right Standards"] },
+  { name: "The Weekend-Ready Deck", tag: "Better", items: ["Mid-line composite", "Black aluminum balusters", "Stair lights", "Stone underneath, with weed barrier", "A gate at the stairs"] },
+  { name: "The Show-Off Deck", tag: "Best", items: ["Premium composite or PVC", "Black aluminum or cable railing", "Post-cap lights and a drink rail", "White PVC post and beam wraps", "PVC skirting"] },
+];
+
+const standards = [
+  { name: "The Rot-Stop Joist Shield", body: "Protection tape on top of every joist, so water can't sit where the boards meet the frame." },
+  { name: "The Finished-Edge Picture Frame", body: "A border board around the whole deck that hides every cut end." },
+  { name: "The Clean-Line Fascia", body: "Color-matched or white fascia over the framing, so it looks finished from the yard." },
+];
+
+const ranges: Record<string, string> = {
+  "new-pool-deck-exeter-township-pa": "Low-to-mid $10,000s",
+  "wood-deck-replacement-exeter-township-pa": "Mid-$40,000s",
+  "composite-deck-construction-limerick-township-pa": "Mid-to-high $50,000s",
+};
+---
+
+<BaseLayout title="Review: proposed home page" description="Proposed home page for review." noindex>
+  <Vote id="hero" label="1. Hero: the dream outcome" status="changed">
+    <PageHero
+      tall
+      photo={HERO}
+      eyebrow={`Deck builder · ${SITE.city}, ${SITE.state} · Since ${SITE.since}`}
+      title="Douglassville's Trusted Deck Builder"
+      intro="Replace the deck you've stopped trusting with one you'll never stain again, without the contractor runaround."
+      note="Estimate at the visit or the same day · Permits handled · We text you at every step"
+    >
+      <Button href="/estimator" variant="light" size="lg">Get My Price in 2 Minutes</Button>
+      <Button href="#estimate" variant="outline-light" size="lg">Book a Free Visit</Button>
+    </PageHero>
+  </Vote>
+
+  <Vote id="pain" label="2. Sound familiar? (the pain)">
+    <section class="section container-site">
+      <div class="max-w-3xl">
+        <SectionHeading eyebrow="Sound familiar?" title="Getting a deck built shouldn't be this hard" />
+        <ul class="mt-8 grid gap-4 text-[1.1875rem] leading-snug">
+          {pains.map((p) => <li class="flex items-baseline gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />{p}</li>)}
+        </ul>
+        <p class="mt-8 text-[1.1875rem] font-medium text-primary">There's a better way to get a deck built.</p>
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="avatars" label="3. Which one are you? (the avatars)">
+    <section class="section bg-secondary">
+      <div class="container-site">
+        <SectionHeading eyebrow="Where are you starting?" title="Which one sounds like you?" />
+        <div class="mt-10 grid gap-7 sm:grid-cols-2 lg:grid-cols-4">
+          {avatars.map((a) => (
+            <a href={a.href} class="group block">
+              <Photo photo={a.photo} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-2xl object-cover" />
+              <h3 class="mt-4 text-xl leading-snug text-primary underline underline-offset-3 group-hover:decoration-2">{a.title}</h3>
+              <p class="mt-1 text-muted-foreground">{a.body}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="offer" label="4. The No-Runaround Deck Replacement Plan (the offer)">
+    <section class="section container-site">
+      <SectionHeading eyebrow="How we work" title="The No-Runaround Deck Replacement Plan" intro="Five things we do on every job, so getting a deck built feels easy." />
+      <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {offer.map((o, i) => (
+          <div class="rounded-2xl border border-border bg-card p-7">
+            <p class="eyebrow">0{i + 1}</p>
+            <h3 class="mt-2 text-2xl leading-tight text-primary">{o.title}</h3>
+            <ul class="mt-4 grid gap-2 text-muted-foreground">{o.items.map((it) => <li>{it}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="packages" label="5. Three ways to build (good, better, best)">
+    <section class="section bg-secondary">
+      <div class="container-site">
+        <SectionHeading eyebrow="The deck itself" title="Three ways to build" intro="Every package includes the permit, haul-away and daily photos. Your price comes from your size and site." />
+        <div class="mt-12 grid gap-6 lg:grid-cols-3">
+          {packages.map((p) => (
+            <div class:list={["rounded-2xl bg-card p-7", p.tag === "Better" ? "border-2 border-primary" : "border border-border"]}>
+              <p class="eyebrow">{p.tag}</p>
+              <h3 class="mt-2 text-2xl leading-tight text-primary">{p.name}</h3>
+              <ul class="mt-4 grid gap-2 text-muted-foreground">{p.items.map((it) => <li>{it}</li>)}</ul>
+              <Button href="/estimator" variant="outline" size="lg" class="mt-6">Get Your Price</Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="standards" label="6. The Built-Right Standards">
+    <section class="section container-site split">
+      <div>
+        <SectionHeading eyebrow="On every deck we build" title="The Built-Right Standards" intro="Your boards carry a manufacturer warranty of up to 50 years. We make sure the frame lasts just as long." />
+        <div class="mt-8 grid gap-6">
+          {standards.map((s) => (
+            <div>
+              <h3 class="text-xl text-primary">{s.name}</h3>
+              <p class="mt-1 text-muted-foreground">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Photo photo={PHOTO.limerick[14]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    </section>
+  </Vote>
+
+  <Vote id="proof" label="7. Real decks, real prices (proof)">
+    <section class="section on-dark bg-navy-deep">
+      <div class="container-site">
+        <div class="mb-12"><SectionHeading title="What customers say" /></div>
+        <GoogleReviews dark />
+        <h2 class="display-2 mt-20">Real decks, real prices</h2>
+        <div class="mt-10 grid gap-7 md:grid-cols-3">
+          {PROJECT_LIST.map((p) => (
+            <a href={`/${p.slug}`} class="group block">
+              <Photo photo={p.hero} class="aspect-[4/3] w-full rounded-2xl object-cover" />
+              <p class="mt-4 text-xl font-medium leading-snug group-hover:underline">{p.card}</p>
+              <p class="mt-1 text-muted-foreground">Projects like this: {ranges[p.slug]}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="promises" label="8. Our promises (short)">
+    <section class="section container-site">
+      <SectionHeading eyebrow="Our promises" title="In writing, on every job" />
+      <div class="mt-10 grid gap-8 md:grid-cols-3">
+        <div><h3 class="text-2xl text-primary">The price you sign is the price you pay</h3><p class="mt-2 text-muted-foreground">Anything that changes gets your OK, in writing, first.</p></div>
+        <div><h3 class="text-2xl text-primary">We walk it with you before the last payment</h3><p class="mt-2 text-muted-foreground">You pay the balance once you've seen the finished deck.</p></div>
+        <div><h3 class="text-2xl text-primary">Backed by a real warranty</h3><p class="mt-2 text-muted-foreground">Our workmanship warranty, plus manufacturer warranties registered for you. (Terms to confirm.)</p></div>
+      </div>
+    </section>
+  </Vote>
+
+  <Vote id="close" label="9. Close: capacity and next step">
+    <section id="estimate" class="section on-dark scroll-mt-4 bg-primary">
+      <div class="container-site split items-start">
+        <div>
+          <h2 class="display-2">Ready for a deck you're proud of?</h2>
+          <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">We build about 40 decks a year, March through November. Tell us about yours and we'll set up a free visit.</p>
+          <QuoteForm client:load onDark />
+        </div>
+        <Photo photo={PHOTO.compositeNew} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+      </div>
+    </section>
+  </Vote>
+
+  <ReviewBar page="home" />
+</BaseLayout>
