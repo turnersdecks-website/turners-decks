@@ -17,9 +17,10 @@ const { page } = Astro.props;
   .review-chip { position: absolute; top: 10px; right: 10px; z-index: 30; display: flex; gap: 4px; align-items: center;
     background: #fff; color: #1d3058; border: 1px solid #d6d9e0; border-radius: 999px; padding: 4px 6px; font: 600 13px/1 Inter, sans-serif; box-shadow: 0 2px 8px rgb(0 0 0 / .12); }
   .review-tag { padding: 0 6px; }
+  [data-vote="hero"] .review-chip { top: 120px; }
   .review-chip button { border-radius: 999px; padding: 6px 9px; background: #f2f3f6; cursor: pointer; }
   .review-chip button[aria-pressed="true"] { background: #1d3058; color: #fff; }
-  #review-bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60; display: flex; gap: 12px; align-items: center;
+  #review-bar { position: fixed; left: 16px; bottom: 16px; z-index: 60; display: flex; gap: 12px; align-items: center;
     background: #1d3058; color: #fff; border-radius: 999px; padding: 10px 12px 10px 18px; font: 14px/1.2 Inter, sans-serif; box-shadow: 0 4px 16px rgb(0 0 0 / .25); }
   #review-bar button { background: #fff; color: #1d3058; border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
 </style>
