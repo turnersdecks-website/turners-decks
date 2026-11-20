@@ -188,6 +188,8 @@ export const leads = sqliteTable(
     roofAnswersVersion: integer('roof_answers_version').notNull().default(0),
     /** The Customer this Lead became (set when it is won) or belongs to (a new Lead from a past Customer). */
     customerId: text('customer_id').references((): AnySQLiteColumn => customers.id, { onDelete: 'set null' }),
+    /** The booked consultation (appointments.server.ts); null = none booked. Its confirmation and reminder are outbox jobs. */
+    appointmentAt: integer('appointment_at', { mode: 'timestamp_ms' }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -368,7 +370,7 @@ export const notificationJobs = sqliteTable(
     subject: text('subject'),
     // How a finished job ended (JobOutcome type): `dead` state covers both a definite refusal (`failed`) and an
     // ambiguous give-up (`dead`). Null while unfinished, and for jobs finished before this column existed.
-    outcome: text('outcome', { enum: ['accepted', 'failed', 'dead'] }),
+    outcome: text('outcome', { enum: ['accepted', 'failed', 'dead', 'cancelled'] }),
   },
   (t) => [
     check('notification_jobs_state_check', sql`${t.state} in ('pending', 'claimed', 'sent', 'failed', 'dead')`),

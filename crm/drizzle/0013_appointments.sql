@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `appointment_at` integer;
