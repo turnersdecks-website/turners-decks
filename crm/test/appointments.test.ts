@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { getDb } from '#/db/client'
 import { REMINDER_BEFORE_MS, bookAppointment, cancelAppointment } from '#/lib/appointments.server'
 import { dispatchDueJobs } from '#/lib/outbox'
@@ -45,6 +45,9 @@ describe('Appointments', () => {
   it('the reminder email goes out once it is due, and not before', async () => {
     const now = Date.now()
     const at = now + 3 * DAY
+    const before = await env.DB.prepare('SELECT email FROM company_settings WHERE id = 1').first<string | null>('email')
+    await env.DB.prepare("UPDATE company_settings SET email = 'Office@example.com' WHERE id = 1").run()
+    onTestFinished(() => env.DB.prepare('UPDATE company_settings SET email = ? WHERE id = 1').bind(before).run().then(() => {}))
     const leadId = await insertLead({ firstName: 'Rita', email: `r-${crypto.randomUUID()}@example.com` })
     await bookAppointment(getDb(env.DB), env, { leadId, at, sendEmail: true, sendText: false }, null, now)
     const reminder = (await apptJobs(leadId)).find((j) => j.payload.which === 'reminder')!
@@ -54,6 +57,8 @@ describe('Appointments', () => {
     await dispatchDueJobs(sendingEnv, { fetch: resend.fetch, now: () => at - REMINDER_BEFORE_MS + 60_000 })
     expect(resend.callsFor(reminder.id)).toHaveLength(1)
     expect(resend.callsFor(reminder.id)[0].body.subject).toBe('See you tomorrow, Rita')
+    // The business inbox gets a blind copy of every Homeowner email.
+    expect(resend.callsFor(reminder.id)[0].body.bcc).toEqual(['office@example.com'])
   })
 
   it('moving the appointment cancels the old reminder; cancelling it leaves nothing waiting', async () => {

@@ -23,6 +23,8 @@ export type JobKind = {
   renderSms?: (payload: any, ctx: JobKindContext) => Promise<{ to: string; content: string } | null>
   onOutcome?: (outcome: JobOutcome, job: Job, ctx: JobKindContext, fence: SQL) => BatchItem<'sqlite'>[]
   sensitive?: boolean
+  /** Emails to a Homeowner: a blind copy goes to the company email (Settings), so the business inbox has a record. */
+  copyCompany?: boolean
 }
 
 // `to`/`subject`: the envelope frozen at enqueue (plan 006 S11), sent as-is. Absent on jobs queued before then.
@@ -91,7 +93,7 @@ export const JOB_KINDS: Record<string, JobKind> = {
   },
 
   // FLW-201: rendered and frozen at intake (src/lib/intake-estimate.ts > estimateEmail); sent exactly as stored.
-  estimate_email: { render: async (p: Email) => (p?.to ? p : null) },
+  estimate_email: { render: async (p: Email) => (p?.to ? p : null), copyCompany: true },
 
   // Texts from the Quo number (docs/adr/0004-quo-texting.md). Payload `{ to, content }` frozen at enqueue.
   // The instant reply to a website Lead who ticked "Text me about my project". Checked again at send time: the Lead
@@ -150,6 +152,7 @@ export const JOB_KINDS: Record<string, JobKind> = {
       return { to: p.to, subject: p.subject, text: p.text, ...(p.replyTo ? { replyTo: p.replyTo } : {}) }
     },
     onOutcome: (outcome, job, { db }, fence) => appointmentActivity(db, outcome, job, fence, 'email'),
+    copyCompany: true,
   },
   appointment_text: {
     async renderSms(p: { lead_id: string; at: number; to: string; content: string }, { db }) {
@@ -160,6 +163,7 @@ export const JOB_KINDS: Record<string, JobKind> = {
   },
 
   form_ack: {
+    copyCompany: true,
     async render(payload: LeadJobPayload, { db, env }) {
       const lead = await db.select().from(leads).where(eq(leads.id, payload.lead_id)).get()
       if (!lead) return null
