@@ -93,13 +93,18 @@ function LeadsPage() {
     }
   }
 
-  const alerts = [
-    cronStale && 'Background jobs have not run in the last 15 minutes. Emails may be delayed. Tell an admin.',
-    stuckJobs > 0 &&
-      `${stuckJobs === 1 ? '1 email has' : `${stuckJobs} emails have`} failed for over an hour. An admin can check the Worker logs.`,
-    stuckSubmissions > 0 &&
-      `${stuckSubmissions === 1 ? '1 website form has' : `${stuckSubmissions} website forms have`} not been processed for over 15 minutes. An admin can check Submissions.`,
-  ].filter((a): a is string => Boolean(a))
+  const alerts: { key: string; text: string; link?: { label: string; search: { tab: 'messages' } } }[] = [
+    cronStale && { key: 'cron', text: 'Background jobs have not run in the last 15 minutes. Emails may be delayed. Tell an admin.' },
+    stuckJobs > 0 && {
+      key: 'jobs',
+      text: `${stuckJobs === 1 ? '1 email or text has' : `${stuckJobs} emails or texts have`} failed for over an hour.`,
+      link: { label: 'See it in the Message log', search: { tab: 'messages' as const } },
+    },
+    stuckSubmissions > 0 && {
+      key: 'subs',
+      text: `${stuckSubmissions === 1 ? '1 website form has' : `${stuckSubmissions} website forms have`} not been processed for over 15 minutes. An admin can check Submissions.`,
+    },
+  ].filter((a): a is { key: string; text: string; link?: { label: string; search: { tab: 'messages' } } } => Boolean(a))
 
   const openCount = leads.filter((l) => isOpenStage(stageOf(l))).length
   const counts: Record<Show, number> = {
@@ -136,10 +141,17 @@ function LeadsPage() {
 
       {alerts.length > 0 && (
         <div className="space-y-2 border-b px-4 py-3 sm:px-6">
-          {alerts.map((text) => (
-            <Alert key={text} variant="destructive" className="bg-destructive/10">
+          {alerts.map((a) => (
+            <Alert key={a.key} variant="destructive" className="bg-destructive/10">
               <AlertCircle className="size-4" aria-hidden />
-              <AlertDescription>{text}</AlertDescription>
+              <AlertDescription>
+                {a.text}{' '}
+                {a.link && (
+                  <Link to="/settings" search={a.link.search} className="font-medium underline underline-offset-2">
+                    {a.link.label}
+                  </Link>
+                )}
+              </AlertDescription>
             </Alert>
           ))}
         </div>

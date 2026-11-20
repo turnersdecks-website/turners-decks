@@ -370,7 +370,7 @@ export const notificationJobs = sqliteTable(
     subject: text('subject'),
     // How a finished job ended (JobOutcome type): `dead` state covers both a definite refusal (`failed`) and an
     // ambiguous give-up (`dead`). Null while unfinished, and for jobs finished before this column existed.
-    outcome: text('outcome', { enum: ['accepted', 'failed', 'dead', 'cancelled'] }),
+    outcome: text('outcome', { enum: ['accepted', 'failed', 'dead', 'cancelled', 'dismissed'] }),
   },
   (t) => [
     check('notification_jobs_state_check', sql`${t.state} in ('pending', 'claimed', 'sent', 'failed', 'dead')`),

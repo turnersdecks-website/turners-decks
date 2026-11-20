@@ -1,5 +1,6 @@
 import { Link, createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
-import { Building2, Mail, Plug, Save } from 'lucide-react'
+import { Building2, Mail, MessagesSquare, Plug, Save } from 'lucide-react'
+import { MessageLogSection } from '#/components/MessageLog'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -27,12 +28,14 @@ import { cn } from '#/lib/utils'
 // - Company: name, contact, timezone, Owner alert emails; the Photo home screen for Pat's phone
 // - Automations: Customer email templates (incl. the Estimate email) and texting rules (on/off, Pat's cell)
 // - Connections: Quo and QuickBooks (connect, status, sync)
+// - Message log: emails and texts the CRM sent or tried to send, with errors; Retry or Dismiss failed ones
 // Your profile moved to /profile (the avatar menu). Staff who are not admins are sent there. Server guards are the real
 // check (requireAdmin on every company write). Old hash links (#texting, #quickbooks...) land on the right tab.
 const TABS = [
   { id: 'company', title: 'Company', icon: Building2 },
   { id: 'automations', title: 'Automations', icon: Mail },
   { id: 'connections', title: 'Connections', icon: Plug },
+  { id: 'messages', title: 'Message log', icon: MessagesSquare },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 const HASH_TAB: Record<string, TabId> = { company: 'company', 'photo-home': 'company', 'email-templates': 'automations', texting: 'connections', quickbooks: 'connections' }
@@ -54,6 +57,7 @@ function SettingsPage() {
   const search = Route.useSearch()
   const navigate = useNavigate()
   const tab = search.tab ?? 'company'
+  const { settings } = Route.useLoaderData()
   // An old link with a hash (e.g. /settings#quickbooks) opens the tab that section lives on now.
   useEffect(() => {
     const t = HASH_TAB[window.location.hash.slice(1)]
@@ -81,7 +85,7 @@ function SettingsPage() {
           </Link>
         ))}
       </div>
-      <div className="max-w-3xl space-y-10">
+      <div className={cn("space-y-10", tab === "messages" ? "max-w-5xl" : "max-w-3xl")}>
         {tab === 'company' && (
           <>
             <CompanySection />
@@ -96,6 +100,7 @@ function SettingsPage() {
             <QboRulesSection />
           </>
         )}
+        {tab === 'messages' && <MessageLogSection timeZone={settings.timezone} />}
       </div>
     </div>
   )
