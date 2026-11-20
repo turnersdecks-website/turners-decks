@@ -53,3 +53,13 @@ export function wallTimeToEpoch(local: string, timeZone: string): number {
   // Re-check at the result in case a DST change sits between the guess and the answer.
   return asUtc - offsetMinutes(first, timeZone) * 60_000
 }
+
+/** epoch ms -> "YYYY-MM-DDTHH:mm" wall time in `timeZone` (the value of an <input type="datetime-local">). */
+export function epochToWallTime(ms: number, timeZone: string): string {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(ms)
+      .map((x) => [x.type, x.value]),
+  )
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`
+}

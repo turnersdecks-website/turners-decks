@@ -61,7 +61,8 @@ export function enqueueJob(
     payload,
     envelope,
     failOnDuplicate = false,
-  }: { kind: string; dedupeKey: string; payload: unknown; envelope?: Envelope; failOnDuplicate?: boolean },
+    notBefore,
+  }: { kind: string; dedupeKey: string; payload: unknown; envelope?: Envelope; failOnDuplicate?: boolean; notBefore?: Date },
 ) {
   const id = crypto.randomUUID()
   const now = new Date()
@@ -71,7 +72,8 @@ export function enqueueJob(
     payloadJson: JSON.stringify(payload),
     dedupeKey,
     state: 'pending' as const,
-    nextAttemptAt: now,
+    // A scheduled job (an appointment reminder) waits for `notBefore`; the 5-minute cron sends it once due.
+    nextAttemptAt: notBefore && notBefore > now ? notBefore : now,
     createdAt: now,
     ...(envelope ? { recipient: envelope.to.join(', ') || null, subject: envelope.subject } : {}),
   }

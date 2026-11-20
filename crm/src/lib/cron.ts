@@ -96,7 +96,15 @@ export async function readBacklog(d1: D1Database, now: number) {
     db
       .select({ n: sql<number>`count(*)` })
       .from(notificationJobs)
-      .where(and(inArray(notificationJobs.state, ['failed', 'dead']), lt(jobCreated, now - JOB_ALARM_AFTER_MS), gte(jobCreated, since)))
+      // Cancelled appointment messages (appointments.server.ts) were never meant to go out: not a backlog.
+      .where(
+        and(
+          inArray(notificationJobs.state, ['failed', 'dead']),
+          sql`coalesce(${notificationJobs.outcome}, '') <> 'cancelled'`,
+          lt(jobCreated, now - JOB_ALARM_AFTER_MS),
+          gte(jobCreated, since),
+        ),
+      )
       .get(),
     db
       .select({ n: sql<number>`count(*)` })

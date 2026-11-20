@@ -4,6 +4,7 @@ import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-r
 import { SearchX, Trash2, UserRound } from 'lucide-react'
 import { useState, type ComponentType, type ReactNode } from 'react'
 import { toast } from 'sonner'
+import { AppointmentCard } from '#/components/AppointmentCard'
 import { ConfirmDialog } from '#/components/confirm-dialog'
 import { EstimateSnapshots } from '#/components/EstimateSnapshots'
 import { EmptyState } from '#/components/empty-state'
@@ -36,7 +37,8 @@ import { customerName } from '#/lib/customer-vocab'
 // header, beside a right rail of key/value rows (details, Assigned to). Activities: the activity timeline and stage
 // history. Estimate (FLW-203): the Lead's Estimate snapshots from the online estimator. Quote: the five Quote file
 // slots (QuoteFiles).
-// Not in Good Cover v1 (they come back with their features): Pine & Gable's saved Estimates, Book appointment,
+// The rail's Appointment card books the consultation and its confirmation and reminder (appointments.server.ts).
+// Not in Good Cover v1 (they come back with their features): Pine & Gable's saved Estimates,
 // Send mailer, and the Prospect history / Possible Prospects rail sections.
 // The tab lives in `?tab=` (no param = Homeowner), so SSR renders the right one; every panel stays mounted (hidden
 // when inactive) so a half-typed note or Homeowner edit survives a tab switch.
@@ -329,6 +331,7 @@ function LeadDetail() {
             </div>
 
             <aside className="min-w-0 self-start overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xs xl:sticky xl:top-6">
+              <AppointmentCard key={lead.id} lead={lead} timeZone={timeZone} busy={busy} onChange={refresh} />
               <RailSection label="Lead details">
                 <RailRow label="Came in by">
                   <ChannelPill channel={lead.channel} />

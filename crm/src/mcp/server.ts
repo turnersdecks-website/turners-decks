@@ -39,6 +39,7 @@ import {
   updateLeadRecord,
 } from '#/lib/leads.server'
 import { readCompanySettings, saveCompanySettings } from '#/lib/settings.server'
+import { appointmentMessages, bookAppointment, cancelAppointment } from '#/lib/appointments.server'
 import { assignTransactions, jobFinancials, listTransactions, qboStatus } from '#/lib/qbo.server'
 import type { McpProps } from '#/mcp/oauth'
 
@@ -336,6 +337,40 @@ function buildServer(env: Env, staff: Staff) {
         if (a.at && staff.role !== 'admin') throw forbidden()
         return moveLeadToStage(env.DB, a.leadId, a.stage, staff.id, { at: importedAt(toMs(a.at, 'at'), 'at'), reason: a.reason })
       }),
+  )
+
+  server.registerTool(
+    'book_appointment',
+    {
+      title: 'Book or move an appointment',
+      description:
+        "Books (or moves) the Lead's free consultation. Moves a new or contacted Lead to appointment, sends the confirmation now and queues a reminder for 24 hours before, by email and/or text from the Quo number. Moving it cancels the old reminder. A text needs the Homeowner's mobile; if they have no text consent yet, booking records Staff-given consent (they gave us the number for this visit), but never overrides a STOP.",
+      inputSchema: { leadId: id, at: dateTime.describe('When, with its offset, e.g. 2026-11-28T10:00:00-05:00'), sendEmail: z.boolean(), sendText: z.boolean() },
+      annotations: WRITE,
+    },
+    (a) => run(() => bookAppointment(db, env, { leadId: a.leadId, at: toMs(a.at, 'at')!, sendEmail: a.sendEmail, sendText: a.sendText }, staff.id)),
+  )
+
+  server.registerTool(
+    'cancel_appointment',
+    {
+      title: 'Cancel an appointment',
+      description: "Clears the Lead's appointment and cancels its unsent reminder. Sends nothing to the Homeowner.",
+      inputSchema: { leadId: id },
+      annotations: WRITE,
+    },
+    (a) => run(() => cancelAppointment(db, a.leadId, staff.id)),
+  )
+
+  server.registerTool(
+    'list_appointment_messages',
+    {
+      title: "A Lead's appointment messages",
+      description: 'The confirmation and reminder emails and texts for a Lead: sent, waiting (with when) or cancelled.',
+      inputSchema: { leadId: id },
+      annotations: READ,
+    },
+    (a) => run(() => appointmentMessages(db, a.leadId)),
   )
 
   server.registerTool(

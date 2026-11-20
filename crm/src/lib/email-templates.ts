@@ -18,7 +18,7 @@ export const EMAIL_TEMPLATES: TemplateDef[] = [
   {
     key: 'appointment_confirmation',
     name: 'Appointment confirmation',
-    when: 'When an appointment is booked. Not sent yet: comes with Appointments.',
+    when: 'When an appointment is booked on a Lead (with Email ticked).',
     placeholders: ['first_name', 'appointment_date', 'appointment_time', 'address', 'company_name', 'company_phone'],
     defaultTemplate: `Subject: Your appointment with {company_name}
 Hi {first_name},
@@ -31,13 +31,13 @@ Need to change the time? Call or text {company_phone}.
   },
   {
     key: 'appointment_reminder',
-    name: 'Appointment reminder (night before)',
-    when: 'The evening before an appointment. Not sent yet: comes with Appointments.',
+    name: 'Appointment reminder (24 hours before)',
+    when: '24 hours before a booked appointment (with Email ticked).',
     placeholders: ['first_name', 'appointment_date', 'appointment_time', 'address', 'company_name', 'company_phone'],
     defaultTemplate: `Subject: See you tomorrow, {first_name}
 Hi {first_name},
 
-A reminder that Pat will be at {address} tomorrow, {appointment_date}, at {appointment_time}.
+A reminder that we'll see you tomorrow, {appointment_date}, at {appointment_time} at {address}.
 
 If something came up, call or text {company_phone}.
 

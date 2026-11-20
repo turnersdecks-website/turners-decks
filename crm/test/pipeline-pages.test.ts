@@ -105,13 +105,14 @@ describe('Lead detail /leads/$id', () => {
     expect(html).toContain('Oct 20, 2026, 10:00 AM')
   })
 
-  it('shows no Book appointment or Send mailer actions (not in v1)', async () => {
+  it('shows the Appointment card with Book appointment, and no Send mailer (not in v1)', async () => {
     const { cookie } = await signedInStaff('admin')
     const id = await insertLead({ firstName: 'Scope', lastName: 'Lead' })
 
     const html = await page(`/leads/${id}`, cookie)
 
-    expect(html).not.toContain('Book appointment')
+    expect(html).toContain('data-slot="appointment-card"')
+    expect(html).toContain('Book appointment')
     expect(html).not.toContain('Send mailer')
   })
 

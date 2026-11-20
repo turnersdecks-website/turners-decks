@@ -7,6 +7,7 @@ import type { Envelope, Job, JobOutcome, OutboxEnv } from '#/lib/outbox'
 import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from '#/lib/settings.server'
 import { type NewLeadExtra, newLeadVars, renderNewLeadText } from '#/lib/new-lead-text'
 import { hasTextConsent } from '#/lib/texting.server'
+import { appointmentStillOn } from '#/lib/appointments.server'
 
 // One entry per notification job kind (src/lib/outbox.ts). `render` builds the email at send time from the job's
 // payload (null = nothing to send, reported as `failed`; a throw is retried). `onOutcome`, optional, hears how the
@@ -141,6 +142,23 @@ export const JOB_KINDS: Record<string, JobKind> = {
   // A text to Pat's own cell (Settings > Texting), e.g. a photo link. Staff-made, so no consent check.
   sms_owner: { renderSms: async (p: { to: string; content: string }) => (p?.to && p.content ? { to: p.to, content: p.content } : null) },
 
+  // Appointment confirmation and reminder (src/lib/appointments.server.ts). Rendered and frozen at booking; at send
+  // time each checks the Lead still has the same appointment and is not Do not contact (a text also needs consent).
+  appointment_email: {
+    async render(p: Email & { lead_id: string; at: number }, { db }) {
+      if (!p?.to || !(await appointmentStillOn(db, p))) return null
+      return { to: p.to, subject: p.subject, text: p.text, ...(p.replyTo ? { replyTo: p.replyTo } : {}) }
+    },
+    onOutcome: (outcome, job, { db }, fence) => appointmentActivity(db, outcome, job, fence, 'email'),
+  },
+  appointment_text: {
+    async renderSms(p: { lead_id: string; at: number; to: string; content: string }, { db }) {
+      if (!p?.to || !(await appointmentStillOn(db, p)) || !(await hasTextConsent(db, p.to))) return null
+      return { to: p.to, content: p.content }
+    },
+    onOutcome: (outcome, job, { db }, fence) => appointmentActivity(db, outcome, job, fence, 'text'),
+  },
+
   form_ack: {
     async render(payload: LeadJobPayload, { db, env }) {
       const lead = await db.select().from(leads).where(eq(leads.id, payload.lead_id)).get()
@@ -203,4 +221,24 @@ async function newLeadExtra(db: JobKindContext['db'], leadId: string): Promise<N
   } catch {
     return {}
   }
+}
+
+/** The appointment email or text on the Lead's activity, however it ended (as sms_lead_reply). */
+function appointmentActivity(db: JobKindContext['db'], outcome: JobOutcome, job: Job, fence: SQL, kind: 'email' | 'text') {
+  const p = safeJson(job.payloadJson) as { lead_id?: string; which?: string; content?: string; subject?: string; text?: string }
+  if (!p.lead_id) return []
+  const state = outcome.type === 'accepted' ? 'accepted' : outcome.type === 'failed' ? 'failed' : 'unknown'
+  const message = kind === 'text' ? (p.content ?? '') : `Subject: ${p.subject ?? ''}\n\n${p.text ?? ''}`
+  const label = `Appointment ${p.which === 'reminder' ? 'reminder' : 'confirmation'}`
+  const body = outcome.type === 'accepted' ? `${label} ${kind} sent.\n\n${message}` : `${label} ${kind} not sent: ${outcome.error}\n\n${message}`
+  const dedupe = outcome.type === 'accepted' && outcome.resendId ? `${kind === 'text' ? 'quo' : 'resend'}:${outcome.resendId}` : `job:${job.id}`
+  return [
+    db
+      .insert(leadActivity)
+      .select(
+        sql`SELECT ${crypto.randomUUID()}, ${leads.id}, ${kind}, 'outbound', NULL, NULL, ${body.slice(0, 8000)}, NULL, NULL, NULL, ${dedupe},
+          ${Date.now()}, ${state}, ${outcome.type === 'accepted' ? outcome.resendId : null} FROM ${leads} WHERE ${leads.id} = ${p.lead_id} AND ${fence}`,
+      )
+      .onConflictDoNothing(),
+  ]
 }
