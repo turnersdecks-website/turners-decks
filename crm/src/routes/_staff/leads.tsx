@@ -1,3 +1,4 @@
+import { LeadAgePill } from '#/components/LeadAgePill'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertCircle, Plus } from 'lucide-react'
@@ -247,9 +248,13 @@ function LeadBoard({
                         dragId === l.id && 'scale-[0.98] opacity-55',
                       )}
                     >
-                      <ChannelPill channel={l.channel} />
+                      <div className="flex items-center justify-between gap-2">
+                        <ChannelPill channel={l.channel} />
+                        <LeadAgePill stage={stageOf(l)} createdAt={l.createdAt} />
+                      </div>
                       <h3 className="mt-1 line-clamp-2 text-sm font-semibold">
-                        <Link to="/leads/$id" params={{ id: l.id }} className="hover:underline">
+                        {/* The whole card opens the Lead: the link's ::after covers the card; the stage picker sits above it. */}
+                        <Link to="/leads/$id" params={{ id: l.id }} draggable={false} className="after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:underline">
                           {leadName(l)}
                         </Link>
                       </h3>
@@ -259,7 +264,7 @@ function LeadBoard({
                           <Badge variant="destructive">Needs review</Badge>
                         </div>
                       )}
-                      <label className="mt-3 block xl:hidden">
+                      <label className="relative z-10 mt-3 block xl:hidden">
                         <span className="sr-only">Pipeline stage</span>
                         <select
                           value={stageOf(l)}
@@ -336,7 +341,12 @@ function LeadList({ rows, timeZone, show }: { rows: BoardLead[]; timeZone: strin
     {
       accessorKey: 'stage',
       header: 'Stage',
-      cell: ({ row }) => <Badge variant={row.original.stage === 'won' ? 'success' : 'secondary'}>{STAGE_LABELS[row.original.stage]}</Badge>,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5">
+          <Badge variant={row.original.stage === 'won' ? 'success' : 'secondary'}>{STAGE_LABELS[row.original.stage]}</Badge>
+          <LeadAgePill stage={row.original.stage} createdAt={row.original.createdAt} />
+        </span>
+      ),
       enableGlobalFilter: false,
     },
     { id: 'channel', accessorFn: (l) => channelLabel(l.channel), header: 'Came in by', cell: ({ row }) => <ChannelPill channel={row.original.channel} />, enableGlobalFilter: false },

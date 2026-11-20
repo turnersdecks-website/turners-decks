@@ -2,6 +2,7 @@ import { CalendarCheck, CalendarClock, Loader2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
+import { DayPicker } from '#/components/DayPicker'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { bookLeadAppointment, cancelLeadAppointment, listAppointmentMessages } from '#/lib/appointments.functions'
@@ -96,21 +97,7 @@ export function AppointmentCard({
         <label htmlFor={`appt-day-${lead.id}`} className="text-xs font-medium text-muted-foreground">
           Day
         </label>
-        <Input
-          id={`appt-day-${lead.id}`}
-          type="date"
-          min={today}
-          value={day}
-          disabled={disabled}
-          onChange={(e) => setDay(e.target.value)}
-          // The whole box opens the calendar, not only the small icon.
-          onClick={(e) => {
-            try {
-              e.currentTarget.showPicker()
-            } catch {}
-          }}
-          className="h-11 cursor-pointer text-base"
-        />
+        <DayPicker id={`appt-day-${lead.id}`} value={day} onChange={setDay} min={today} today={today} disabled={disabled} />
       </div>
 
       <div className="space-y-1.5">
