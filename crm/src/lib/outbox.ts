@@ -2,7 +2,7 @@ import { waitUntil } from 'cloudflare:workers'
 import { and, asc, eq, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { getDb } from '#/db/client'
-import { notificationJobs } from '#/db/schema'
+import { companySettings, notificationJobs } from '#/db/schema'
 import { type Email, type SendEmail, redactEmail } from '#/lib/email'
 import { JOB_KINDS, type JobKindContext } from '#/lib/outbox-kinds'
 import { sendSms } from '#/lib/quo'
@@ -185,6 +185,7 @@ async function sendClaimed(ctx: JobKindContext, job: Job, now: number, fetch: ty
   try {
     email = (await kind.render?.(JSON.parse(job.payloadJson), ctx)) ?? null
     if (!email) return finish(ctx, job, now, { type: 'failed', error: 'nothing to send (no recipient)' })
+    if (kind.copyCompany) email = await withCompanyCopy(ctx, email)
     result = await sendViaResend(ctx.env, job.id, email, fetch)
   } catch (err) {
     result = { ok: false, definite: false, error: String(err), status: null }
@@ -301,6 +302,7 @@ async function sendViaResend(env: OutboxEnv, jobId: string, email: Email, fetch:
         text: email.text,
         ...(email.replyTo ? { reply_to: email.replyTo } : {}),
         ...(email.cc?.length ? { cc: email.cc } : {}),
+        ...(email.bcc?.length ? { bcc: email.bcc } : {}),
       }),
       signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     })
@@ -310,6 +312,14 @@ async function sendViaResend(env: OutboxEnv, jobId: string, email: Email, fetch:
   } catch (err) {
     return { ok: false, definite: false, error: String(err), status: null }
   }
+}
+
+/** Adds the company email (Settings) as a blind copy, unless it is already a recipient. */
+async function withCompanyCopy(ctx: JobKindContext, email: Email): Promise<Email> {
+  const row = await ctx.db.select({ email: companySettings.email }).from(companySettings).where(eq(companySettings.id, 1)).get()
+  const copy = row?.email?.trim().toLowerCase()
+  if (!copy || recipients(email).some((r) => r.toLowerCase() === copy)) return email
+  return { ...email, bcc: [...(email.bcc ?? []), copy] }
 }
 
 const recipients = (email: Email) => (Array.isArray(email.to) ? email.to : [email.to])
