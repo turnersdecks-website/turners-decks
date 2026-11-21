@@ -25,7 +25,7 @@ import { errorMessage } from '#/lib/errors'
 import { listEstimateSnapshots } from '#/lib/estimate-snapshots.functions'
 import { listCustomers } from '#/lib/customers.functions'
 import { listLeadFiles } from '#/lib/lead-files.functions'
-import { assignLead, deleteLead, getLead, listAssignableStaff, moveLeadStage, setDoNotContact, updateLead } from '#/lib/leads.functions'
+import { assignLead, deleteLead, getLead, listAssignableStaff, markReviewed, moveLeadStage, setDoNotContact, updateLead } from '#/lib/leads.functions'
 import { STAGES, STAGE_LABELS, STAGE_STYLES, leadName } from '#/lib/pipeline'
 import { getCompanySettings } from '#/lib/settings.functions'
 import { cn } from '#/lib/utils'
@@ -263,7 +263,7 @@ function LeadDetail() {
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight">{name}</h1>
-              {lead.needsReview && <Badge variant="destructive">Needs review</Badge>}
+              {lead.needsReview && <Badge className="border-warning/50 bg-warning/20 text-warning-foreground hover:bg-warning/20">Needs review</Badge>}
               {lead.doNotContact && <Badge variant="secondary">Do not contact</Badge>}
             </div>
           </div>
@@ -288,6 +288,19 @@ function LeadDetail() {
           </div>
         </div>
       </header>
+
+      {lead.needsReview && (
+        <div role="status" className="mx-4 mt-4 flex flex-col gap-3 rounded-xl border border-warning/50 bg-warning/10 p-4 sm:mx-6 sm:flex-row sm:items-center sm:justify-between" data-slot="needs-review">
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold">Needs review</p>
+            <p>{reviewReason(activity)}</p>
+            <p className="text-muted-foreground">If it belongs to them, add it in the Homeowner card and save. Then mark this reviewed.</p>
+          </div>
+          <Button size="sm" className="shrink-0 bg-brand text-brand-foreground hover:bg-brand/90" disabled={busy} onClick={() => run(() => markReviewed({ data: { leadId: lead.id } }), 'Marked reviewed')}>
+            Mark reviewed
+          </Button>
+        </div>
+      )}
 
       <Tabs
         value={tab ?? 'homeowner'}
@@ -405,4 +418,10 @@ function LeadDetail() {
       </Tabs>
     </div>
   )
+}
+
+/** Why a Lead needs review: the newest note intake left (a new phone or email, or a match to two Leads). */
+function reviewReason(activity: { kind: string; body: string | null }[]) {
+  const note = activity.find((a) => a.kind === 'note' && a.body && /^This Form submission|^Possible duplicate/i.test(a.body))
+  return note?.body ?? 'A website form matched this Lead but brought a phone or email that is not on it yet. See Activities.'
 }

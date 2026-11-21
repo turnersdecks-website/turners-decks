@@ -370,6 +370,22 @@ export async function setLeadDoNotContact(db: Db, leadId: string, value: unknown
   return saved[0]
 }
 
+/**
+ * Clears Needs review. The flag is set when a website form matched this Lead but brought a phone or email that is
+ * not on it (or matched two different Leads); Staff check the note in Activity, add the contact if it is theirs, then
+ * mark it reviewed. Logged as a note so the history shows who cleared it.
+ */
+export async function markLeadReviewed(db: Db, leadId: string, staffId: string | null) {
+  const found = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, leadId)).get()
+  if (!found) throw leadNotFound()
+  const now = new Date()
+  await db.batch([
+    db.update(leads).set({ needsReview: false, updatedAt: now }).where(eq(leads.id, leadId)),
+    db.insert(leadActivity).values({ id: crypto.randomUUID(), leadId, kind: 'note', body: 'Marked reviewed.', authorId: staffId, createdAt: now }),
+  ])
+  return { id: leadId, needsReview: false }
+}
+
 export async function assignLeadTo(db: Db, leadId: string, staffId: string | null) {
   if (staffId) {
     const assignee = await db.select({ id: user.id }).from(user).where(and(eq(user.id, staffId), eq(user.banned, false))).get()
