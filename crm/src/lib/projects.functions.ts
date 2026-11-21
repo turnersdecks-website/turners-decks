@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { env } from 'cloudflare:workers'
 import { requireStaff } from '#/lib/guards'
 import { record, requiredId } from '#/lib/input'
-import { jobChecklist, moveJobToStep, projectBoard, setChecklistItem } from '#/lib/projects.server'
+import { jobChecklist, moveJobToStep, projectBoard, setChecklistItem, skipChecklistItem } from '#/lib/projects.server'
 
 // The project board (GLOSSARY Project step) for the CRM pages. Any Staff member moves Jobs and ticks items.
 
@@ -24,3 +24,9 @@ export const tickChecklistItem = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
   .validator((data: { jobId: string; key: string; done: boolean }) => record(data))
   .handler(({ data, context: { staff } }) => setChecklistItem(env.DB, requiredId(data.jobId), data.key, data.done, staff.id))
+
+/** Marks a skippable checklist item "Not doing", or undoes it. */
+export const skipChecklistItemFn = createServerFn({ method: 'POST' })
+  .middleware([requireStaff])
+  .validator((data: { jobId: string; key: string; skip: boolean }) => record(data))
+  .handler(({ data, context: { staff } }) => skipChecklistItem(env.DB, requiredId(data.jobId), data.key, data.skip, staff.id))

@@ -146,3 +146,58 @@ describe('Crew check-in', () => {
     expect(await env.DB.prepare('SELECT id FROM leads WHERE phone_e164 = ?').bind(PAT).first()).toBeNull()
   })
 })
+
+import { profitAndLoss, jobFinancials } from '#/lib/qbo.server'
+import { verifyCrewPay, crewPayCandidates, listJobCrewTime } from '#/lib/crew-time.server'
+import { skipChecklistItem, jobChecklist } from '#/lib/projects.server'
+
+describe('Verifying crew pay (counted once)', () => {
+  it('links days to the QuickBooks payment that covered them, or marks them paid outside QuickBooks', async () => {
+    const job = await makeJob('Kondracki')
+    await sendDueCheckins(env, SIX_PM)
+    await reply('Gary $225, Tommy $225')
+    const SAT = SIX_PM + 24 * 60 * 60_000
+    await sendDueCheckins(env, SAT)
+    await reply('same', SAT + 60_000)
+    // Gary was paid $450 by Venmo from the business account (synced, not sorted yet); Tommy got cash.
+    await env.DB.prepare(
+      "INSERT INTO qbo_transactions (id, entity, qbo_id, kind, txn_date, amount_cents, party_name, account, deleted, synced_at) VALUES ('Purchase:v1', 'Purchase', 'v1', 'cost', '2026-11-23', 45000, 'Gary Smith', 'Contractors', 0, 1)",
+    ).run()
+    const db = getDb(env.DB)
+    const gary = await env.DB.prepare("SELECT id FROM crew_time WHERE job_id = ? AND name = 'Gary' ORDER BY work_date").bind(job).all<{ id: string }>()
+    const cands = await crewPayCandidates(db, gary.results[0].id)
+    expect(cands.sameName.map((d) => d.workDate)).toEqual(['2026-11-20', '2026-11-21'])
+    expect(cands.candidates[0]).toMatchObject({ id: 'Purchase:v1', mentionsName: true, onJob: false, amountCents: 45000 })
+
+    await verifyCrewPay(db, { ids: gary.results.map((r) => r.id), via: 'qbo', qboTxnId: 'Purchase:v1' }, null)
+    // The payment is now sorted onto the Job, so the QuickBooks costs include it once.
+    expect(await env.DB.prepare("SELECT assignment, job_id FROM qbo_transactions WHERE id = 'Purchase:v1'").first()).toEqual({ assignment: 'job', job_id: job })
+
+    const tommy = await env.DB.prepare("SELECT id FROM crew_time WHERE job_id = ? AND name = 'Tommy'").bind(job).all<{ id: string }>()
+    const after = await verifyCrewPay(db, { ids: tommy.results.map((r) => r.id), via: 'outside', note: 'cash' }, null)
+    expect(after.totals).toMatchObject({ costCents: 90000, qboCents: 45000, outsideCents: 45000, unverifiedCents: 0 })
+
+    const fin = await jobFinancials(db, job)
+    expect(fin.totals).toMatchObject({ costCents: 45000, crewOutsideCents: 45000, allInCostCents: 90000 })
+    await env.DB.prepare("UPDATE jobs SET status = 'done', step = 'done', finish_date = '2026-11-25' WHERE id = ?").bind(job).run()
+    const pnl = await profitAndLoss(db, 2026)
+    expect(pnl.completedJobs.find((j) => j.id === job)?.costCents).toBe(90000)
+    expect(pnl.months.find((m) => m.month === '2026-11')!.jobCostCents).toBeGreaterThanOrEqual(90000)
+    expect((await listJobCrewTime(db, job)).unverified).toBe(0)
+  })
+})
+
+describe('Checklist: inspections and Not doing', () => {
+  it('has footing then framing inspections; Not asking for a review skips review asked and received', async () => {
+    const job = await makeJob('Skipper')
+    await env.DB.prepare('UPDATE jobs SET permit_needed = 1 WHERE id = ?').bind(job).run()
+    const before = await jobChecklist(env.DB, job)
+    expect(before.items.filter((i) => i.step === 'build').map((i) => i.key)).toEqual(['footing_inspection', 'framing_inspection', 'build_complete', 'after_photos'])
+    const after = await skipChecklistItem(env.DB, job, 'review_asked', true, null)
+    const close = after.items.filter((i) => i.key === 'review_asked' || i.key === 'review_received')
+    expect(close.every((i) => i.done && i.skipped)).toBe(true)
+    const undone = await skipChecklistItem(env.DB, job, 'review_asked', false, null)
+    expect(undone.items.find((i) => i.key === 'review_received')).toMatchObject({ done: false })
+    await expect(skipChecklistItem(env.DB, job, 'paid_in_full', true, null)).rejects.toBeInstanceOf(Response)
+  })
+})

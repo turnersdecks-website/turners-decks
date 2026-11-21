@@ -39,8 +39,19 @@ export function JobMoneyPanel({ jobId }: { jobId: string }) {
         </div>
         {stat('Paid', t.paidCents)}
       </div>
+      {t.crewOutsideCents > 0 && (
+        <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted/40 p-3 sm:grid-cols-5">
+          {stat('Crew paid outside QuickBooks', t.crewOutsideCents)}
+          {stat('All-in costs', t.allInCostCents)}
+          {stat('All-in profit', t.allInProfitCents)}
+          <div>
+            <p className="text-xs text-muted-foreground">All-in margin</p>
+            <p className="text-lg font-semibold tabular-nums">{t.allInMarginPct === null ? '–' : `${t.allInMarginPct}%`}</p>
+          </div>
+        </div>
+      )}
       <p className="text-xs text-muted-foreground">
-        Profit is invoiced minus the costs sorted onto this Job (materials, subcontractors). Our own crew's time is not in it.
+        Profit is invoiced minus the costs sorted onto this Job. Crew paid through QuickBooks is in those costs; crew paid another way (cash) is added once in All-in, after it's verified under Crew time.
         {t.marginPct === null && ' Margin shows once the Job has both invoices and costs.'}
       </p>
       {fin.transactions.length === 0 ? (

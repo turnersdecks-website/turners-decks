@@ -49,6 +49,8 @@ export type ChecklistItemDef = {
   auto?: (j: ChecklistJob) => boolean
   /** Shown under an automatic item: where its tick comes from. */
   autoHint?: string
+  /** Can be marked "Not doing" (e.g. no review asked for this Job); a skipped item counts as done. */
+  skip?: { label: string; also?: string[] }
 }
 
 const permit = (j: ChecklistJob) => j.permitNeeded
@@ -76,6 +78,7 @@ export const CHECKLIST: ChecklistItemDef[] = [
   { step: 'schedule', key: 'start_date', label: 'Start date set', auto: (j) => Boolean(j.startDate), autoHint: 'Set Start date on the Job' },
   { step: 'schedule', key: 'customer_confirmed', label: 'Customer confirmed the start date' },
 
+  { step: 'build', key: 'footing_inspection', label: 'Footing inspection passed', when: permit },
   { step: 'build', key: 'framing_inspection', label: 'Framing inspection passed', when: permit },
   { step: 'build', key: 'build_complete', label: 'Build complete' },
   { step: 'build', key: 'after_photos', label: 'After photos taken', auto: (j) => j.afterPhotoCount > 0, autoHint: 'Ticks when after photos are added' },
@@ -83,22 +86,43 @@ export const CHECKLIST: ChecklistItemDef[] = [
   { step: 'closeout', key: 'final_inspection', label: 'Final inspection passed', when: permit },
   { step: 'closeout', key: 'final_invoice', label: 'Final invoice sent' },
   { step: 'closeout', key: 'paid_in_full', label: 'Paid in full' },
-  { step: 'closeout', key: 'review_asked', label: 'Review asked', field: 'reviewAsked' },
-  { step: 'closeout', key: 'review_received', label: 'Review received', field: 'reviewReceived' },
-  { step: 'closeout', key: 'on_website', label: 'On the website', field: 'onWebsite' },
+  { step: 'closeout', key: 'review_asked', label: 'Review asked', field: 'reviewAsked', skip: { label: 'Not asking for a review', also: ['review_received'] } },
+  { step: 'closeout', key: 'review_received', label: 'Review received', field: 'reviewReceived', skip: { label: 'No review' } },
+  { step: 'closeout', key: 'on_website', label: 'On the website', field: 'onWebsite', skip: { label: 'Not putting it on the website' } },
 ]
 
 export const checklistItem = (key: string) => CHECKLIST.find((i) => i.key === key)
 
-export type ChecklistState = { key: string; label: string; step: ProjectStep; done: boolean; kind: 'manual' | 'field' | 'auto'; autoHint?: string }
+export type ChecklistState = {
+  key: string
+  label: string
+  step: ProjectStep
+  done: boolean
+  kind: 'manual' | 'field' | 'auto'
+  autoHint?: string
+  /** "Not doing" label when the item can be skipped; `skipped` when it was (and then `done`). */
+  skipLabel?: string
+  skipped?: boolean
+}
 
-/** The items that apply to this Job, with whether each is done. `ticked` holds the hand-ticked keys. */
+/** job_checklist key that records an item marked "Not doing". */
+export const skipKey = (key: string) => `skip:${key}`
+
+/** The items that apply to this Job, with whether each is done. `ticked` holds the hand-ticked keys (and skip:<key>
+ * for items marked Not doing, which count as done). */
 export function checklistFor(job: ChecklistJob, ticked: ReadonlySet<string>): ChecklistState[] {
   return CHECKLIST.filter((i) => !i.when || i.when(job)).map((i) => {
-    if (i.auto) return { key: i.key, label: i.label, step: i.step, done: i.auto(job), kind: 'auto', autoHint: i.autoHint }
-    if (i.field) return { key: i.key, label: i.label, step: i.step, done: job[i.field], kind: 'field' }
-    return { key: i.key, label: i.label, step: i.step, done: ticked.has(i.key), kind: 'manual' }
+    if (i.skip && ticked.has(skipKey(i.key))) return { key: i.key, label: i.label, step: i.step, done: true, kind: i.field ? 'field' : 'manual', skipLabel: i.skip.label, skipped: true }
+    return withSkip(i, itemState(i, job, ticked))
   })
+}
+
+const withSkip = (i: ChecklistItemDef, st: ChecklistState): ChecklistState => (i.skip ? { ...st, skipLabel: i.skip.label } : st)
+
+function itemState(i: ChecklistItemDef, job: ChecklistJob, ticked: ReadonlySet<string>): ChecklistState {
+  if (i.auto) return { key: i.key, label: i.label, step: i.step, done: i.auto(job), kind: 'auto', autoHint: i.autoHint }
+  if (i.field) return { key: i.key, label: i.label, step: i.step, done: job[i.field], kind: 'field' }
+  return { key: i.key, label: i.label, step: i.step, done: ticked.has(i.key), kind: 'manual' }
 }
 
 /** Done and total items of one step (a step with nothing that applies, e.g. Permit work with no permit or HOA, is 0/0). */
