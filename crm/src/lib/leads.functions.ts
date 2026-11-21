@@ -17,6 +17,7 @@ import {
   leadNotFound,
   moveLeadToStage,
   updateLeadRecord,
+  markLeadReviewed,
 } from '#/lib/leads.server'
 import type { CallDirection, ManualActivityKind } from '#/lib/pipeline'
 
@@ -132,6 +133,12 @@ export const setDoNotContact = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
   .validator((data: { leadId: string; value: boolean }) => record(data))
   .handler(({ data }) => setLeadDoNotContact(getDb(env.DB), requiredId(data.leadId), data.value))
+
+/** Clears Needs review (see markLeadReviewed). */
+export const markReviewed = createServerFn({ method: 'POST' })
+  .middleware([requireStaff])
+  .validator((data: { leadId: string }) => record(data))
+  .handler(({ data, context: { staff } }) => markLeadReviewed(getDb(env.DB), requiredId(data.leadId), staff.id))
 
 export const assignLead = createServerFn({ method: 'POST' })
   .middleware([requireStaff])

@@ -273,7 +273,7 @@ function LeadBoard({
                       <p className="mt-1 truncate text-xs text-muted-foreground">{[l.street, l.city].filter(Boolean).join(', ') || l.email || l.phone}</p>
                       {l.needsReview && (
                         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                          <Badge variant="destructive">Needs review</Badge>
+                          <Badge className="border-warning/50 bg-warning/20 text-warning-foreground hover:bg-warning/20">Needs review</Badge>
                         </div>
                       )}
                       <label className="relative z-10 mt-3 block xl:hidden">
