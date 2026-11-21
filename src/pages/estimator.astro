@@ -8,6 +8,23 @@ import SectionHeading from "@/components/sections/SectionHeading.astro";
 import Faq from "@/components/sections/Faq.astro";
 import Button from "@/components/Button.astro";
 import { faqSchema } from "@/lib/seo";
+import Photo from "@/components/sections/Photo.astro";
+import { PHOTO } from "@/lib/photos";
+import { ArrowUpDown, Fence, Footprints, Hammer, Layers, ListChecks, MapPin, Ruler, Tag } from "@lucide/astro";
+
+const steps = [
+  { icon: ListChecks, title: "Answer six quick questions", body: "Pick from photos and simple choices. No measuring tape needed." },
+  { icon: Tag, title: "See your price range", body: "Based on real decks we've built in Berks, Montgomery, and Chester Counties." },
+  { icon: MapPin, title: "Get a free on-site quote", body: "It's a planning tool, not a quote. When you're ready, we measure and confirm the price." },
+];
+const asks = [
+  { icon: Hammer, label: "Type of project" },
+  { icon: Ruler, label: "Rough size" },
+  { icon: Layers, label: "Decking material" },
+  { icon: ArrowUpDown, label: "Height off the ground" },
+  { icon: Fence, label: "Railings" },
+  { icon: Footprints, label: "Stairs" },
+];
 
 const faqs = [
   { q: "How accurate is the online estimate?", a: "It gives a realistic preliminary range for early budgeting. Your final price comes from a free on-site quote, where we measure and look at site conditions, structure, access, and permit requirements." },
@@ -36,23 +53,50 @@ const faqs = [
     </div>
   </section>
 
-  <section class="section container-site split items-start">
-    <div class="max-w-3xl">
-      <SectionHeading eyebrow="How it works" title="A realistic range in a couple of minutes" />
-      <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">
-        Answer a few questions about your project: the type of deck, roughly how big, the decking material, how high it sits, and whether you want railings and stairs. The estimator uses pricing from real decks we've built in Berks, Montgomery, and Chester Counties to give you a preliminary price range.
-      </p>
-      <p class="mt-4 text-[1.0625rem] leading-relaxed text-muted-foreground">
-        It's a planning tool, not a quote. When you're ready, we'll come out for a free on-site quote: we measure and confirm the price.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <Button href="/deck-materials-guide" variant="outline" size="lg">Compare Materials</Button>
-        <Button href="/gallery" variant="outline" size="lg">See Our Projects</Button>
-      </div>
+  <!-- How it works: three steps, then the six things it asks about -->
+  <section class="section container-site">
+    <div class="max-w-2xl">
+      <p class="eyebrow mb-2.5">How it works</p>
+      <h2 class="display-2">A realistic range in a couple of minutes</h2>
     </div>
-    <div>
-      <h2 class="display-2">Questions</h2>
-      <Faq faqs={faqs} />
+    <ol class="mt-12 grid gap-6 md:grid-cols-3">
+      {steps.map((s, i) => (
+        <li class="relative rounded-3xl bg-secondary p-7">
+          <div class="flex items-center gap-3">
+            <span class="flex size-11 items-center justify-center rounded-full bg-primary text-white" aria-hidden="true"><s.icon class="size-5" /></span>
+            <span class="eyebrow">Step {i + 1}</span>
+          </div>
+          <h3 class="mt-5 text-[1.375rem] font-medium leading-snug text-primary">{s.title}</h3>
+          <p class="mt-2 text-muted-foreground">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="mt-12 rounded-3xl border border-border p-7">
+      <p class="eyebrow">What it asks about</p>
+      <ul class="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
+        {asks.map((a) => (
+          <li class="flex items-center gap-3 font-medium text-primary">
+            <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary" aria-hidden="true"><a.icon class="size-5" /></span>
+            {a.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Questions beside a photo -->
+  <section class="section bg-secondary">
+    <div class="container-site grid gap-12 lg:grid-cols-[5fr_7fr]">
+      <div>
+        <p class="eyebrow mb-2.5">Questions</p>
+        <h2 class="display-2">Good to know</h2>
+        <Photo photo={PHOTO.compositeBorder} sizes="(min-width: 1024px) 40vw, 100vw" class="mt-8 hidden aspect-[4/3] w-full rounded-3xl object-cover lg:block" />
+        <div class="mt-8 flex flex-wrap gap-3">
+          <Button href="/deck-materials-guide" variant="outline" size="lg">Compare Materials</Button>
+          <Button href="/gallery" variant="outline" size="lg">See Our Projects</Button>
+        </div>
+      </div>
+      <div class="lg:pt-2"><Faq faqs={faqs} /></div>
     </div>
   </section>
 </BaseLayout>
