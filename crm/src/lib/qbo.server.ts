@@ -449,13 +449,18 @@ export async function listTransactions(db: Db, f: TxnFilter = {}) {
 /** A Job's QuickBooks transactions and totals (jobTotals). */
 export async function jobFinancials(db: Db, jobId: string) {
   const rows = await listTransactions(db, { jobId, limit: 2000 })
-  const outside = await db.get<{ cents: number }>(sql`SELECT coalesce(sum(cost_cents), 0) AS cents FROM crew_time WHERE job_id = ${jobId} AND paid_via = 'outside'`)
+  const crew = await db.get<{ outside: number; unverified: number; notes: string | null }>(
+    sql`SELECT coalesce(sum(CASE WHEN paid_via = 'outside' THEN cost_cents END), 0) AS outside,
+        coalesce(sum(CASE WHEN paid_via IS NULL THEN cost_cents END), 0) AS unverified,
+        group_concat(DISTINCT CASE WHEN paid_via = 'outside' THEN paid_note END) AS notes
+      FROM crew_time WHERE job_id = ${jobId}`,
+  )
   const t = jobTotals(rows)
-  const crewOutsideCents = outside?.cents ?? 0
+  const crewOutsideCents = crew?.outside ?? 0
   // All in: the QuickBooks costs plus crew paid outside QuickBooks, so crew pay counts once.
   const allInCostCents = t.costCents + crewOutsideCents
   return {
-    totals: { ...t, crewOutsideCents, allInCostCents, allInProfitCents: t.revenueCents - allInCostCents, allInMarginPct: marginPct(t.revenueCents, allInCostCents) },
+    totals: { ...t, crewOutsideCents, crewOutsideNotes: crew?.notes ?? null, crewUnverifiedCents: crew?.unverified ?? 0, allInCostCents, allInProfitCents: t.revenueCents - allInCostCents, allInMarginPct: marginPct(t.revenueCents, allInCostCents) },
     transactions: rows,
   }
 }

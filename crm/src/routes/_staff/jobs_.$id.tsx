@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog'
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
-import { Calculator, Hammer, ListChecks, Lock, MapPin, SearchX } from 'lucide-react'
+import { Calculator, Camera, Hammer, ListChecks, Lock, MapPin, SearchX } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { JobFields, type JobDraft, jobDraftFrom } from '#/components/CustomerForms'
@@ -177,9 +177,15 @@ function JobDetail() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
           <JobCard key={job.updatedAt.toString()} job={job} timeZone={timeZone} refresh={refresh} />
-          <JobMoneyPanel key={`money-${job.id}`} jobId={job.id} />
+          <JobMoneyPanel key={`money-${job.id}`} jobId={job.id} quotedCents={job.quotedPriceCents} />
           <CrewTimePanel key={`crew-${job.id}`} jobId={job.id} today={epochToWallTime(Date.now(), timeZone).slice(0, 10)} onChanged={() => void refresh()} />
-          <PhotosPanel key={job.id} target={{ jobId: job.id }} timeZone={timeZone} />
+          <section aria-label="Photos" className="space-y-3 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Camera className="size-4 text-muted-foreground" />
+              Photos
+            </h2>
+            <PhotosPanel key={job.id} target={{ jobId: job.id }} timeZone={timeZone} contained />
+          </section>
         </div>
         <aside className="min-w-0 space-y-6 self-start xl:sticky xl:top-6">
           <section aria-label="Project steps" className="space-y-3 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">

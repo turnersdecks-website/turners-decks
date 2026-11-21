@@ -30,7 +30,8 @@ const EMPTY: Record<PhotoStage, string> = {
   mock: 'No AI mocks yet.',
 }
 
-export function PhotosPanel({ target, timeZone }: { target: Target; timeZone: string }) {
+/** `contained`: inside a card already (the Job page), so the stage boxes drop their own card look. */
+export function PhotosPanel({ target, timeZone, contained = false }: { target: Target; timeZone: string; contained?: boolean }) {
   const [photos, setPhotos] = useState<Photo[] | null>(null)
   const [links, setLinks] = useState<OpenLink[]>([])
   const [showHidden, setShowHidden] = useState(false)
@@ -85,6 +86,7 @@ export function PhotosPanel({ target, timeZone }: { target: Target; timeZone: st
             onChanged={load}
             onOpen={(list, index) => setViewing({ list, index })}
             onToggle={change}
+            contained={contained}
           />
         ))}
       </div>
@@ -108,7 +110,9 @@ function StageBox({
   onChanged,
   onOpen,
   onToggle,
+  contained = false,
 }: {
+  contained?: boolean
   stage: PhotoStage
   target: Target
   canAdd: boolean
@@ -121,7 +125,7 @@ function StageBox({
 }) {
   const isMock = stage === 'mock'
   return (
-    <div className="flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-4 text-card-foreground shadow-xs">
+    <div className={cn('flex min-w-0 flex-col gap-3 rounded-xl border p-4', contained ? 'bg-muted/30' : 'bg-card text-card-foreground shadow-xs')}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           {isMock && <Sparkles className="size-4 text-highlight" aria-hidden />}

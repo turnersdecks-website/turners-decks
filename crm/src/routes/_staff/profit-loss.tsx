@@ -59,7 +59,7 @@ function ProfitLossPage() {
 
         <StatGrid>
           <StatCard label="Revenue" value={formatMoney(revenue) || '$0'} hint={`Invoiced${year === thisYear ? ' so far this year' : ` in ${year}`}; ${formatMoney(paid) || '$0'} paid`} />
-          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint="Materials, subcontractors, permits and dump fees sorted onto Jobs" />
+          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint="Costs sorted onto Jobs, plus crew paid outside QuickBooks" />
           <StatCard label="Profit" value={formatMoney(profit) || '$0'} hint="Revenue minus Job costs" />
           <StatCard label="Margin" value={pct(marginPct(revenue, jobCosts))} hint="Profit as a share of revenue" />
         </StatGrid>
@@ -170,7 +170,7 @@ function ProfitLossPage() {
               )}
             </table>
           </div>
-          <p className="text-xs text-muted-foreground">Profit and margin show once a Job has both invoices and costs on it. Our own crew's time is not in Job costs.</p>
+          <p className="text-xs text-muted-foreground">Profit and margin show once a Job has both invoices and costs on it. Job costs include crew paid through QuickBooks, plus crew verified as paid outside QuickBooks.</p>
         </section>
       </div>
     </>
