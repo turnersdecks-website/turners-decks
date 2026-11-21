@@ -1,4 +1,4 @@
-// "Get a free estimate" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
+// "Get a free quote" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
 import { useEffect, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, DeadlineFields, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
@@ -7,6 +7,9 @@ import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
 import { fieldErrors, quoteSchema } from "@/lib/quote";
 import { SITE } from "@/lib/site";
 import { readTouches } from "@/lib/visit-touch";
+
+// Fields inside the "Add project details" section.
+const MORE_FIELDS = new Set(["street", "town", "approx_size", "material", "notes", "deadline_reason", "deadline_date"]);
 
 const selectCls = "flex h-12 w-full rounded-lg border px-3 text-base";
 // White fields with dark text on both tones; the navy band drops the field border, as the white fill carries it.
@@ -22,6 +25,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [serverError, setServerError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+  const moreRef = useRef<HTMLDetailsElement>(null);
   useFocusFirstError(formRef, errors);
   const turnstile = useTurnstile();
   const keys = useRef(new SubmissionKeys());
@@ -42,7 +46,10 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
       // A new attempt that fails validation sent nothing: drop the previous send failure.
       setStatus("idle");
       setServerError("");
-      setErrors(fieldErrors(parsed.error.issues));
+      const errs = fieldErrors(parsed.error.issues);
+      // Open the optional section if a problem is inside it, so the focused field is visible.
+      if (moreRef.current && Object.keys(errs).some((k) => MORE_FIELDS.has(k))) moreRef.current.open = true;
+      setErrors(errs);
       return;
     }
     setErrors({});
@@ -74,7 +81,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
       <div ref={doneRef} className={onDark ? "" : "rounded-2xl bg-card p-8 shadow-card"} role="status">
         <CheckCircle2 className="size-12 text-stone" />
         <h3 className="mt-4 text-3xl">Thanks, we got it.</h3>
-        <p className="mt-3 text-muted-foreground">We'll call you {SITE.responseTime} to set up your free on-site estimate.</p>
+        <p className="mt-3 text-muted-foreground">We'll call you {SITE.responseTime} to set up your free on-site quote.</p>
         <p className="mt-2 text-muted-foreground">Need us sooner? <a href={SITE.phoneHref} className="link inline-flex min-h-11 items-center">Call {SITE.phone}</a></p>
       </div>
     );
@@ -91,13 +98,11 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className={`relative space-y-5 ${tone.form}`}>
       <Honeypot />
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {field("first_name", "First name", { autoComplete: "given-name" })}
         {field("last_name", "Last name", { autoComplete: "family-name" })}
         {field("email", "Email", { type: "email", autoComplete: "email" })}
         {field("phone", "Phone", { type: "tel", autoComplete: "tel", inputMode: "tel" })}
-        {field("street", "Project address (optional)", { autoComplete: "address-line1", placeholder: "Street address" })}
-        {field("town", "Town (optional)", { autoComplete: "address-level2" })}
         {field("zip", "Zip code", { inputMode: "numeric", maxLength: 5, autoComplete: "postal-code" })}
         <div>
           <Label htmlFor="project_type">Project type</Label>
@@ -109,27 +114,38 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
           </select>
           <FieldError id="project_type-error" message={errors["project_type"]} />
         </div>
-        {field("approx_size", "Approximate size (optional)", { placeholder: "e.g. 12 x 16 ft" })}
-        <div>
-          <Label htmlFor="material">Preferred material</Label>
-          <select id="material" name="material" defaultValue="Not sure" className={`mt-1.5 ${selectCls} ${tone.field}`}>
-            <option>Composite</option>
-            <option>PVC</option>
-            <option>Pressure-treated wood</option>
-            <option>Not sure</option>
-          </select>
+      </div>
+      {/* Optional details stay in the form (and are sent) while folded away. */}
+      <details ref={moreRef} className="group rounded-lg border border-current/25 px-4">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 font-medium [&::-webkit-details-marker]:hidden">
+          Add project details (optional)
+          <svg className="size-5 shrink-0 transition-transform group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" /></svg>
+        </summary>
+        <div className="grid gap-4 pb-5 pt-2 sm:grid-cols-2">
+          {field("street", "Project address", { autoComplete: "address-line1", placeholder: "Street address" })}
+          {field("town", "Town", { autoComplete: "address-level2" })}
+          {field("approx_size", "Approximate size", { placeholder: "e.g. 12 x 16 ft" })}
+          <div>
+            <Label htmlFor="material">Preferred material</Label>
+            <select id="material" name="material" defaultValue="Not sure" className={`mt-1.5 ${selectCls} ${tone.field}`}>
+              <option>Composite</option>
+              <option>PVC</option>
+              <option>Pressure-treated wood</option>
+              <option>Not sure</option>
+            </select>
+          </div>
+          <DeadlineFields idPrefix="q" selectClassName={`mt-1.5 ${selectCls} ${tone.field}`} inputClassName={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} />
+          <div className="sm:col-span-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea id="notes" name="notes" rows={3} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, or anything else." />
+          </div>
         </div>
-        <DeadlineFields idPrefix="q" selectClassName={`mt-1.5 ${selectCls} ${tone.field}`} inputClassName={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} />
-      </div>
-      <div>
-        <Label htmlFor="notes">Notes (optional)</Label>
-        <Textarea id="notes" name="notes" rows={4} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, or anything else." />
-      </div>
+      </details>
       <SmsConsent id="q-sms_consent" />
       <TurnstileBox boxRef={turnstile.ref} />
       {status === "error" && <SendError message={serverError} />}
       <Button type="submit" variant={onDark ? "light" : "cta"} size="lg" className="w-full sm:w-auto" disabled={!ready || status === "sending"}>
-        {status === "sending" ? "Sending…" : "Request My Free Estimate"}
+        {status === "sending" ? "Sending…" : "Request My Free Quote"}
       </Button>
     </form>
   );

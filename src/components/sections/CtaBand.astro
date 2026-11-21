@@ -2,7 +2,7 @@
 import Button from "@/components/Button.astro";
 import { SITE } from "@/lib/site";
 interface Props { title?: string; body?: string }
-const { title = "Ready for a new deck?", body = "Get a free on-site estimate. No pressure, no sales pitch." } = Astro.props;
+const { title = "Ready for a new deck?", body = "Get a free on-site quote. No pressure, no sales pitch." } = Astro.props;
 ---
 
 <section class="on-dark bg-primary">
@@ -12,7 +12,7 @@ const { title = "Ready for a new deck?", body = "Get a free on-site estimate. No
       <p class="mt-4 text-[1.1875rem] leading-normal text-muted-foreground">{body}</p>
     </div>
     <div class="flex shrink-0 flex-wrap gap-3">
-      <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+      <Button href="/contact" variant="light" size="lg">Get a Free Quote</Button>
       <Button href={SITE.phoneHref} variant="outline-light" size="lg">Call {SITE.phone}</Button>
       <Button href={SITE.smsHref} variant="outline-light" size="lg">Text us</Button>
     </div>

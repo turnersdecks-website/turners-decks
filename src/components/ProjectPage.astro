@@ -39,7 +39,7 @@ const factors = c.cost.lists?.flatMap((l) => l.items) ?? [];
   schema={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Our Decks", path: "/decks" }, { name: c.card, path: `/${c.slug}` }])}
 >
   <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1}>
-    <Button href="/contact" variant="light" size="lg">Get a Free Estimate</Button>
+    <Button href="/contact" variant="light" size="lg">Get a Free Quote</Button>
     <Button href={`/${service.slug}`} variant="outline-light" size="lg">About {service.title.toLowerCase()}</Button>
   </PageHero>
 
@@ -117,7 +117,7 @@ const factors = c.cost.lists?.flatMap((l) => l.items) ?? [];
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
           <Button href="/estimator" variant="light" size="lg">Estimate Your Deck</Button>
-          <Button href="/contact" variant="outline-light" size="lg">Get a Free Estimate</Button>
+          <Button href="/contact" variant="outline-light" size="lg">Get a Free Quote</Button>
         </div>
       </div>
       <div class="rounded-3xl border border-border p-7">
