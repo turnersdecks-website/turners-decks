@@ -800,6 +800,14 @@ export const crewTime = sqliteTable(
     source: text('source', { enum: ['text', 'manual'] }).notNull(),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
+    /** Verified paid: 'qbo' = covered by the QuickBooks payment in qbo_txn_id (already in the Job's QuickBooks costs);
+     * 'outside' = paid another way (cash...), so its cost is added to the Job's costs once. Null = not verified yet. */
+    paidVia: text('paid_via', { enum: ['qbo', 'outside'] }),
+    qboTxnId: text('qbo_txn_id').references(() => qboTransactions.id, { onDelete: 'set null' }),
+    /** How it was paid when outside QuickBooks, in plain words ("cash", "Pat's personal Venmo"). */
+    paidNote: text('paid_note'),
+    verifiedAt: integer('verified_at', { mode: 'timestamp_ms' }),
+    verifiedBy: text('verified_by').references(() => user.id, { onDelete: 'set null' }),
   },
-  (t) => [index('crew_time_job_idx').on(t.jobId, t.workDate)],
+  (t) => [index('crew_time_job_idx').on(t.jobId, t.workDate), index('crew_time_qbo_idx').on(t.qboTxnId)],
 )

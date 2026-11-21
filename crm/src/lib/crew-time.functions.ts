@@ -7,6 +7,10 @@ import {
   addCrewTime,
   checkinText,
   clearCrewTimeReview,
+  crewPayCandidates,
+  type VerifyCrewInput,
+  unverifyCrewPay,
+  verifyCrewPay,
   listJobCrewTime,
   readCrewSettings,
   removeCrewTime,
@@ -48,3 +52,18 @@ export const clearCrewReviewFn = createServerFn({ method: 'POST' })
   .middleware([requireStaff])
   .validator((data: { id: string }) => record(data))
   .handler(({ data }) => clearCrewTimeReview(getDb(env.DB), requiredId(data.id)))
+
+export const getCrewPayCandidates = createServerFn({ method: 'GET' })
+  .middleware([requireStaff])
+  .validator((data: { id: string }) => record(data))
+  .handler(({ data }) => crewPayCandidates(getDb(env.DB), requiredId(data.id)))
+
+export const verifyCrewPayFn = createServerFn({ method: 'POST' })
+  .middleware([requireStaff])
+  .validator((data: VerifyCrewInput) => record(data))
+  .handler(({ data, context: { staff } }) => verifyCrewPay(getDb(env.DB), data as unknown as VerifyCrewInput, staff.id))
+
+export const unverifyCrewPayFn = createServerFn({ method: 'POST' })
+  .middleware([requireStaff])
+  .validator((data: { id: string }) => record(data))
+  .handler(({ data }) => unverifyCrewPay(getDb(env.DB), requiredId(data.id)))

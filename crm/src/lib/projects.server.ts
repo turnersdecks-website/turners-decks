@@ -1,5 +1,5 @@
 import type { JobStatus } from '#/lib/job-statuses'
-import { type ChecklistJob, type ProjectStep, checklistFor, checklistItem, isProjectStep, stepProgress } from '#/lib/project-steps'
+import { type ChecklistJob, type ProjectStep, checklistFor, checklistItem, isProjectStep, skipKey, stepProgress } from '#/lib/project-steps'
 
 // The project board (GLOSSARY Project step): won Jobs by step, each step's checklist, moving a Job between steps.
 // Shared by the CRM pages (projects.functions.ts) and the MCP tools.
@@ -142,5 +142,24 @@ export async function setChecklistItem(d1: D1, jobId: string, key: unknown, done
   } else {
     await d1.prepare('DELETE FROM job_checklist WHERE job_id = ? AND item_key = ?').bind(jobId, item.key).run()
   }
+  return jobChecklist(d1, jobId)
+}
+
+/** Marks a skippable item "Not doing" (or undoes it). Skipping an item can skip others with it (no review asked means
+ * no review received). Stored as job_checklist rows keyed skip:<key>; a skipped item counts as done. */
+export async function skipChecklistItem(d1: D1, jobId: string, key: unknown, skip: unknown, staffId: string | null, now = Date.now()) {
+  const item = typeof key === 'string' ? checklistItem(key) : undefined
+  if (!item?.skip) throw badRequest('That item cannot be skipped.')
+  if (typeof skip !== 'boolean') throw badRequest('skip must be true or false.')
+  const exists = await d1.prepare('SELECT 1 FROM jobs WHERE id = ?').bind(jobId).first()
+  if (!exists) throw jobNotFound()
+  const keys = [item.key, ...(item.skip.also ?? [])].map(skipKey)
+  await d1.batch(
+    keys.map((k) =>
+      skip
+        ? d1.prepare('INSERT OR IGNORE INTO job_checklist (job_id, item_key, done_at, done_by) VALUES (?, ?, ?, ?)').bind(jobId, k, now, staffId)
+        : d1.prepare('DELETE FROM job_checklist WHERE job_id = ? AND item_key = ?').bind(jobId, k),
+    ),
+  )
   return jobChecklist(d1, jobId)
 }

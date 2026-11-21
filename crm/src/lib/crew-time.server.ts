@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, notInArray, or, sql } from 'drizzle-orm'
 import type { BatchItem } from 'drizzle-orm/batch'
 import { getDb } from '#/db/client'
-import { CREW_PAY_TYPES, type CrewPayType, companySettings, crewCheckins, crewMembers, crewTime, jobs } from '#/db/schema'
+import { CREW_PAY_TYPES, type CrewPayType, companySettings, crewCheckins, crewMembers, crewTime, jobs, qboTransactions } from '#/db/schema'
 import { type CrewPick, type ParsedEntry, describeEntries, matchCrew, parseCrewReply } from '#/lib/crew-reply'
 import { badRequest } from '#/lib/input'
 import { type OutboxEnv, enqueueJob, kickJobs } from '#/lib/outbox'
@@ -289,11 +289,128 @@ export async function crewReplyWrites(db: Db, text: string, to: string, now: num
 
 export async function listJobCrewTime(db: Db, jobId: string) {
   const [rows, crew] = await Promise.all([
-    db.select().from(crewTime).where(eq(crewTime.jobId, jobId)).orderBy(desc(crewTime.workDate), asc(crewTime.createdAt)),
+    db
+      .select({
+        row: crewTime,
+        txnDate: qboTransactions.txnDate,
+        txnParty: qboTransactions.partyName,
+        txnMemo: qboTransactions.memo,
+        txnAmountCents: qboTransactions.amountCents,
+      })
+      .from(crewTime)
+      .leftJoin(qboTransactions, eq(qboTransactions.id, crewTime.qboTxnId))
+      .where(eq(crewTime.jobId, jobId))
+      .orderBy(desc(crewTime.workDate), asc(crewTime.createdAt)),
     db.select({ id: crewMembers.id, name: crewMembers.name, payType: crewMembers.payType, rateCents: crewMembers.rateCents }).from(crewMembers).where(eq(crewMembers.active, true)).orderBy(asc(crewMembers.name)),
   ])
-  const totals = rows.reduce((a, r) => ({ hours: a.hours + (r.hours ?? 0), costCents: a.costCents + (r.costCents ?? 0) }), { hours: 0, costCents: 0 })
-  return { rows, crew, totals, needsReview: rows.filter((r) => r.needsReview).length }
+  const list = rows.map(({ row, ...t }) => ({ ...row, qboTxn: row.qboTxnId ? { date: t.txnDate, party: t.txnParty ?? t.txnMemo, amountCents: t.txnAmountCents } : null }))
+  const sum = (f: (r: (typeof list)[number]) => boolean) => list.filter(f).reduce((a, r) => a + (r.costCents ?? 0), 0)
+  const totals = {
+    hours: list.reduce((a, r) => a + (r.hours ?? 0), 0),
+    costCents: sum(() => true),
+    /** Covered by QuickBooks payments: already in the Job's QuickBooks costs. */
+    qboCents: sum((r) => r.paidVia === 'qbo'),
+    /** Paid outside QuickBooks: added to the Job's costs (P&L) once. */
+    outsideCents: sum((r) => r.paidVia === 'outside'),
+    /** Not verified yet: not in any cost total until it is. */
+    unverifiedCents: sum((r) => !r.paidVia),
+  }
+  return { rows: list, crew, totals, needsReview: list.filter((r) => r.needsReview).length, unverified: list.filter((r) => !r.paidVia).length }
+}
+
+// ---------------------------------------------------------------------------
+// Verifying crew pay (counted once): link an entry to the QuickBooks payment that covered it, or mark it paid outside
+// QuickBooks. A QuickBooks payment still in To sort is sorted onto the Job when linked.
+
+const dayShift = (date: string, days: number) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10)
+
+/** QuickBooks costs that could be this crew member's pay: on this Job or not sorted yet, from a week before the work
+ * day to three weeks after, with the ones that mention the person's name first. */
+export async function crewPayCandidates(db: Db, crewTimeId: string) {
+  const entry = await db.select().from(crewTime).where(eq(crewTime.id, crewTimeId)).get()
+  if (!entry) throw badRequest('That entry is gone.')
+  const txns = await db
+    .select()
+    .from(qboTransactions)
+    .where(
+      and(
+        eq(qboTransactions.deleted, false),
+        eq(qboTransactions.kind, 'cost'),
+        or(eq(qboTransactions.jobId, entry.jobId), isNull(qboTransactions.assignment)),
+        gte(qboTransactions.txnDate, dayShift(entry.workDate, -7)),
+        lte(qboTransactions.txnDate, dayShift(entry.workDate, 21)),
+      ),
+    )
+    .orderBy(asc(qboTransactions.txnDate))
+    .limit(200)
+  const first = entry.name.split(/\s+/)[0].toLowerCase()
+  const mentions = (t: (typeof txns)[number]) => [t.partyName, t.memo, t.linesJson].some((v) => v?.toLowerCase().includes(first))
+  const linked = txns.length
+    ? await db
+        .select({ txn: crewTime.qboTxnId, n: sql<number>`count(*)`, cents: sql<number>`coalesce(sum(${crewTime.costCents}), 0)` })
+        .from(crewTime)
+        .where(inArray(crewTime.qboTxnId, txns.map((t) => t.id)))
+        .groupBy(crewTime.qboTxnId)
+    : []
+  const byTxn = new Map(linked.map((l) => [l.txn, l]))
+  const sameName = await db
+    .select({ id: crewTime.id, workDate: crewTime.workDate, costCents: crewTime.costCents })
+    .from(crewTime)
+    .where(and(eq(crewTime.jobId, entry.jobId), eq(crewTime.name, entry.name), isNull(crewTime.paidVia)))
+    .orderBy(asc(crewTime.workDate))
+  return {
+    entry: { id: entry.id, name: entry.name, workDate: entry.workDate, costCents: entry.costCents },
+    /** This person's other unverified days on the Job: one payment often covers several (a weekend). */
+    sameName,
+    candidates: txns
+      .map((t) => ({
+        id: t.id,
+        date: t.txnDate,
+        party: t.partyName ?? t.memo ?? t.account ?? 'QuickBooks cost',
+        account: t.account,
+        amountCents: t.amountCents,
+        onJob: t.jobId === entry.jobId,
+        mentionsName: mentions(t),
+        linkedCount: byTxn.get(t.id)?.n ?? 0,
+        linkedCents: byTxn.get(t.id)?.cents ?? 0,
+      }))
+      .sort((a, b) => Number(b.mentionsName) - Number(a.mentionsName) || Number(b.onJob) - Number(a.onJob) || a.date.localeCompare(b.date))
+      .slice(0, 15),
+  }
+}
+
+export type VerifyCrewInput = { ids: string[]; via: 'qbo'; qboTxnId: string } | { ids: string[]; via: 'outside'; note: string }
+
+export async function verifyCrewPay(db: Db, input: VerifyCrewInput, staffId: string | null, now = Date.now()) {
+  const ids = Array.isArray(input.ids) ? input.ids.filter((v) => typeof v === 'string').slice(0, 50) : []
+  if (!ids.length) throw badRequest('Pick at least one day.')
+  const entries = await db.select({ id: crewTime.id, jobId: crewTime.jobId }).from(crewTime).where(inArray(crewTime.id, ids))
+  if (entries.length !== ids.length) throw badRequest('Some of those entries are gone.')
+  const jobId = entries[0].jobId
+  if (entries.some((e) => e.jobId !== jobId)) throw badRequest('Those entries are on different Jobs.')
+  const writes: BatchItem<'sqlite'>[] = []
+  if (input.via === 'qbo') {
+    const txn = await db.select().from(qboTransactions).where(eq(qboTransactions.id, String(input.qboTxnId))).get()
+    if (!txn || txn.deleted) throw badRequest('That QuickBooks transaction is gone.')
+    if (txn.assignment === 'job' && txn.jobId !== jobId) throw badRequest('That QuickBooks payment is on another Job.')
+    if (txn.assignment === 'ignored') throw badRequest('That QuickBooks payment is marked Ignored. Sort it onto this Job first.')
+    if (!txn.assignment)
+      writes.push(db.update(qboTransactions).set({ assignment: 'job', jobId, assignedBy: staffId ?? 'auto', assignedAt: new Date(now) }).where(eq(qboTransactions.id, txn.id)))
+    writes.push(db.update(crewTime).set({ paidVia: 'qbo', qboTxnId: txn.id, paidNote: null, verifiedAt: new Date(now), verifiedBy: staffId }).where(inArray(crewTime.id, ids)))
+  } else {
+    const note = typeof input.note === 'string' ? input.note.trim().slice(0, 100) : ''
+    if (!note) throw badRequest('Say how they were paid, e.g. cash.')
+    writes.push(db.update(crewTime).set({ paidVia: 'outside', qboTxnId: null, paidNote: note, verifiedAt: new Date(now), verifiedBy: staffId }).where(inArray(crewTime.id, ids)))
+  }
+  await db.batch(writes as [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]])
+  return listJobCrewTime(db, jobId)
+}
+
+/** Back to not verified (the QuickBooks payment stays sorted on the Job). */
+export async function unverifyCrewPay(db: Db, id: string) {
+  const [row] = await db.update(crewTime).set({ paidVia: null, qboTxnId: null, paidNote: null, verifiedAt: null, verifiedBy: null }).where(eq(crewTime.id, id)).returning({ jobId: crewTime.jobId })
+  if (!row) throw badRequest('That entry is gone.')
+  return listJobCrewTime(db, row.jobId)
 }
 
 export type ManualCrewInput = { jobId: string; workDate: string; crewMemberId?: string | null; name?: string; hours?: number | null; payType?: CrewPayType | null; rate?: number | null }

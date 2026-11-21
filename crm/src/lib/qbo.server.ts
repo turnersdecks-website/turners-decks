@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
 import { companySettings, customers, jobs, qboConnection, qboTransactions } from '#/db/schema'
 import { badRequest } from '#/lib/input'
-import { OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, type QboRules, jobTotals, parseQboRules, ruleFor } from '#/lib/qbo-vocab'
+import { OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, type QboRules, jobTotals, marginPct, parseQboRules, ruleFor } from '#/lib/qbo-vocab'
 
 // QuickBooks Online sync (docs/adr/0006-quickbooks-sync.md). One admin connects once (OAuth 2.0, /api/qbo/connect).
 // A nightly cron (and "Sync now") pulls transactions: the first run reads everything since BACKFILL_FROM with queries,
@@ -449,7 +449,15 @@ export async function listTransactions(db: Db, f: TxnFilter = {}) {
 /** A Job's QuickBooks transactions and totals (jobTotals). */
 export async function jobFinancials(db: Db, jobId: string) {
   const rows = await listTransactions(db, { jobId, limit: 2000 })
-  return { totals: jobTotals(rows), transactions: rows }
+  const outside = await db.get<{ cents: number }>(sql`SELECT coalesce(sum(cost_cents), 0) AS cents FROM crew_time WHERE job_id = ${jobId} AND paid_via = 'outside'`)
+  const t = jobTotals(rows)
+  const crewOutsideCents = outside?.cents ?? 0
+  // All in: the QuickBooks costs plus crew paid outside QuickBooks, so crew pay counts once.
+  const allInCostCents = t.costCents + crewOutsideCents
+  return {
+    totals: { ...t, crewOutsideCents, allInCostCents, allInProfitCents: t.revenueCents - allInCostCents, allInMarginPct: marginPct(t.revenueCents, allInCostCents) },
+    transactions: rows,
+  }
 }
 
 /** Settings and the MCP: connected or not, last sync, last error. Never tokens. */
@@ -517,6 +525,15 @@ export async function profitAndLoss(db: Db, year: number) {
     .from(qboTransactions)
     .where(and(eq(qboTransactions.deleted, false), sql`substr(${qboTransactions.txnDate}, 1, 4) = ${y}`))
     .groupBy(sql`substr(${qboTransactions.txnDate}, 1, 7)`)
+  // Crew paid outside QuickBooks, by the month they worked: Job costs too (counted once, crew-time.server.ts).
+  const crewOutside = await db.all<{ month: string; cents: number }>(
+    sql`SELECT substr(work_date, 1, 7) AS month, coalesce(sum(cost_cents), 0) AS cents FROM crew_time WHERE paid_via = 'outside' AND substr(work_date, 1, 4) = ${y} GROUP BY 1`,
+  )
+  for (const c of crewOutside) {
+    const m = monthRows.find((r) => r.month === c.month)
+    if (m) m.jobCostCents += c.cents
+    else monthRows.push({ month: c.month, revenueCents: 0, jobCostCents: c.cents, unsortedCents: 0, paidCents: 0 })
+  }
   const byMonth = new Map(monthRows.map((m) => [m.month, m]))
   const months: PnlMonth[] = Array.from({ length: 12 }, (_, i) => {
     const month = `${y}-${String(i + 1).padStart(2, '0')}`
@@ -531,7 +548,10 @@ export async function profitAndLoss(db: Db, year: number) {
       first: customers.firstName,
       last: customers.lastName,
       revenueCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'revenue' THEN t.amount_cents WHEN 'revenue_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
-      costCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'cost' THEN t.amount_cents WHEN 'cost_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)`,
+      // QuickBooks costs, plus crew time verified as paid outside QuickBooks (cash...), so crew pay counts once
+      // (crew-time.server.ts): crew time covered by a QuickBooks payment is already in the QuickBooks costs.
+      costCents: sql<number>`(SELECT coalesce(sum(CASE t.kind WHEN 'cost' THEN t.amount_cents WHEN 'cost_credit' THEN -t.amount_cents ELSE 0 END), 0) FROM qbo_transactions t WHERE t.job_id = ${jobs.id} AND t.deleted = 0)
+        + (SELECT coalesce(sum(c.cost_cents), 0) FROM crew_time c WHERE c.job_id = ${jobs.id} AND c.paid_via = 'outside')`,
     })
     .from(jobs)
     .innerJoin(customers, eq(customers.id, jobs.customerId))

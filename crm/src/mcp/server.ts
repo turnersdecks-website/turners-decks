@@ -825,7 +825,7 @@ function buildServer(env: Env, staff: Staff) {
     'job_financials',
     {
       title: 'A Job\'s money from QuickBooks',
-      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, profit (invoiced minus costs) and margin % (null until the Job has both invoices and costs); plus the transactions.',
+      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, profit (invoiced minus costs); crew pay verified as paid outside QuickBooks (cash), and all-in costs and profit including it (crew pay counted once); plus the transactions.',
       inputSchema: { jobId: id },
       annotations: READ,
     },
@@ -837,6 +837,9 @@ function buildServer(env: Env, staff: Staff) {
           invoiced: f.totals.revenueCents / 100,
           paid: f.totals.paidCents / 100,
           invoicedMinusCosts: f.totals.profitCents / 100,
+          crewPaidOutsideQuickBooks: f.totals.crewOutsideCents / 100,
+          allInCosts: f.totals.allInCostCents / 100,
+          allInProfit: f.totals.allInProfitCents / 100,
           transactions: f.transactions.map(txnView),
         }
       }),
