@@ -1,6 +1,8 @@
 ---
 // Project spotlight pages at the old site's addresses (one per finished job). Town and county only:
-// never a customer's name or street address.
+// never a customer's name or street address. Layout: big-number strip, overview with a photo,
+// before and after, story sections that alternate with photos, a navy cost card, the rest of the
+// photos, and more spotlights as photo cards.
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Button from "@/components/Button.astro";
 import Photo from "@/components/sections/Photo.astro";
@@ -15,6 +17,20 @@ interface Props { slug: ProjectSlug }
 const c = PROJECT_PAGES[Astro.props.slug];
 const service = SERVICE_PAGES[c.service];
 const others = PROJECT_LIST.filter((p) => p.slug !== c.slug);
+
+// Photos used beside the text, in order; whatever is left goes in the photo grid.
+const pool = c.photos.filter((p) => p !== c.hero);
+const overviewPhoto = pool[0];
+const blockPhotos = c.blocks.map((_, i) => pool[i + 1]);
+const rest = pool.slice(1 + c.blocks.length);
+
+const glance = [
+  { label: "Cost range", value: c.glance.range, strong: true },
+  ...(c.glance.size ? [{ label: "Size", value: c.glance.size }] : []),
+  { label: "Material", value: c.glance.material },
+  { label: "Location", value: `${c.glance.location}, PA` },
+];
+const factors = c.cost.lists?.flatMap((l) => l.items) ?? [];
 ---
 
 <BaseLayout
@@ -27,29 +43,113 @@ const others = PROJECT_LIST.filter((p) => p.slug !== c.slug);
     <Button href={`/${service.slug}`} variant="outline-light" size="lg">About {service.title.toLowerCase()}</Button>
   </PageHero>
 
+  <!-- At a glance -->
+  <section class="container-site -mt-10 relative z-10">
+    <dl class="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(auto-fit,minmax(0,1fr))]">
+      {glance.map((g) => (
+        <div class:list={["rounded-2xl p-5 shadow-sm sm:p-6", g.strong ? "on-dark col-span-2 bg-primary lg:col-span-1" : "border border-border bg-background"]}>
+          <dt class="eyebrow">{g.label}</dt>
+          <dd class:list={["mt-2 font-medium leading-snug", g.strong ? "text-[1.625rem]" : "text-lg text-primary sm:text-xl"]}>{g.value}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <!-- Overview -->
   <section class="section container-site split items-start">
     <div>
-      <dl class="grid gap-x-6 gap-y-3 rounded-3xl bg-secondary p-7 sm:grid-cols-[auto_1fr]">
-        {c.specs.map(([k, v]) => (
-          <>
-            <dt class="font-medium text-primary">{k}</dt>
-            <dd class="text-muted-foreground">{v}</dd>
-          </>
-        ))}
-      </dl>
-      {c.intro.map((t) => <p class="mt-6 text-[1.0625rem] leading-relaxed text-muted-foreground">{t}</p>)}
+      <p class="eyebrow mb-2.5">The project</p>
+      {c.intro.map((t, i) => <p class:list={["leading-relaxed", i === 0 ? "text-[1.3125rem] text-foreground" : "mt-5 text-[1.0625rem] text-muted-foreground"]}>{t}</p>)}
+      <details class="faq mt-8 rounded-2xl bg-secondary p-6">
+        <summary class="flex cursor-pointer items-center justify-between gap-4 font-medium text-primary">
+          Full project details
+          <svg class="faq-chevron size-5 shrink-0 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" /></svg>
+        </summary>
+        <dl class="mt-5 grid gap-x-6 gap-y-3 sm:grid-cols-[auto_1fr]">
+          {c.specs.map(([k, v]) => (
+            <>
+              <dt class="font-medium text-primary">{k}</dt>
+              <dd class="text-muted-foreground">{v}</dd>
+            </>
+          ))}
+        </dl>
+      </details>
     </div>
-    <div class="grid gap-12">
-      {c.blocks.map((b) => <ContentBlock block={b} />)}
-    </div>
+    {overviewPhoto && <Photo photo={overviewPhoto} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />}
   </section>
 
   {
     c.before && (
+      <section class="section bg-secondary">
+        <div class="container-site">
+          <p class="eyebrow mb-2.5">Before and after</p>
+          <h2 class="display-2">Drag to compare</h2>
+          <div class="mt-8 max-w-4xl">
+            <BeforeAfterSlider before={c.before} after={c.hero} alt={c.card} />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Story: each section beside a photo, alternating sides -->
+  {c.blocks.map((b, i) => (
+    <section class:list={["section", { "bg-secondary": (i + (c.before ? 1 : 0)) % 2 === 1 }]}>
+      <div class="container-site split">
+        {blockPhotos[i] && (
+          <div class:list={{ "md:order-last": i % 2 === 0 }}>
+            <Photo photo={blockPhotos[i]!} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+          </div>
+        )}
+        <ContentBlock block={{ ...b, level: 2 }} />
+      </div>
+    </section>
+  ))}
+
+  <!-- Cost -->
+  <section class="section on-dark bg-navy-deep">
+    <div class="container-site split items-start">
+      <div>
+        <p class="eyebrow mb-4">{c.cost.heading}</p>
+        <p class="display-1">{c.glance.range}</p>
+        <p class="mt-5 max-w-[30em] text-[1.0625rem] leading-relaxed text-muted-foreground">
+          A rounded range for this project's size and scope, not a quote. Every deck is priced on its own layout and site.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <Button href="/estimator" variant="light" size="lg">Estimate Your Deck</Button>
+          <Button href="/contact" variant="outline-light" size="lg">Get a Free Estimate</Button>
+        </div>
+      </div>
+      <div class="rounded-3xl border border-border p-7">
+        <h2 class="text-[1.375rem] font-medium">What moves the price</h2>
+        <ul class="mt-5 grid gap-3 text-[1.0625rem] leading-snug">
+          {factors.map((f) => (
+            <li class="flex items-start gap-3">
+              <svg class="mt-0.5 size-5 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.58l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd" /></svg>
+              {f}
+            </li>
+          ))}
+        </ul>
+        {c.cost.after?.map((t) => <p class="mt-5 text-muted-foreground">{t}</p>)}
+      </div>
+    </div>
+  </section>
+
+  {
+    rest.length > 0 && (
       <section class="section container-site">
-        <h2 class="display-2">Before and after</h2>
-        <div class="mt-8 max-w-4xl">
-          <BeforeAfterSlider before={c.before} after={c.hero} alt={c.card} />
+        <p class="eyebrow mb-2.5">Gallery</p>
+        <h2 class="display-2">More from this project</h2>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {rest.map((ph, i) => (
+            <div class:list={{ "sm:col-span-2 sm:row-span-2": i === 0 }}>
+              <Photo
+                photo={ph}
+                sizes={i === 0 ? "(min-width: 1024px) 66vw, 100vw" : undefined}
+                class:list={["w-full rounded-2xl object-cover", i === 0 ? "aspect-[4/3] h-full" : "aspect-[4/3]"]}
+              />
+            </div>
+          ))}
         </div>
       </section>
     )
@@ -57,25 +157,19 @@ const others = PROJECT_LIST.filter((p) => p.slug !== c.slug);
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <h2 class="display-2">Project photos</h2>
-      <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {c.photos.map((ph) => <Photo photo={ph} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}
+      <h2 class="display-2">More project spotlights</h2>
+      <div class="mt-10 grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        {others.map((p) => (
+          <a href={`/${p.slug}`} class="group block">
+            <Photo photo={p.hero} class="aspect-[4/3] w-full rounded-2xl object-cover" />
+            <p class="eyebrow mt-4">{p.glance.range}</p>
+            <p class="mt-1 text-xl font-medium leading-snug text-primary group-hover:underline">{p.card}</p>
+          </a>
+        ))}
+        <a href="/gallery" class="flex min-h-48 items-center justify-center rounded-2xl border border-border p-7 text-center text-xl font-medium text-primary hover:underline">
+          See every deck in the gallery
+        </a>
       </div>
-    </div>
-  </section>
-
-  <section class="section container-site split items-start">
-    <ContentBlock block={{ ...c.cost, level: 2 }} />
-    <div class="max-w-xl">
-      <p class="text-[1.0625rem] leading-relaxed text-muted-foreground">
-        Want a ballpark for your own deck? The price estimator gives a preliminary range in a couple of minutes.
-      </p>
-      <Button href="/estimator" variant="outline" size="lg" class="mt-6">Try the Price Estimator</Button>
-      <h2 class="mt-12 text-[1.625rem] font-medium leading-tight text-primary">More projects</h2>
-      <ul class="mt-4 grid gap-2">
-        {others.map((p) => <li><a href={`/${p.slug}`} class="link inline-flex min-h-11 items-center">{p.card}</a></li>)}
-        <li><a href="/decks" class="link inline-flex min-h-11 items-center">All our decks</a></li>
-      </ul>
     </div>
   </section>
 

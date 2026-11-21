@@ -49,7 +49,8 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
         {PROJECT_LIST.map((p) => (
           <a href={`/${p.slug}`} class="group block">
             <Photo photo={p.hero} class="aspect-[4/3] w-full rounded-2xl object-cover" />
-            <p class="mt-4 text-xl font-medium leading-snug text-primary group-hover:underline">{p.card}</p>
+            <p class="eyebrow mt-4">{p.glance.range}</p>
+            <p class="mt-1 text-xl font-medium leading-snug text-primary group-hover:underline">{p.card}</p>
           </a>
         ))}
       </div>
