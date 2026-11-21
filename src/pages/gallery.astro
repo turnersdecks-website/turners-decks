@@ -58,7 +58,7 @@ const withPhotos = PROJECTS.filter((p) => p.photos.length);
   {withPhotos.map((p, i) => (
     <section class:list={["section", { "bg-secondary": i % 2 === 1 }]}>
       <div class="container-site">
-        <SectionHeading eyebrow={p.type} title={p.title} intro={p.blurb} />
+        <SectionHeading eyebrow={p.type} title={p.title} intro={p.before && p.after ? (p.more ?? "More photos from this project.") : p.blurb} />
         <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {p.photos.map((ph) => <Photo photo={ph} class="aspect-[4/3] w-full rounded-2xl object-cover" />)}
         </div>
