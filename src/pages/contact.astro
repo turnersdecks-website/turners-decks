@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Button from "@/components/Button.astro";
 import Photo from "@/components/sections/Photo.astro";
 import QuoteForm from "@/components/islands/QuoteForm";
 import { PHOTO } from "@/lib/photos";
@@ -23,12 +24,39 @@ import { localBusinessSchema } from "@/lib/seo";
       </div>
       <div>
         <Photo photo={PHOTO.groundComposite} sizes="(min-width: 900px) 50vw, 100vw" eager class="aspect-[4/3] w-full rounded-3xl object-cover" />
-        <dl class="divided mt-8 text-base md:grid-flow-row md:[&>*]:border-l-0 md:[&>*]:border-t md:[&>*]:px-0 md:[&>*]:py-4 md:[&>:first-child]:border-t-0 md:[&>:first-child]:pt-0">
-          <div><dt class="eyebrow">Call or text</dt><dd class="flex flex-wrap gap-x-4"><a href={SITE.phoneHref} class="link inline-flex min-h-11 items-center">{SITE.phoneVanity} ({SITE.phone})</a><a href={SITE.smsHref} class="link inline-flex min-h-11 items-center">Send a text</a></dd></div>
-          <div><dt class="eyebrow">Email</dt><dd><a href={`mailto:${SITE.email}`} class="link inline-flex min-h-11 items-center break-all">{SITE.email}</a></dd></div>
-          <div><dt class="eyebrow">Where we build</dt><dd class="mt-1">{SITE.city}, {SITE.state}, serving Berks, Montgomery & Chester Counties</dd></div>
-          <div><dt class="eyebrow">Hours</dt><dd class="mt-1">{SITE.hours}</dd></div>
-        </dl>
+        <div class="mt-8 rounded-3xl border border-border p-6 sm:p-7">
+          <p class="eyebrow">Call or text</p>
+          <p class="mt-2 text-[1.75rem] font-medium leading-tight">{SITE.phoneVanity}</p>
+          <p class="text-muted-foreground">{SITE.phone}</p>
+          <div class="mt-5 flex flex-wrap gap-3">
+            <Button href={SITE.phoneHref} variant="light">Call us</Button>
+            <Button href={SITE.smsHref} variant="outline-light">Send a text</Button>
+          </div>
+          <ul class="mt-7 grid gap-5 border-t border-border pt-6">
+            <li class="flex gap-4">
+              <svg class="mt-0.5 size-5 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>
+              <div>
+                <p class="eyebrow">Email</p>
+                <a href={`mailto:${SITE.email}`} class="mt-1 inline-block break-all font-medium no-underline hover:underline">{SITE.email}</a>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <svg class="mt-0.5 size-5 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
+              <div>
+                <p class="eyebrow">Where we build</p>
+                <p class="mt-1">Based in {SITE.city}, {SITE.state}. Serving Berks, Montgomery & Chester Counties.</p>
+                <a href="/service-areas" class="mt-1 inline-block text-sm text-muted-foreground underline-offset-3 hover:underline">See the towns we serve</a>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <svg class="mt-0.5 size-5 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+              <div>
+                <p class="eyebrow">Hours</p>
+                <p class="mt-1">{SITE.hours}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
