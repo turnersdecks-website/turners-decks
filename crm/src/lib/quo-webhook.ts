@@ -10,9 +10,11 @@ import { START_WORDS, STOP_WORDS, keywordOf, verifyQuoSignature } from '#/lib/qu
 import { leadCreated, stageMove } from '#/lib/stage-history.server'
 import { newLeadRecipients } from '#/lib/new-lead-text'
 import { firstTextReplyText } from '#/lib/texting.server'
+import { crewReplyWrites } from '#/lib/crew-time.server'
 
 // POST /api/public/quo-webhook (docs/adr/0004-quo-texting.md). Quo calls it for the connected number:
-// - message.received: the text goes on the sender's Lead; a number we don't know becomes a new Lead (source `text`).
+// - message.received from Pat's cell (Settings > Texting): a reply to the crew check-in (crew-time.server.ts); never a
+//   Lead. From anyone else: the text goes on the sender's Lead; a number we don't know becomes a new Lead (source `text`).
 //   STOP-type words revoke text consent; START grants it again. A first text from a number with no consent history
 //   counts as consent to reply about their project (they reached out), as the privacy policy says. When texting is
 //   switched on, that first text from a new number gets one automatic reply (firstTextReplyText), sent through the
@@ -89,6 +91,9 @@ async function writesFor(
     const phone = toE164(String(ctx.senderIdentifier ?? ''))
     if (!phone || phone === ours) return []
     const text = typeof r.text === 'string' ? r.text : ''
+    // Pat's own cell: a reply to the crew check-in (crew-time.server.ts), or else nothing. Pat is never made a Lead.
+    const owner = await db.select({ m: companySettings.ownerMobile }).from(companySettings).where(eq(companySettings.id, 1)).get()
+    if (owner?.m && phone === owner.m) return (await crewReplyWrites(db, text, phone, at.getTime(), jobIds)) ?? []
     const media = Array.isArray(r.media) ? r.media.length : 0
     const word = keywordOf(text)
     const stop = STOP_WORDS.includes(word)
