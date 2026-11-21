@@ -33,6 +33,8 @@ it('has exactly the v1 columns', async () => {
     'qbo_rules', // docs/adr/0006-quickbooks-sync.md: which QuickBooks costs need sorting
     'new_lead_text_to', // docs/adr/0004-quo-texting.md: who gets the new Lead heads-up text
     'new_lead_text_template', // and its wording
+    'crew_checkin_enabled', // crew-time.server.ts: the build-day crew check-in text to Pat
+    'crew_checkin_hour', // and when it goes out
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })

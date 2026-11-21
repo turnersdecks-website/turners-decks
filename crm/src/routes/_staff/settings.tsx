@@ -1,6 +1,7 @@
 import { Link, createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { Building2, Mail, MessagesSquare, Plug, Save } from 'lucide-react'
 import { MessageLogSection } from '#/components/MessageLog'
+import { CrewSettingsSection } from '#/components/CrewSettings'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader } from '#/components/page'
@@ -25,7 +26,7 @@ import { DEFAULT_NEW_LEAD_TEMPLATE, NEW_LEAD_PLACEHOLDERS, renderNewLeadText } f
 import { cn } from '#/lib/utils'
 
 // Settings (admins), ported from Pine & Gable's /settings and regrouped into three tabs:
-// - Company: name, contact, timezone, Owner alert emails; the Photo home screen for Pat's phone
+// - Company: name, contact, timezone, Owner alert emails; the crew list and check-in text; the Photo home screen for Pat's phone
 // - Automations: Customer email templates (incl. the Estimate email) and texting rules (on/off, Pat's cell)
 // - Connections: Quo and QuickBooks (connect, status, sync)
 // - Message log: emails and texts the CRM sent or tried to send, with errors; Retry or Dismiss failed ones
@@ -38,7 +39,7 @@ const TABS = [
   { id: 'messages', title: 'Message log', icon: MessagesSquare },
 ] as const
 type TabId = (typeof TABS)[number]['id']
-const HASH_TAB: Record<string, TabId> = { company: 'company', 'photo-home': 'company', 'email-templates': 'automations', texting: 'connections', quickbooks: 'connections' }
+const HASH_TAB: Record<string, TabId> = { company: 'company', crew: 'company', 'photo-home': 'company', 'email-templates': 'automations', texting: 'connections', quickbooks: 'connections' }
 
 export const Route = createFileRoute('/_staff/settings')({
   validateSearch: (s: Record<string, unknown>): { tab?: TabId; qbo?: string } => ({
@@ -89,6 +90,7 @@ function SettingsPage() {
         {tab === 'company' && (
           <>
             <CompanySection />
+            <CrewSettingsSection />
             <PhotoHomeSection />
           </>
         )}

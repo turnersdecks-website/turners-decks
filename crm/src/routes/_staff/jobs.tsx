@@ -121,7 +121,9 @@ function JobBoard({ jobs }: { jobs: Card[] }) {
   const [openJob, setOpenJob] = useState<Card | null>(null)
 
   const stepOf = (j: Card) => moved[j.id] ?? j.step
-  const refresh = () => router.invalidate()
+  // `sync` waits for the new board data: a plain invalidate() can resolve with the old data while the reload is still
+  // pending, and the card jumped back to its old column for a moment before landing (the flash on move).
+  const refresh = () => router.invalidate({ sync: true })
 
   async function move(id: string, step: ProjectStep) {
     setMoved((m) => ({ ...m, [id]: step }))
@@ -172,7 +174,7 @@ function JobBoard({ jobs }: { jobs: Card[] }) {
                 aria-label={PROJECT_STEP_LABELS[step]}
                 {...dropHandlers(step)}
                 className={cn(
-                  'flex h-full min-h-0 w-[85vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-t-2xl border-x border-t bg-background sm:w-[260px]',
+                  'flex h-full min-h-0 w-[85vw] max-w-[300px] shrink-0 snap-start flex-col overflow-hidden rounded-t-2xl border-x border-t bg-background transition-colors duration-150 sm:w-[260px]',
                   dropStep === step && 'border-primary/50 bg-primary/5',
                 )}
               >
@@ -197,8 +199,8 @@ function JobBoard({ jobs }: { jobs: Card[] }) {
                         }}
                         onDragEnd={endDrag}
                         className={cn(
-                          'cursor-grab rounded-xl border bg-card p-3 shadow-xs transition hover:border-primary/40 hover:shadow-md active:cursor-grabbing',
-                          dragId === j.id && 'scale-[0.98] opacity-55',
+                          'cursor-grab rounded-xl border bg-card p-3 shadow-xs transition-[border-color,box-shadow] duration-150 hover:border-primary/40 hover:shadow-md active:cursor-grabbing',
+                          dragId === j.id && 'opacity-60',
                         )}
                       >
                         <button type="button" onClick={() => setOpenJob(j)} className="block w-full text-left">

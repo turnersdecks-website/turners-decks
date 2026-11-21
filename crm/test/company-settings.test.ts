@@ -61,6 +61,8 @@ describe('changing company settings', () => {
       new_lead_text_to: null,
       new_lead_text_template: null,
       qbo_rules: null,
+      crew_checkin_enabled: 0,
+      crew_checkin_hour: 18,
     })
   })
 

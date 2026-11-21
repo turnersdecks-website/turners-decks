@@ -419,6 +419,10 @@ export const companySettings = sqliteTable(
     newLeadTextTemplate: text('new_lead_text_template'),
     /** QuickBooks sorting rules (QboRules in qbo-vocab.ts) as JSON; null = the defaults. */
     qboRules: text('qbo_rules'),
+    /** The 6 PM crew check-in text to Pat on build days (crew-time.server.ts). Off until Kristin turns it on. */
+    crewCheckinEnabled: integer('crew_checkin_enabled', { mode: 'boolean' }).notNull().default(false),
+    /** Hour of the day (company time zone, 0 to 23) the check-in goes out. */
+    crewCheckinHour: integer('crew_checkin_hour').notNull().default(18),
   },
   // New columns are validated by the server (settings.functions.ts); a CHECK here would force a table rebuild.
   (t) => [check('company_settings_single_row', sql`${t.id} = 1`)],
@@ -738,3 +742,64 @@ export const emailTemplates = sqliteTable('email_templates', {
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null' }),
 })
+
+// Crew time (crew-time.server.ts). Crew members with their usual pay (hourly or a day amount); a check-in is the
+// daily text to Pat for one Job being built; crew time is who worked on a Job on a day and what it cost, from Pat's
+// reply or entered by hand. Its totals fill the Job's labor hours and labor cost.
+export const CREW_PAY_TYPES = ['hourly', 'day'] as const
+export type CrewPayType = (typeof CREW_PAY_TYPES)[number]
+
+export const crewMembers = sqliteTable('crew_members', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  /** Other names Pat might text, comma separated (e.g. "Tom, Tommy T"). */
+  aliases: text('aliases'),
+  payType: text('pay_type', { enum: CREW_PAY_TYPES }),
+  rateCents: integer('rate_cents'),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+})
+
+export const crewCheckins = sqliteTable(
+  'crew_checkins',
+  {
+    id: text('id').primaryKey(),
+    jobId: text('job_id')
+      .notNull()
+      .references(() => jobs.id, { onDelete: 'cascade' }),
+    /** The work day, "YYYY-MM-DD" in the company time zone. */
+    workDate: text('work_date').notNull(),
+    /** sent: waiting for Pat; answered: his reply was read; */
+    status: text('status', { enum: ['sent', 'answered'] }).notNull().default('sent'),
+    sentAt: integer('sent_at', { mode: 'timestamp_ms' }).notNull(),
+    answeredAt: integer('answered_at', { mode: 'timestamp_ms' }),
+    reply: text('reply'),
+  },
+  (t) => [uniqueIndex('crew_checkins_job_day_unique').on(t.jobId, t.workDate), index('crew_checkins_status_idx').on(t.status, t.sentAt)],
+)
+
+export const crewTime = sqliteTable(
+  'crew_time',
+  {
+    id: text('id').primaryKey(),
+    jobId: text('job_id')
+      .notNull()
+      .references(() => jobs.id, { onDelete: 'cascade' }),
+    checkinId: text('checkin_id').references(() => crewCheckins.id, { onDelete: 'set null' }),
+    crewMemberId: text('crew_member_id').references(() => crewMembers.id, { onDelete: 'set null' }),
+    /** The name as Pat wrote it (or the crew member's name). */
+    name: text('name').notNull(),
+    workDate: text('work_date').notNull(),
+    hours: real('hours'),
+    payType: text('pay_type', { enum: CREW_PAY_TYPES }),
+    rateCents: integer('rate_cents'),
+    costCents: integer('cost_cents'),
+    /** Something to check: a name not on the crew list, or no rate to price it with. */
+    needsReview: integer('needs_review', { mode: 'boolean' }).notNull().default(false),
+    source: text('source', { enum: ['text', 'manual'] }).notNull(),
+    createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('crew_time_job_idx').on(t.jobId, t.workDate)],
+)

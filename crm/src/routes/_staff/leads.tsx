@@ -72,7 +72,8 @@ function LeadsPage() {
     try {
       await moveLeadStage({ data: { leadId: id, stage } })
       if (stage === 'won') toast.success('Won. Added to Contacts as a Customer, with a new Job.')
-      await router.invalidate()
+      // `sync`: wait for the new data, so the card doesn't flash back to its old column before landing.
+      await router.invalidate({ sync: true })
     } catch (error) {
       toast.error(await errorMessage(error))
     } finally {
@@ -256,8 +257,8 @@ function LeadBoard({
                       }}
                       onDragEnd={endDrag}
                       className={cn(
-                        'group relative cursor-grab rounded-xl border bg-card p-3 shadow-xs transition hover:border-primary/40 hover:shadow-md active:cursor-grabbing',
-                        dragId === l.id && 'scale-[0.98] opacity-55',
+                        'group relative cursor-grab rounded-xl border bg-card p-3 shadow-xs transition-[border-color,box-shadow] duration-150 hover:border-primary/40 hover:shadow-md active:cursor-grabbing',
+                        dragId === l.id && 'opacity-60',
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">

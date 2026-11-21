@@ -1,3 +1,5 @@
+import { CrewTimePanel } from '#/components/CrewTimePanel'
+import { epochToWallTime } from '#/lib/dates'
 import { JobMoneyPanel } from '#/components/JobMoneyPanel'
 import { PhotosPanel } from '#/components/PhotosPanel'
 import { ProjectChecklist } from '#/components/ProjectChecklist'
@@ -176,6 +178,7 @@ function JobDetail() {
         <div className="min-w-0 space-y-6">
           <JobCard key={job.updatedAt.toString()} job={job} timeZone={timeZone} refresh={refresh} />
           <JobMoneyPanel key={`money-${job.id}`} jobId={job.id} />
+          <CrewTimePanel key={`crew-${job.id}`} jobId={job.id} today={epochToWallTime(Date.now(), timeZone).slice(0, 10)} onChanged={() => void refresh()} />
           <PhotosPanel key={job.id} target={{ jobId: job.id }} timeZone={timeZone} />
         </div>
         <aside className="min-w-0 space-y-6 self-start xl:sticky xl:top-6">
@@ -221,7 +224,7 @@ function JobDetail() {
             <Row label="Material variance">{m.materialVarianceCents === null ? blank(null) : `${m.materialVarianceCents > 0 ? '+' : ''}${formatMoney(m.materialVarianceCents)}`}</Row>
             <Row label="Gross margin">{m.grossMarginCents === null ? blank(null) : formatMoney(m.grossMarginCents)}</Row>
             <Row label="Gross margin %">{blank(m.grossMarginPct, '%')}</Row>
-            <p className="pt-2 text-xs text-muted-foreground">Saved numbers only. Labor cost is entered by hand; no labor rate is assumed.</p>
+            <p className="pt-2 text-xs text-muted-foreground">Labor hours and cost come from Crew time once it has entries; otherwise they're entered by hand.</p>
           </section>
         </aside>
       </div>
