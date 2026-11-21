@@ -40,6 +40,7 @@ import {
 } from '#/lib/leads.server'
 import { readCompanySettings, saveCompanySettings } from '#/lib/settings.server'
 import { appointmentMessages, bookAppointment, cancelAppointment } from '#/lib/appointments.server'
+import { addCrewTime, crewPayCandidates, listJobCrewTime, readCrewSettings, verifyCrewPay } from '#/lib/crew-time.server'
 import { assignTransactions, jobFinancials, listTransactions, qboStatus } from '#/lib/qbo.server'
 import type { McpProps } from '#/mcp/oauth'
 
@@ -337,6 +338,95 @@ function buildServer(env: Env, staff: Staff) {
         if (a.at && staff.role !== 'admin') throw forbidden()
         return moveLeadToStage(env.DB, a.leadId, a.stage, staff.id, { at: importedAt(toMs(a.at, 'at'), 'at'), reason: a.reason })
       }),
+  )
+
+  // Crew time (crew-time.server.ts): who worked on a Job, by day, and verifying how they were paid.
+  const crewView = (d: Awaited<ReturnType<typeof listJobCrewTime>>) => ({
+    totals: {
+      hours: d.totals.hours,
+      cost: d.totals.costCents / 100,
+      paidInQuickBooks: d.totals.qboCents / 100,
+      paidOutsideQuickBooks: d.totals.outsideCents / 100,
+      notVerified: d.totals.unverifiedCents / 100,
+    },
+    entries: d.rows.map((r) => ({
+      id: r.id,
+      workDate: r.workDate,
+      name: r.name,
+      hours: r.hours,
+      payType: r.payType,
+      rate: r.rateCents === null ? null : r.rateCents / 100,
+      cost: r.costCents === null ? null : r.costCents / 100,
+      needsReview: r.needsReview,
+      source: r.source,
+      paid: r.paidVia === 'qbo' ? `QuickBooks ${r.qboTxnId}` : r.paidVia === 'outside' ? `outside QuickBooks: ${r.paidNote}` : 'not verified',
+    })),
+  })
+
+  server.registerTool(
+    'list_crew',
+    { title: 'Crew list', description: 'The crew members with their usual pay (per hour or per day) and whether the 6 PM build-day check-in text to Pat is on.', inputSchema: {}, annotations: READ },
+    () =>
+      run(async () => {
+        const s = await readCrewSettings(db)
+        return { checkinOn: s.enabled, checkinHour: s.hour, crew: s.crew.map((c) => ({ id: c.id, name: c.name, alsoCalled: c.aliases, payType: c.payType, usualPay: c.rateCents === null ? null : c.rateCents / 100, active: c.active })) }
+      }),
+  )
+
+  server.registerTool(
+    'list_crew_time',
+    { title: "A Job's crew time", description: 'Who worked on a Job by day, hours, pay and cost, and whether each was verified paid (in QuickBooks or outside it).', inputSchema: { jobId: id }, annotations: READ },
+    (a) => run(async () => crewView(await listJobCrewTime(db, a.jobId))),
+  )
+
+  server.registerTool(
+    'add_crew_time',
+    {
+      title: 'Add crew time',
+      description:
+        "Adds one person's day on a Job (e.g. from a photo of Pat's notes). Matches the name to the crew list (nicknames too). Pay: give `pay` with `payType` (hourly = rate per hour, day = amount for the day), or leave it out to use their usual pay. Updates the Job's labor hours and cost. Not verified paid until verify_crew_pay.",
+      inputSchema: {
+        jobId: id,
+        workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('The day they worked, YYYY-MM-DD'),
+        name: z.string().min(1).max(60),
+        hours: z.number().min(0).max(24).nullable().optional(),
+        pay: z.number().min(0).max(5000).nullable().optional().describe('Dollars: the hourly rate or the day amount'),
+        payType: z.enum(['hourly', 'day']).optional(),
+      },
+      annotations: WRITE,
+    },
+    (a) =>
+      run(async () =>
+        crewView(await addCrewTime(db, { jobId: a.jobId, workDate: a.workDate, name: a.name, hours: a.hours ?? null, rate: a.pay ?? null, payType: a.pay != null ? (a.payType ?? 'hourly') : null }, staff.id)),
+      ),
+  )
+
+  server.registerTool(
+    'crew_pay_candidates',
+    {
+      title: 'QuickBooks payments that could cover crew time',
+      description: "For one crew time entry: the same person's other unverified days on the Job, and QuickBooks costs on the Job or not sorted yet from a week before to three weeks after, name matches first.",
+      inputSchema: { entryId: id },
+      annotations: READ,
+    },
+    (a) => run(() => crewPayCandidates(db, a.entryId)),
+  )
+
+  server.registerTool(
+    'verify_crew_pay',
+    {
+      title: 'Verify crew pay',
+      description:
+        "Marks crew time entries paid, so crew pay is counted once: via qbo links them to the QuickBooks payment that covered them (sorting it onto the Job if it was not sorted); via outside records pay outside QuickBooks (note how, e.g. cash), which is added to the Job's costs. Only when Kristin or Pat said how they were paid.",
+      inputSchema: { entryIds: z.array(id).min(1).max(50), via: z.enum(['qbo', 'outside']), qboTxnId: z.string().max(100).optional(), note: z.string().max(100).optional() },
+      annotations: WRITE,
+    },
+    (a) =>
+      run(async () =>
+        crewView(
+          await verifyCrewPay(db, a.via === 'qbo' ? { ids: a.entryIds, via: 'qbo', qboTxnId: a.qboTxnId ?? '' } : { ids: a.entryIds, via: 'outside', note: a.note ?? '' }, staff.id),
+        ),
+      ),
   )
 
   server.registerTool(
