@@ -9,17 +9,17 @@ import { localBusinessSchema } from "@/lib/seo";
 ---
 
 <BaseLayout
-  title="Get a Free Deck Estimate"
-  description="Request a free on-site deck estimate from Turner's Decks in Douglassville, PA. Serving Berks, Montgomery, and Chester Counties."
+  title="Get a Free Deck Quote"
+  description="Request a free on-site deck quote (estimate) from Turner's Decks in Douglassville, PA. Serving Berks, Montgomery, and Chester Counties."
   schema={localBusinessSchema()}
   chip="call"
 >
   <section class="on-dark bg-navy-deep">
-    <div class="container-site split items-start pb-[clamp(4rem,8vw,6.5rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]">
+    <div class="container-site split items-start pb-[clamp(4rem,8vw,6.5rem)] pt-[calc(var(--header-h)+clamp(1.5rem,3vw,2.5rem))]">
       <div>
         <p class="eyebrow mb-4 text-white">Contact</p>
-        <h1 class="display-1">Get a free estimate</h1>
-        <p class="mb-8 mt-5 text-[1.1875rem] leading-normal text-muted-foreground">Tell us about your project and we'll set up a free on-site visit.</p>
+        <h1 class="display-2">Get a free quote</h1>
+        <p class="mb-6 mt-3 text-[1.125rem] leading-normal text-muted-foreground">Tell us about your project and we'll set up a free on-site visit.</p>
         <QuoteForm client:load onDark />
       </div>
       <div>

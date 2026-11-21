@@ -29,7 +29,7 @@ const [first, second, ...rest] = c.blocks;
   ]}
 >
   <PageHero photo={c.hero} eyebrow={c.eyebrow} title={c.h1} intro={c.intro}>
-    <Button href="#quote" variant="light" size="lg">Get a Free Estimate</Button>
+    <Button href="#quote" variant="light" size="lg">Get a Free Quote</Button>
     <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
   </PageHero>
 
@@ -81,7 +81,7 @@ const [first, second, ...rest] = c.blocks;
   <section id="quote" class="section on-dark scroll-mt-4 bg-primary">
     <div class="container-site split items-start">
       <div>
-        <h2 class="display-2">Get a free on-site estimate</h2>
+        <h2 class="display-2">Get a free on-site quote</h2>
         <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">No pressure, no sales pitch.</p>
         <QuoteForm client:load onDark defaultProject={c.formValue} />
       </div>
