@@ -297,6 +297,8 @@ export type ProjectPage = {
   h1: string;
   service: ServicePageSlug;
   specs: [string, string][];
+  /** Big numbers at the top of the page. Range is a rounded band, never the exact price. */
+  glance: { range: string; size?: string; material: string; location: string };
   intro: string[];
   blocks: Block[];
   cost: Block;
@@ -323,6 +325,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
       ["Finish", "Natural, stain-ready wood"],
       ["Location", "Exeter Township, Berks County, PA"],
     ],
+    glance: { range: "$10,000 to $15,000", size: "12′ × 18′ pool, 3′ walkway", material: "Pressure-treated wood", location: "Exeter Township" },
     intro: [
       "This project involved building a new, ground-level pool deck to create a safe and functional space around an existing pool. The homeowners wanted a simple, budget-conscious solution that would improve access to the pool while keeping the footprint efficient and easy to maintain.",
     ],
@@ -372,6 +375,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
       ["Skirting", "White PVC horizontal skirting"],
       ["Location", "Limerick Township, Montgomery County, PA"],
     ],
+    glance: { range: "$55,000 to $60,000", size: "About 520 sq ft", material: "Trex Select, Pebble Grey", location: "Limerick Township" },
     intro: [
       "This project involved replacing an existing concrete patio with a large, elevated composite deck designed to improve usability, flow, and access to the backyard. The new deck expanded the usable outdoor space while incorporating clean finishing details and long-term, low-maintenance materials.",
     ],
@@ -453,6 +457,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
       ["Location", "Exeter Township, Berks County, PA"],
       ["Material", "Trex composite deck"],
     ],
+    glance: { range: "$40,000 to $50,000", material: "Trex composite", location: "Exeter Township" },
     intro: [
       "This project involved replacing an aging wood deck with a low-maintenance composite deck designed for long-term durability, improved safety, and everyday use. The homeowners wanted a clean, modern look with minimal upkeep while maintaining the existing footprint and improving the overall function of their outdoor space.",
     ],
