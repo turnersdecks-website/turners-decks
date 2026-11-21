@@ -342,3 +342,30 @@ describe('importing history (build 1)', () => {
     expect(job.value.scope).toBe('16x20 Trex Select, wrapped step')
   })
 })
+
+describe('crew time through Claude', () => {
+  it('adds a day from Pat’s notes, then verifies it paid in cash', async () => {
+    const { cookie } = await signedInStaff('staff')
+    const token = await connect(cookie)
+    const c = crypto.randomUUID()
+    const jobId = crypto.randomUUID()
+    await env.DB.prepare("INSERT INTO customers (id, first_name, last_name, client_type, created_at, updated_at) VALUES (?, 'Ken', 'K', 'residential', 1, 1)").bind(c).run()
+    await env.DB.prepare("INSERT INTO jobs (id, customer_id, name, status, step, created_at, updated_at) VALUES (?, ?, 'K deck', 'in_progress', 'build', 1, 1)").bind(jobId, c).run()
+    await env.DB.prepare("INSERT INTO crew_members (id, name, aliases, pay_type, rate_cents) VALUES ('mcp-tommy', 'Tommyx', NULL, 'day', 22500)").run()
+
+    const added = await tool<{ totals: { cost: number; notVerified: number }; entries: { id: string; name: string; cost: number }[] }>(token, 'add_crew_time', {
+      jobId,
+      workDate: '2026-11-14',
+      name: 'tommyx',
+    })
+    expect(added.value.entries).toMatchObject([{ name: 'Tommyx', cost: 225 }])
+    expect(added.value.totals.notVerified).toBe(225)
+
+    const verified = await tool<{ totals: { paidOutsideQuickBooks: number; notVerified: number } }>(token, 'verify_crew_pay', {
+      entryIds: [added.value.entries[0].id],
+      via: 'outside',
+      note: 'cash',
+    })
+    expect(verified.value.totals).toMatchObject({ paidOutsideQuickBooks: 225, notVerified: 0 })
+  })
+})
