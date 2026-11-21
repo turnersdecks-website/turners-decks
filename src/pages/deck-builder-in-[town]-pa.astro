@@ -9,7 +9,7 @@ import StepList from "@/components/sections/StepList.astro";
 import ServiceCards from "@/components/sections/ServiceCards.astro";
 import Faq from "@/components/sections/Faq.astro";
 import CtaBand from "@/components/sections/CtaBand.astro";
-import { PHOTO } from "@/lib/photos";
+import { townPhotos } from "@/lib/town-photos";
 import { PERMIT_STEPS, SITE, TOWNS } from "@/lib/site";
 import { townFaqs } from "@/lib/services";
 import { faqSchema, localBusinessSchema } from "@/lib/seo";
@@ -20,6 +20,7 @@ export function getStaticPaths() {
 
 const { town } = Astro.props;
 const faqs = townFaqs(town.name);
+const photos = townPhotos(town.slug);
 ---
 
 <BaseLayout
@@ -28,7 +29,7 @@ const faqs = townFaqs(town.name);
   schema={[localBusinessSchema([`${town.name}, PA`]), faqSchema(faqs)]}
 >
   <PageHero
-    photo={PHOTO.compositeNew}
+    photo={photos.hero}
     eyebrow={`${town.county} County`}
     title={`Deck Builder in ${town.name}, PA`}
     intro={`Turner's Decks builds new decks, replaces old ones, and builds pool decks for homeowners in ${town.name}. Founded by professional carpenter ${SITE.owner}, we handle the permit from start to finish.`}
@@ -43,13 +44,13 @@ const faqs = townFaqs(town.name);
       <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
       {/* [CONTENT] town-specific permit notes (township office, typical timeline) */}
     </div>
-    <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+    <Photo photo={photos.build} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
       <SectionHeading eyebrow="What we build" title="Decks We Build" />
-      <div class="mt-12"><ServiceCards /></div>
+      <div class="mt-12"><ServiceCards rotate={TOWNS.findIndex((t) => t.slug === town.slug) + 1} /></div>
     </div>
   </section>
 
@@ -58,7 +59,7 @@ const faqs = townFaqs(town.name);
     {/* [CONTENT] local details, neighborhoods, or notes about building in this town */}
     <h2 class="mt-16 text-[clamp(1.5rem,2.6vw,2rem)]">Recent Projects</h2>
     <div class="mt-8 grid gap-6 sm:grid-cols-3">
-      {[PHOTO.replacementSkirt, PHOTO.groundComposite, PHOTO.poolDeck].map((p) => <Photo photo={p} class="aspect-square w-full rounded-2xl object-cover" />)}
+      {photos.recent.map((p) => <Photo photo={p} class="aspect-square w-full rounded-2xl object-cover" />)}
     </div>
   </section>
 

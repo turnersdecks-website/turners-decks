@@ -18,6 +18,9 @@ interface Props { slug: ServicePageSlug }
 const c = SERVICE_PAGES[Astro.props.slug];
 const project = PROJECT_PAGES[c.recent.project];
 const [first, second, ...rest] = c.blocks;
+// Different photos per service so these sections don't repeat across the three pages.
+const BUILD_PHOTO = { "new-deck-construction": PHOTO.limerick[13], "deck-replacement": PHOTO.woodToTrex[7], "pool-decks": PHOTO.ptPool[10] };
+const QUOTE_PHOTO = { "new-deck-construction": PHOTO.groundSide, "deck-replacement": PHOTO.privacy[2], "pool-decks": PHOTO.poolCorner };
 ---
 
 <BaseLayout
@@ -74,7 +77,7 @@ const [first, second, ...rest] = c.blocks;
         <SectionHeading eyebrow="Permits" title="We handle the permit, start to finish" />
         <div class="mt-8"><StepList steps={PERMIT_STEPS} /></div>
       </div>
-      <Photo photo={PHOTO.framing} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+      <Photo photo={BUILD_PHOTO[c.slug]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
     </div>
   </section>
 
@@ -85,7 +88,7 @@ const [first, second, ...rest] = c.blocks;
         <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">No pressure, no sales pitch.</p>
         <QuoteForm client:load onDark defaultProject={c.formValue} />
       </div>
-      <Photo photo={PHOTO.compositeBorder} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+      <Photo photo={QUOTE_PHOTO[c.slug]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
     </div>
   </section>
 </BaseLayout>

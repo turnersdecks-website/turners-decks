@@ -148,6 +148,13 @@ export const PROJECTS: Project[] = [
 
 export const SERVICE_IMAGES: Record<string, Photo> = {
   "new-deck-construction": PHOTO.groundComposite,
-  "deck-replacement": PHOTO.replacementDeck,
-  "pool-decks": PHOTO.poolDeck,
+  "deck-replacement": PHOTO.privacyAfter,
+  "pool-decks": PHOTO.grayPool[0],
+};
+
+/** Alternates for the service cards on town pages, so each town shows a different mix. */
+export const SERVICE_IMAGE_SETS: Record<string, Photo[]> = {
+  "new-deck-construction": [PHOTO.groundComposite, PHOTO.compositeNew, PHOTO.limerick[0], PHOTO.groundSide, PHOTO.limerick[9]],
+  "deck-replacement": [PHOTO.privacyAfter, PHOTO.woodToTrex[0], PHOTO.replacementDeck, PHOTO.replacementAfter, PHOTO.brownComposite],
+  "pool-decks": [PHOTO.grayPool[0], PHOTO.poolDeck, PHOTO.ptPool[1], PHOTO.poolAfter, PHOTO.poolCorner],
 };
