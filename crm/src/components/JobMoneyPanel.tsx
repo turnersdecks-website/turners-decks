@@ -7,7 +7,8 @@ import { QBO_ENTITY_LABELS, type QboEntity } from '#/lib/qbo-vocab'
 import { getJobFinancials } from '#/lib/qbo.functions'
 import { cn } from '#/lib/utils'
 
-// A Job's P&L, laid out like the P&L page: stat cards, then a statement (revenue by invoice, Job costs by QuickBooks
+// A Job's P&L, laid out like the P&L page (with expected revenue and profit from the project price when the Job
+// has a quoted price): stat cards, then a statement (revenue by invoice, Job costs by QuickBooks
 // account, plus crew paid outside QuickBooks so crew pay counts once, then profit), then the QuickBooks transactions.
 // Loaded after the page.
 
@@ -36,7 +37,12 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
     costByAccount.set(k, (costByAccount.get(k) ?? 0) + (r.kind === 'cost' ? r.amountCents : -r.amountCents))
   }
   const costRows = [...costByAccount.entries()].sort((a, b) => b[1] - a[1])
-  const toInvoice = quotedCents != null ? quotedCents - t.revenueCents : null
+  // Expected: the project price (the Job's quoted price) once known, so Pat can see how a Job is going before the
+  // final invoice. Costs are the ones so far, so expected profit goes down as more costs come in.
+  const expectedRevenue = quotedCents != null && quotedCents > 0 ? Math.max(quotedCents, t.revenueCents) : null
+  const expectedProfit = expectedRevenue !== null ? expectedRevenue - t.allInCostCents : null
+  const expectedMargin = expectedRevenue !== null && expectedRevenue > 0 ? Math.round((1000 * (expectedProfit ?? 0)) / expectedRevenue) / 10 : null
+  const notInvoiced = expectedRevenue !== null ? expectedRevenue - t.revenueCents : 0
 
   return (
     <section aria-label="P&L" className="space-y-4 rounded-xl border bg-card p-4 text-card-foreground shadow-xs sm:p-5">
@@ -46,14 +52,25 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
       </h2>
 
       <StatGrid>
-        <StatCard
-          label="Revenue"
-          value={formatMoney(t.revenueCents) || '$0'}
-          hint={`Invoiced; ${formatMoney(t.paidCents) || '$0'} paid${toInvoice !== null && toInvoice > 0 ? `, ${formatMoney(toInvoice)} of the quote still to invoice` : ''}`}
-        />
-        <StatCard label="Job costs" value={formatMoney(t.allInCostCents) || '$0'} hint="QuickBooks costs on this Job, plus crew paid outside QuickBooks" />
-        <StatCard label="Profit" value={formatMoney(t.allInProfitCents) || '$0'} hint="Revenue minus Job costs" />
-        <StatCard label="Margin" value={pct(t.allInMarginPct)} hint="Profit as a share of revenue" />
+        {expectedRevenue !== null ? (
+          <>
+            <StatCard
+              label="Project price"
+              value={formatMoney(expectedRevenue)}
+              hint={`${formatMoney(t.revenueCents) || '$0'} invoiced, ${formatMoney(t.paidCents) || '$0'} paid${notInvoiced > 0 ? `, ${formatMoney(notInvoiced)} still to invoice` : ''}`}
+            />
+            <StatCard label="Job costs so far" value={formatMoney(t.allInCostCents) || '$0'} hint="QuickBooks costs on this Job, plus crew paid outside QuickBooks" />
+            <StatCard label="Expected profit" value={formatMoney(expectedProfit ?? 0) || '$0'} hint="Project price minus costs so far; goes down as costs come in" />
+            <StatCard label="Expected margin" value={pct(expectedMargin)} hint={`Profit so far on what's invoiced: ${formatMoney(t.allInProfitCents) || '$0'}`} />
+          </>
+        ) : (
+          <>
+            <StatCard label="Revenue" value={formatMoney(t.revenueCents) || '$0'} hint={`Invoiced; ${formatMoney(t.paidCents) || '$0'} paid. Add the quoted price to the Job to see expected profit.`} />
+            <StatCard label="Job costs" value={formatMoney(t.allInCostCents) || '$0'} hint="QuickBooks costs on this Job, plus crew paid outside QuickBooks" />
+            <StatCard label="Profit" value={formatMoney(t.allInProfitCents) || '$0'} hint="Revenue minus Job costs" />
+            <StatCard label="Margin" value={pct(t.allInMarginPct)} hint="Profit as a share of revenue" />
+          </>
+        )}
       </StatGrid>
 
       <div className="overflow-x-auto rounded-xl border">
@@ -80,9 +97,21 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
               ))
             )}
             <tr className="border-t font-semibold">
-              <td className="px-3 py-1.5">Total revenue</td>
+              <td className="px-3 py-1.5">Invoiced so far</td>
               <td className="px-3 py-1.5 text-right">{money(t.revenueCents)}</td>
             </tr>
+            {expectedRevenue !== null && notInvoiced > 0 && (
+              <tr className="border-t text-muted-foreground italic">
+                <td className="px-3 py-1.5">Not invoiced yet (rest of the project price)</td>
+                <td className="px-3 py-1.5 text-right">{money(notInvoiced)}</td>
+              </tr>
+            )}
+            {expectedRevenue !== null && (
+              <tr className="border-t font-semibold">
+                <td className="px-3 py-1.5">Expected revenue</td>
+                <td className="px-3 py-1.5 text-right">{money(expectedRevenue)}</td>
+              </tr>
+            )}
 
             <tr className="border-t bg-muted/40">
               <th scope="rowgroup" colSpan={2} className="px-3 py-1.5 text-left text-xs font-semibold text-muted-foreground uppercase">
@@ -115,9 +144,17 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
             </tr>
 
             <tr className="border-t-2 font-semibold">
-              <td className="px-3 py-2">Profit</td>
+              <td className="px-3 py-2">Profit so far (invoiced minus costs)</td>
               <td className={cn('px-3 py-2 text-right', t.allInProfitCents < 0 && 'text-destructive')}>{money(t.allInProfitCents)}</td>
             </tr>
+            {expectedProfit !== null && (
+              <tr className="border-t bg-success/5 font-semibold">
+                <td className="px-3 py-2">Expected profit (project price minus costs so far)</td>
+                <td className={cn('px-3 py-2 text-right', expectedProfit < 0 && 'text-destructive')}>
+                  {money(expectedProfit)} <span className="font-normal text-muted-foreground">· {pct(expectedMargin)}</span>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -125,7 +162,7 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
       <p className="text-xs text-muted-foreground">
         Crew paid through QuickBooks is in its account above; crew paid another way is added once it's verified under Crew time.
         {t.crewUnverifiedCents > 0 && ` ${formatMoney(t.crewUnverifiedCents)} of crew time isn't verified yet and isn't counted.`}
-        {t.allInMarginPct === null && ' Margin shows once the Job has both invoices and costs.'}
+        {expectedRevenue !== null && ' The project price is the quoted price on the Job; update it there for change orders.'}
       </p>
 
       <div className="border-t pt-3">
