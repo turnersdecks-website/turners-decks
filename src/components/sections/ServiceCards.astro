@@ -1,10 +1,15 @@
 ---
 import Photo from "./Photo.astro";
 import { SERVICES } from "@/lib/site";
-import { SERVICE_IMAGES } from "@/lib/photos";
+import { SERVICE_IMAGES, SERVICE_IMAGE_SETS } from "@/lib/photos";
 /** Heading level for card titles: 2 when the cards sit directly under the page h1. */
-interface Props { level?: 2 | 3 }
-const { level = 3 } = Astro.props;
+/** `rotate` picks a different photo per service (town pages pass their index) so the cards vary page to page. */
+interface Props { level?: 2 | 3; rotate?: number }
+const { level = 3, rotate } = Astro.props;
+const photoFor = (slug: string) => {
+  const set = SERVICE_IMAGE_SETS[slug];
+  return rotate === undefined || !set ? SERVICE_IMAGES[slug] : set[rotate % set.length];
+};
 const H = `h${level}` as const;
 ---
 
@@ -13,7 +18,7 @@ const H = `h${level}` as const;
     SERVICES.map((s) => (
       <a href={`/${s.slug}`} class="group block">
         <Photo
-          photo={SERVICE_IMAGES[s.slug]}
+          photo={photoFor(s.slug)}
           alt={s.title}
           sizes="(min-width: 768px) 33vw, 100vw"
           class="aspect-[4/3] w-full rounded-2xl object-cover"
