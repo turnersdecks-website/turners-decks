@@ -55,7 +55,7 @@ export const PHOTO = {
   replacementSkirt: p(c3, "Replacement composite deck with white railing and lattice skirting"),
   replacementBefore: p(c4, "Worn wood deck before replacement"),
   replacementBefore2: p(c5, "Old wood deck with lattice before replacement"),
-  elevated: p(d1, "Elevated pressure-treated deck with staircase overlooking a pond"),
+  elevated: p(d1, "Elevated pressure-treated deck with staircase overlooking a pond in Amity Township, PA"),
   elevatedStairs: p(d2, "Elevated deck with straight staircase and wood railings"),
   ptStairs: p(d3, "Pressure-treated deck staircase with railings on both sides"),
   framing: p(d4, "Deck framing with posts and beams during construction"),
@@ -116,10 +116,15 @@ export const PHOTO = {
   coveredPorch: p(img("covered-porch-mahogany-white-railing"), "Covered porch with mahogany decking and white railing"),
   grayPatioDeck: p(img("gray-composite-deck-patio-furniture"), "Gray composite deck with patio furniture and an umbrella"),
   // From the 2026 job folders (Drive), names and addresses left out.
-  stainedPt: p(img("stained-pt-deck-horizontal-railing"), "Stained pressure-treated deck with horizontal wood railings and stairs"),
-  stainedPtSeating: p(img("stained-pt-deck-horizontal-railing-seating"), "Stained pressure-treated deck with outdoor seating"),
-  stainedPtYard: p(img("stained-pt-deck-horizontal-railing-yard"), "Stained pressure-treated deck and stairs seen from the yard"),
-  stainedPtStairs: p(img("stained-pt-deck-stairs-closeup"), "Stained wood stairs with horizontal railings"),
+  privacyBefore: p(img("composite-deck-privacy-wall-exeter-before"), "Old stained wood deck with horizontal railings before replacement"),
+  privacyAfter: p(img("composite-deck-privacy-wall-exeter-after"), "Brown composite deck with a privacy wall, white vinyl railing and stairs in Exeter Township, PA"),
+  privacy: series("composite-deck-privacy-wall-exeter", [
+    "Composite privacy wall with horizontal boards on white posts beside the deck",
+    "Composite stairs with white vinyl railing and black balusters",
+    "Composite deck, privacy wall and stairs seen from the yard",
+    "White vinyl railing with black balusters in front of the privacy wall",
+    "Side view of the composite deck, privacy wall and stairs",
+  ]),
   poolTowardHouse: p(img("composite-pool-deck-toward-house"), "Composite pool deck looking back toward the house"),
   poolCorner: p(img("composite-pool-deck-corner-railing"), "Corner of a composite pool deck with white railing and black balusters"),
   groundSide: p(img("ground-level-composite-deck-side"), "Side view of a ground-level gray composite deck"),
@@ -130,14 +135,14 @@ export const PHOTO = {
   secondStory: p(img("second-story-deck-white-railing-stairs"), "Second-story deck with white railing and stairs"),
 };
 
-export type Project = { title: string; type: string; blurb?: string; photos: Photo[]; before?: Photo; after?: Photo };
+export type Project = { title: string; type: string; blurb?: string; /** Intro for the photo section when the project also has a before-and-after slider, so the slider caption isn't repeated. */ more?: string; photos: Photo[]; before?: Photo; after?: Photo };
 
 export const PROJECTS: Project[] = [
-  { title: "Composite pool deck replacement", type: "Pool deck", blurb: "An old wood pool deck replaced with gray composite decking, white vinyl railing, and black balusters, with plenty of room to lounge around an above-ground pool.", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide, PHOTO.poolTowardHouse, PHOTO.poolCorner] },
-  { title: "Composite deck replacement with white railing", type: "Deck replacement", blurb: "A worn wood deck torn out and rebuilt with brown composite decking and white vinyl railing, keeping the original footprint.", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck, PHOTO.replacementLattice] },
-  { title: "Ground-level composite deck", type: "New deck", blurb: "A new gray composite deck close to the ground, with wrapped steps on every side and a picture-frame border.", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew, PHOTO.groundSide, PHOTO.wrappedSteps] },
-  { title: "Elevated pressure-treated deck by the pond", type: "New deck", blurb: "A tall, freestanding pressure-treated deck with a long staircase, built among willow trees to overlook a pond.", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.elevatedTrees, PHOTO.elevatedRail, PHOTO.framing] },
-  { title: "Stained pressure-treated deck with horizontal railings", type: "New deck", blurb: "A compact, budget-friendly pressure-treated deck finished with stain and horizontal wood railings.", photos: [PHOTO.stainedPt, PHOTO.stainedPtSeating, PHOTO.stainedPtYard, PHOTO.stainedPtStairs] },
+  { title: "Composite pool deck replacement", type: "Pool deck", blurb: "An old wood pool deck replaced with gray composite decking, white vinyl railing, and black balusters, with plenty of room to lounge around an above-ground pool.", more: "More of the finished pool deck: the walkway around the pool, the railing corners, and the view back toward the house.", before: PHOTO.poolBefore, after: PHOTO.poolAfter, photos: [PHOTO.poolDeck, PHOTO.poolRailing, PHOTO.poolSide, PHOTO.poolTowardHouse, PHOTO.poolCorner] },
+  { title: "Composite deck replacement with white railing", type: "Deck replacement", blurb: "A worn wood deck torn out and rebuilt with brown composite decking and white vinyl railing, keeping the original footprint.", more: "More of the finished deck, from the white railing down to the lattice skirting.", before: PHOTO.replacementBefore2, after: PHOTO.replacementSkirt, photos: [PHOTO.replacementAfter, PHOTO.replacementDeck, PHOTO.replacementLattice] },
+  { title: "Ground-level composite deck", type: "New deck", blurb: "A new gray composite deck close to the ground, with wrapped steps on every side and a picture-frame border.", more: "A closer look at the wrapped steps and the picture-frame border.", before: PHOTO.newSiteBefore, after: PHOTO.newSiteAfter, photos: [PHOTO.groundComposite, PHOTO.compositeBorder, PHOTO.compositeNew, PHOTO.groundSide, PHOTO.wrappedSteps] },
+  { title: "Composite deck and privacy wall in Exeter Township", type: "Deck replacement", blurb: "A small stained wood deck at a townhouse replaced with premium composite decking, white PVC fascia, white vinyl railing with black balusters, new stairs, and a rebuilt composite privacy wall between neighbors.", more: "Up close: the privacy wall, the new stairs, and the white railing with black balusters.", before: PHOTO.privacyBefore, after: PHOTO.privacyAfter, photos: PHOTO.privacy },
+  { title: "Elevated pressure-treated deck by a pond in Amity Township", type: "New deck", blurb: "A tall, freestanding pressure-treated deck in Amity Township, built among willow trees with a long staircase up to a view of the pond. It's a fort for the grandkids, and their grandfather is adding the finishing touches himself.", photos: [PHOTO.elevated, PHOTO.elevatedStairs, PHOTO.ptStairs, PHOTO.elevatedTrees, PHOTO.elevatedRail, PHOTO.framing] },
   { title: "Pool deck stair replacement", type: "Pool deck", blurb: "Old pool deck stairs replaced with composite treads and white vinyl railing.", before: PHOTO.poolStairsBefore, after: PHOTO.poolStairsAfter, photos: [] },
 ];
 
