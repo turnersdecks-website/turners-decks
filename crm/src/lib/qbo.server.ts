@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
 import { companySettings, customers, jobs, qboConnection, qboTransactions } from '#/db/schema'
 import { badRequest } from '#/lib/input'
-import { OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, type QboRules, jobTotals, marginPct, parseQboRules, ruleFor } from '#/lib/qbo-vocab'
+import { CREW_PAY_ACCOUNTS, OWNER_ACCOUNTS, QBO_ENTITIES, type QboEntity, type QboKind, type QboRules, jobTotals, marginPct, parseQboRules, ruleFor } from '#/lib/qbo-vocab'
 
 // QuickBooks Online sync (docs/adr/0006-quickbooks-sync.md). One admin connects once (OAuth 2.0, /api/qbo/connect).
 // A nightly cron (and "Sync now") pulls transactions: the first run reads everything since BACKFILL_FROM with queries,
@@ -447,6 +447,55 @@ export async function listTransactions(db: Db, f: TxnFilter = {}) {
 }
 
 /** A Job's QuickBooks transactions and totals (jobTotals). */
+/**
+ * Running numbers during a Job (Kristin, Nov 23 2026: "rough real time numbers during a job"). Crew time counts in the
+ * P&L once verified as paid (crew-time.server.ts), which can be weeks after the work. Until then it is an estimate:
+ * the Job's unverified crew time, less crew payments already in QuickBooks on the Job (CREW_PAY_ACCOUNTS) that no crew
+ * time is linked to yet, so a Venmo to Gary and Gary's crew time are not both counted. Never below zero. When the
+ * crew time is verified the estimate drops out and the real payment is in the costs.
+ * ponytail: a crew payment booked to another account (e.g. Job Supplies) is not subtracted, so the estimate can run
+ * high until that crew time is verified. Upgrade path: link the payment under Crew time (verify_crew_pay).
+ */
+export async function crewEstimates(db: Db, jobIds: string[]) {
+  const out = new Map<string, { unverifiedCents: number; unlinkedCrewPayCents: number; estimateCents: number; months: Map<string, number> }>()
+  if (!jobIds.length) return out
+  const accounts = sql.join(CREW_PAY_ACCOUNTS.map((a) => sql`${a}`), sql`, `)
+  for (let i = 0; i < jobIds.length; i += 90) {
+    const ids = sql.join(jobIds.slice(i, i + 90).map((id) => sql`${id}`), sql`, `)
+    const crew = await db.all<{ job_id: string; month: string; cents: number }>(
+      sql`SELECT job_id, substr(work_date, 1, 7) AS month, coalesce(sum(cost_cents), 0) AS cents FROM crew_time
+          WHERE paid_via IS NULL AND job_id IN (${ids}) GROUP BY 1, 2`,
+    )
+    const paid = await db.all<{ job_id: string; cents: number }>(
+      sql`SELECT t.job_id, coalesce(sum(CASE t.kind WHEN 'cost' THEN t.amount_cents WHEN 'cost_credit' THEN -t.amount_cents ELSE 0 END), 0) AS cents
+          FROM qbo_transactions t
+          WHERE t.deleted = 0 AND t.assignment = 'job' AND t.job_id IN (${ids}) AND t.account IN (${accounts})
+            AND NOT EXISTS (SELECT 1 FROM crew_time c WHERE c.qbo_txn_id = t.id)
+          GROUP BY 1`,
+    )
+    const paidBy = new Map(paid.map((p) => [p.job_id, p.cents]))
+    for (const c of crew) {
+      const e = out.get(c.job_id) ?? { unverifiedCents: 0, unlinkedCrewPayCents: paidBy.get(c.job_id) ?? 0, estimateCents: 0, months: new Map() }
+      e.unverifiedCents += c.cents
+      e.months.set(c.month, (e.months.get(c.month) ?? 0) + c.cents)
+      out.set(c.job_id, e)
+    }
+  }
+  for (const e of out.values()) {
+    e.estimateCents = Math.max(0, e.unverifiedCents - e.unlinkedCrewPayCents)
+    // Spread the estimate over the months the crew worked, in proportion to their unverified time.
+    const ratio = e.unverifiedCents > 0 ? e.estimateCents / e.unverifiedCents : 0
+    let left = e.estimateCents
+    const entries = [...e.months.entries()]
+    entries.forEach(([m, cents], i) => {
+      const share = i === entries.length - 1 ? left : Math.round(cents * ratio)
+      e.months.set(m, share)
+      left -= share
+    })
+  }
+  return out
+}
+
 export async function jobFinancials(db: Db, jobId: string) {
   const rows = await listTransactions(db, { jobId, limit: 2000 })
   const crew = await db.get<{ outside: number; unverified: number; notes: string | null }>(
@@ -459,8 +508,23 @@ export async function jobFinancials(db: Db, jobId: string) {
   const crewOutsideCents = crew?.outside ?? 0
   // All in: the QuickBooks costs plus crew paid outside QuickBooks, so crew pay counts once.
   const allInCostCents = t.costCents + crewOutsideCents
+  // Plus crew time not verified as paid yet, as an estimate (crewEstimates).
+  const est = (await crewEstimates(db, [jobId])).get(jobId)
+  const crewEstimateCents = est?.estimateCents ?? 0
+  const estimatedCostCents = allInCostCents + crewEstimateCents
   return {
-    totals: { ...t, crewOutsideCents, crewOutsideNotes: crew?.notes ?? null, crewUnverifiedCents: crew?.unverified ?? 0, allInCostCents, allInProfitCents: t.revenueCents - allInCostCents, allInMarginPct: marginPct(t.revenueCents, allInCostCents) },
+    totals: {
+      ...t,
+      crewOutsideCents,
+      crewOutsideNotes: crew?.notes ?? null,
+      crewUnverifiedCents: crew?.unverified ?? 0,
+      crewUnlinkedPayCents: est?.unlinkedCrewPayCents ?? 0,
+      crewEstimateCents,
+      allInCostCents,
+      allInProfitCents: t.revenueCents - allInCostCents,
+      allInMarginPct: marginPct(t.revenueCents, allInCostCents),
+      estimatedCostCents,
+    },
     transactions: rows,
   }
 }
@@ -515,7 +579,7 @@ export async function disconnectQuickBooks(db: Db, env: QboEnv, deps: QboDeps = 
 // Payments received are shown apart and never added to revenue. Completed Jobs are those marked done with a finish
 // date in the year; their figures are every transaction sorted onto them, whatever its date.
 
-export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; unsortedCents: number; paidCents: number }
+export type PnlMonth = { month: string; revenueCents: number; jobCostCents: number; crewEstimateCents: number; unsortedCents: number; paidCents: number }
 
 export async function profitAndLoss(db: Db, year: number) {
   const y = String(Math.trunc(year))
@@ -539,11 +603,17 @@ export async function profitAndLoss(db: Db, year: number) {
     if (m) m.jobCostCents += c.cents
     else monthRows.push({ month: c.month, revenueCents: 0, jobCostCents: c.cents, unsortedCents: 0, paidCents: 0 })
   }
+  // Crew time not verified as paid yet, as an estimate in the months it was worked (crewEstimates).
+  const estJobs = await db.all<{ job_id: string }>(sql`SELECT DISTINCT job_id FROM crew_time WHERE paid_via IS NULL AND substr(work_date, 1, 4) = ${y}`)
+  const estimates = await crewEstimates(db, estJobs.map((j) => j.job_id))
+  const crewEstimateByMonth = new Map<string, number>()
+  for (const e of estimates.values()) for (const [m, c] of e.months) if (m.startsWith(y)) crewEstimateByMonth.set(m, (crewEstimateByMonth.get(m) ?? 0) + c)
   const byMonth = new Map(monthRows.map((m) => [m.month, m]))
   const months: PnlMonth[] = Array.from({ length: 12 }, (_, i) => {
     const month = `${y}-${String(i + 1).padStart(2, '0')}`
     const m = byMonth.get(month)
-    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: m?.jobCostCents ?? 0, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
+    const crewEstimateCents = crewEstimateByMonth.get(month) ?? 0
+    return { month, revenueCents: m?.revenueCents ?? 0, jobCostCents: (m?.jobCostCents ?? 0) + crewEstimateCents, crewEstimateCents, unsortedCents: m?.unsortedCents ?? 0, paidCents: m?.paidCents ?? 0 }
   })
   const completedJobs = await db
     .select({
@@ -566,7 +636,12 @@ export async function profitAndLoss(db: Db, year: number) {
     .select({ year: sql<string>`DISTINCT substr(${qboTransactions.txnDate}, 1, 4)` })
     .from(qboTransactions)
     .where(eq(qboTransactions.deleted, false))
-  return { year: Number(y), months, completedJobs, years: years.map((r) => Number(r.year)).filter(Number.isFinite) }
+  const doneEst = await crewEstimates(db, completedJobs.map((j) => j.id))
+  const jobsWithEstimates = completedJobs.map((j) => {
+    const crewEstimateCents = doneEst.get(j.id)?.estimateCents ?? 0
+    return { ...j, costCents: j.costCents + crewEstimateCents, crewEstimateCents }
+  })
+  return { year: Number(y), months, completedJobs: jobsWithEstimates, years: years.map((r) => Number(r.year)).filter(Number.isFinite) }
 }
 
 // ---------------------------------------------------------------------------

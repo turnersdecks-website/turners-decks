@@ -559,7 +559,7 @@ function VerifyPay({
           <p className="mt-1 text-xs text-muted-foreground">
             No QuickBooks costs on this Job or waiting to be sorted from around
             those days. If it was paid from the business account, it may not
-            have synced yet (QuickBooks syncs nightly).
+            have synced yet (QuickBooks syncs every 3 hours).
           </p>
         ) : (
           <ul className="mt-1 max-h-56 space-y-1 overflow-y-auto">

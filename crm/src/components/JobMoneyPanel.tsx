@@ -40,7 +40,9 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
   // Expected: the project price (the Job's quoted price) once known, so Pat can see how a Job is going before the
   // final invoice. Costs are the ones so far, so expected profit goes down as more costs come in.
   const expectedRevenue = quotedCents != null && quotedCents > 0 ? Math.max(quotedCents, t.revenueCents) : null
-  const expectedProfit = expectedRevenue !== null ? expectedRevenue - t.allInCostCents : null
+  // Running numbers: costs so far plus crew time not paid yet (an estimate until it's verified).
+  const runningCost = t.estimatedCostCents
+  const expectedProfit = expectedRevenue !== null ? expectedRevenue - runningCost : null
   const expectedMargin = expectedRevenue !== null && expectedRevenue > 0 ? Math.round((1000 * (expectedProfit ?? 0)) / expectedRevenue) / 10 : null
   const notInvoiced = expectedRevenue !== null ? expectedRevenue - t.revenueCents : 0
 
@@ -59,16 +61,20 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
               value={formatMoney(expectedRevenue)}
               hint={`${formatMoney(t.revenueCents) || '$0'} invoiced, ${formatMoney(t.paidCents) || '$0'} paid${notInvoiced > 0 ? `, ${formatMoney(notInvoiced)} still to invoice` : ''}`}
             />
-            <StatCard label="Job costs so far" value={formatMoney(t.allInCostCents) || '$0'} hint="QuickBooks costs on this Job, plus crew paid outside QuickBooks" />
+            <StatCard
+              label="Job costs so far"
+              value={formatMoney(runningCost) || '$0'}
+              hint={`QuickBooks costs on this Job, plus crew paid outside QuickBooks${t.crewEstimateCents > 0 ? `, plus ${formatMoney(t.crewEstimateCents)} of crew time not paid yet (estimate)` : ''}`}
+            />
             <StatCard label="Expected profit" value={formatMoney(expectedProfit ?? 0) || '$0'} hint="Project price minus costs so far; goes down as costs come in" />
-            <StatCard label="Expected margin" value={pct(expectedMargin)} hint={`Profit so far on what's invoiced: ${formatMoney(t.allInProfitCents) || '$0'}`} />
+            <StatCard label="Expected margin" value={pct(expectedMargin)} hint={`Profit so far on what's invoiced: ${formatMoney(t.revenueCents - runningCost) || '$0'}`} />
           </>
         ) : (
           <>
             <StatCard label="Revenue" value={formatMoney(t.revenueCents) || '$0'} hint={`Invoiced; ${formatMoney(t.paidCents) || '$0'} paid. Add the quoted price to the Job to see expected profit.`} />
-            <StatCard label="Job costs" value={formatMoney(t.allInCostCents) || '$0'} hint="QuickBooks costs on this Job, plus crew paid outside QuickBooks" />
-            <StatCard label="Profit" value={formatMoney(t.allInProfitCents) || '$0'} hint="Revenue minus Job costs" />
-            <StatCard label="Margin" value={pct(t.allInMarginPct)} hint="Profit as a share of revenue" />
+            <StatCard label="Job costs" value={formatMoney(runningCost) || '$0'} hint="QuickBooks costs on this Job, crew paid outside QuickBooks, and crew time not paid yet (estimate)" />
+            <StatCard label="Profit" value={formatMoney(t.revenueCents - runningCost) || '$0'} hint="Revenue minus Job costs" />
+            <StatCard label="Margin" value={pct(t.revenueCents > 0 && runningCost > 0 ? Math.round((100 * (t.revenueCents - runningCost)) / t.revenueCents) : null)} hint="Profit as a share of revenue" />
           </>
         )}
       </StatGrid>
@@ -132,7 +138,21 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
                 <td className="px-3 py-1.5 text-right">{money(t.crewOutsideCents)}</td>
               </tr>
             )}
-            {costRows.length === 0 && t.crewOutsideCents === 0 && (
+            {t.crewEstimateCents > 0 && (
+              <tr className="border-t text-muted-foreground italic">
+                <td className="px-3 py-1.5">
+                  Crew time not paid yet (estimate)
+                  {t.crewUnlinkedPayCents > 0 && (
+                    <span>
+                      {' '}
+                      · {formatMoney(t.crewUnverifiedCents)} logged, less {formatMoney(t.crewUnlinkedPayCents)} already paid in QuickBooks
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-1.5 text-right">{money(t.crewEstimateCents)}</td>
+              </tr>
+            )}
+            {costRows.length === 0 && t.crewOutsideCents === 0 && t.crewEstimateCents === 0 && (
               <tr className="border-t">
                 <td className="px-3 py-1.5 text-muted-foreground">No costs on this Job yet</td>
                 <td />
@@ -140,12 +160,12 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
             )}
             <tr className="border-t font-semibold">
               <td className="px-3 py-1.5">Total Job costs</td>
-              <td className="px-3 py-1.5 text-right">{money(t.allInCostCents)}</td>
+              <td className="px-3 py-1.5 text-right">{money(runningCost)}</td>
             </tr>
 
             <tr className="border-t-2 font-semibold">
               <td className="px-3 py-2">Profit so far (invoiced minus costs)</td>
-              <td className={cn('px-3 py-2 text-right', t.allInProfitCents < 0 && 'text-destructive')}>{money(t.allInProfitCents)}</td>
+              <td className={cn('px-3 py-2 text-right', t.revenueCents - runningCost < 0 && 'text-destructive')}>{money(t.revenueCents - runningCost)}</td>
             </tr>
             {expectedProfit !== null && (
               <tr className="border-t bg-success/5 font-semibold">
@@ -160,8 +180,8 @@ export function JobMoneyPanel({ jobId, quotedCents }: { jobId: string; quotedCen
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Crew paid through QuickBooks is in its account above; crew paid another way is added once it's verified under Crew time.
-        {t.crewUnverifiedCents > 0 && ` ${formatMoney(t.crewUnverifiedCents)} of crew time isn't verified yet and isn't counted.`}
+        Crew paid through QuickBooks is in its account above. Crew time not verified as paid yet is counted as an estimate, less crew
+        payments already in QuickBooks on this Job, and is replaced by the real payment once it's verified under Crew time.
         {expectedRevenue !== null && ' The project price is the quoted price on the Job; update it there for change orders.'}
       </p>
 

@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
-import { Receipt } from 'lucide-react'
+import { Receipt, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ShowTabs } from '#/components/board-views'
@@ -11,10 +11,10 @@ import { Input } from '#/components/ui/input'
 import { formatMoney } from '#/lib/customer-vocab'
 import { errorMessage } from '#/lib/errors'
 import { QBO_ENTITY_LABELS, type QboEntity } from '#/lib/qbo-vocab'
-import { assignQboTransactions, listJobChoices, listQboTransactions } from '#/lib/qbo.functions'
+import { assignQboTransactions, listJobChoices, listQboTransactions, syncQboNow } from '#/lib/qbo.functions'
 import { cn } from '#/lib/utils'
 
-// Transactions (docs/adr/0006-quickbooks-sync.md): what the nightly sync copied from QuickBooks. Staff sort each one
+// Transactions (docs/adr/0006-quickbooks-sync.md): what the sync copied from QuickBooks. Staff sort each one
 // onto a Job or ignore it (not a Job cost or payment); Claude can do the same through the CRM connector. Invoices and payments that name a
 // Customer are put on their Job automatically; costs show a suggested Job to confirm. QuickBooks is never changed.
 const TABS = [
@@ -51,6 +51,20 @@ function TransactionsPage() {
   const show = search.show ?? 'unassigned'
   const navigate = useNavigate()
   const [q, setQ] = useState(search.q ?? '')
+  const router = useRouter()
+  const [syncing, setSyncing] = useState(false)
+  async function syncNow() {
+    setSyncing(true)
+    try {
+      const r = await syncQboNow()
+      toast.success(`Synced: ${r.saved} transactions read, ${r.matched} put on Jobs automatically.`)
+      await router.invalidate()
+    } catch (error) {
+      toast.error(await errorMessage(error))
+    } finally {
+      setSyncing(false)
+    }
+  }
   const counts: Record<Show, number> = {
     unassigned: rows.filter((r) => !r.assignment).length,
     job: rows.filter((r) => r.assignment === 'job').length,
@@ -64,7 +78,13 @@ function TransactionsPage() {
     <div>
       <PageHeader
         title="Transactions"
-        description="From QuickBooks, synced every night. Put each one on a Job, or Ignore it if it is not a Job cost or payment. Nothing changes in QuickBooks."
+        description="From QuickBooks, synced every 3 hours (or Sync now). Put each one on a Job, or Ignore it if it is not a Job cost or payment. Nothing changes in QuickBooks. Charges still waiting in QuickBooks Banking (For review) come in once they're added there."
+        actions={
+          <Button size="sm" variant="outline" disabled={syncing} onClick={syncNow}>
+            <RefreshCw className={cn(syncing && 'animate-spin')} />
+            {syncing ? 'Syncing…' : 'Sync now'}
+          </Button>
+        }
       />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <ShowTabs tabs={TABS} value={show} counts={counts} />

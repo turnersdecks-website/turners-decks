@@ -12,7 +12,7 @@ done today. So the CRM keeps its own copy and does the sorting.
   `QBO_CLIENT_ID`, `QBO_CLIENT_SECRET`; redirect URI `<CRM>/api/qbo/callback`). Tokens are AES-GCM encrypted in
   `qbo_connection` with a key derived from `BETTER_AUTH_SECRET`. Intuit rotates the refresh token on every refresh; the
   nightly sync keeps it alive.
-- **Sync:** cron `17 9 * * *` (UTC) and "Sync now". First run queries Purchase, Bill, VendorCredit, Invoice,
+- **Sync:** cron `17 */3 * * *` (UTC; nightly until Nov 2026) and "Sync now". First run queries Purchase, Bill, VendorCredit, Invoice,
   SalesReceipt, CreditMemo and Payment dated from 2026-01-01 (nothing older is kept, even when CDC reports an edit to it); later runs use Change Data Capture since the last sync
   (re-running the full pull if the gap is over 29 days). Read only: nothing is written to QuickBooks.
 - **Counting:** cost (Purchase, Bill), cost credit (VendorCredit, credit-card refunds), revenue (Invoice, SalesReceipt),

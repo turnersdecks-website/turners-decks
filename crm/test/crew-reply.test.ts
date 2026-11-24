@@ -36,6 +36,16 @@ describe('parseCrewReply', () => {
     expect(m).toMatchObject({ name: 'Mike', crewMemberId: null, needsReview: true, costCents: null })
     expect(l).toMatchObject({ crewMemberId: 'l', needsReview: true, costCents: null, problem: 'no pay for Lenny' })
   })
+  it("reads two people with no comma between them, as Pat wrote on Nov 23: 'Mike 8 - $400.    Lenny 8 -$500.'", () => {
+    expect(entries('Mike 8 - $400.    Lenny 8 -$500.')).toMatchObject([
+      { name: 'Mike', crewMemberId: null, hours: 8, payType: 'day', costCents: 40000, needsReview: true },
+      { name: 'Lenny', crewMemberId: 'l', hours: 8, payType: 'day', costCents: 50000, needsReview: false },
+    ])
+    expect(entries('Tommy 8 Gary 8 hrs Lenny 6 at $30').map((e) => e.name)).toEqual(['Tommy', 'Gary', 'Lenny'])
+    // A first and last name before any number stays one person; pay words stay with their person.
+    expect(entries('Mike Smith 8 hrs at $30')).toMatchObject([{ name: 'Mike Smith', hours: 8, costCents: 24000 }])
+    expect(entries('Gary 250 for the day')).toHaveLength(1)
+  })
   it('understands whole-reply words', () => {
     expect(parseCrewReply('Nobody', crew).kind).toBe('none')
     expect(parseCrewReply('rain day', crew).kind).toBe('none')

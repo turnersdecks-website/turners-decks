@@ -30,6 +30,7 @@ function ProfitLossPage() {
   const sum = (k: keyof (typeof months)[number]) => months.reduce((a, m) => a + (m[k] as number), 0)
   const revenue = sum('revenueCents')
   const jobCosts = sum('jobCostCents')
+  const crewEstimate = sum('crewEstimateCents')
   const unsorted = sum('unsortedCents')
   const paid = sum('paidCents')
   const profit = revenue - jobCosts
@@ -59,7 +60,7 @@ function ProfitLossPage() {
 
         <StatGrid>
           <StatCard label="Revenue" value={formatMoney(revenue) || '$0'} hint={`Invoiced${year === thisYear ? ' so far this year' : ` in ${year}`}; ${formatMoney(paid) || '$0'} paid`} />
-          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint="Costs sorted onto Jobs, plus crew paid outside QuickBooks" />
+          <StatCard label="Job costs" value={formatMoney(jobCosts) || '$0'} hint={`Costs sorted onto Jobs, plus crew paid outside QuickBooks${crewEstimate > 0 ? `, plus ${formatMoney(crewEstimate)} of crew time not paid yet (estimate)` : ''}`} />
           <StatCard label="Profit" value={formatMoney(profit) || '$0'} hint="Revenue minus Job costs" />
           <StatCard label="Margin" value={pct(marginPct(revenue, jobCosts))} hint="Profit as a share of revenue" />
         </StatGrid>
@@ -170,7 +171,7 @@ function ProfitLossPage() {
               )}
             </table>
           </div>
-          <p className="text-xs text-muted-foreground">Profit and margin show once a Job has both invoices and costs on it. Job costs include crew paid through QuickBooks, plus crew verified as paid outside QuickBooks.</p>
+          <p className="text-xs text-muted-foreground">Profit and margin show once a Job has both invoices and costs on it. Job costs include crew paid through QuickBooks, crew verified as paid outside QuickBooks, and crew time not verified as paid yet as an estimate (less crew payments already in QuickBooks for that Job).</p>
         </section>
       </div>
     </>

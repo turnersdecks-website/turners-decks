@@ -41,6 +41,11 @@ export function marginPct(revenueCents: number, costCents: number) {
   return revenueCents > 0 && costCents > 0 ? Math.round((100 * (revenueCents - costCents)) / revenueCents) : null
 }
 
+/** QuickBooks accounts crew pay is booked to. A payment in one of these on a Job that is not yet linked to crew time
+ * already covers some of the Job's unverified crew time, so the labor estimate subtracts it (qbo.server.ts
+ * crewEstimates). */
+export const CREW_PAY_ACCOUNTS = ['Contractors'] as const
+
 /** QuickBooks accounts that hold the owner's draws and personal spending (and personal income tax). Private: the sync
  * never copies them into the CRM, so no Staff member or connector sees them. */
 export const OWNER_ACCOUNTS = ["Owner's Pay & Personal Expenses"] as const

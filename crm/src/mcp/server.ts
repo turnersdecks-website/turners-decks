@@ -863,7 +863,7 @@ function buildServer(env: Env, staff: Staff) {
 
 
   // QuickBooks (docs/adr/0006-quickbooks-sync.md) ------------------------------------------------------------
-  // Transactions synced nightly from QuickBooks (read only there). Money in dollars. kind: cost, cost_credit,
+  // Transactions synced every 3 hours from QuickBooks (read only there). Money in dollars. kind: cost, cost_credit,
   // revenue (invoice / sales receipt), revenue_credit (credit memo), payment (paid against invoices; not revenue).
 
   const txnView = (r: Awaited<ReturnType<typeof listTransactions>>[number]) => {
@@ -915,7 +915,7 @@ function buildServer(env: Env, staff: Staff) {
     'job_financials',
     {
       title: 'A Job\'s money from QuickBooks',
-      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, profit (invoiced minus costs); crew pay verified as paid outside QuickBooks (cash), and all-in costs and profit including it (crew pay counted once); plus the transactions.',
+      description: 'Totals for one Job from its sorted QuickBooks transactions: costs (net of vendor credits), invoiced (net of credit memos), paid, profit (invoiced minus costs); crew pay verified as paid outside QuickBooks (cash), and all-in costs and profit including it (crew pay counted once); crew time not verified as paid yet as an estimate (less crew payments in QuickBooks not linked to crew time), and estimated costs including it, for running numbers during a Job; plus the transactions.',
       inputSchema: { jobId: id },
       annotations: READ,
     },
@@ -930,6 +930,9 @@ function buildServer(env: Env, staff: Staff) {
           crewPaidOutsideQuickBooks: f.totals.crewOutsideCents / 100,
           allInCosts: f.totals.allInCostCents / 100,
           allInProfit: f.totals.allInProfitCents / 100,
+          crewTimeNotPaidYetEstimate: f.totals.crewEstimateCents / 100,
+          estimatedCosts: f.totals.estimatedCostCents / 100,
+          estimatedProfitOnInvoiced: (f.totals.revenueCents - f.totals.estimatedCostCents) / 100,
           transactions: f.transactions.map(txnView),
         }
       }),

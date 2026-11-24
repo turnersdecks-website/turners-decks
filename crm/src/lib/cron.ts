@@ -12,8 +12,11 @@ import { qboConnection } from '#/db/schema'
 // schedule to wrangler.jsonc and a task under the same string (e.g. a daily '0 11 * * *').
 
 export const OUTBOX_CRON = '*/5 * * * *'
-/** Nightly, 09:17 UTC: the QuickBooks sync (docs/adr/0006-quickbooks-sync.md). */
-export const NIGHTLY_CRON = '17 9 * * *'
+/**
+ * Every 3 hours at :17 (UTC): the QuickBooks sync (docs/adr/0006-quickbooks-sync.md). Was nightly; every 3 hours so
+ * Job numbers stay close to current during a build (Kristin, Nov 23 2026). Changes only after the first run, so cheap.
+ */
+export const QBO_SYNC_CRON = '17 */3 * * *'
 /** The dashboard banner shows once the 5-minute cron has missed about two runs (PLAN.md > Observability). */
 export const CRON_STALE_AFTER_MS = 15 * 60_000
 /** Backlog alarms (PLAN.md > Observability): jobs failed/dead for over 1 hour, submissions unprocessed over 15 min. */
@@ -49,7 +52,7 @@ export const CRON_TASKS: Record<string, CronTask[]> = {
       },
     },
   ],
-  [NIGHTLY_CRON]: [
+  [QBO_SYNC_CRON]: [
     {
       name: 'quickbooks-sync',
       // Only once QuickBooks is connected; a failed sync is recorded on the connection (Settings shows it) and rethrown.
