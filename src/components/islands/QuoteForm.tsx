@@ -1,7 +1,7 @@
 // "Get a free quote" form (React island). Posts the lead to the CRM intake (lib/crm-intake.ts).
 import { useEffect, useRef, useState, type ComponentProps, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Button, DeadlineFields, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { SubmissionKeys, quotePayload, submitToCrm } from "@/lib/crm-intake";
 import { fieldErrors, quoteSchema } from "@/lib/quote";
@@ -9,7 +9,7 @@ import { SITE } from "@/lib/site";
 import { readTouches } from "@/lib/visit-touch";
 
 // Fields inside the "Add project details" section.
-const MORE_FIELDS = new Set(["street", "town", "approx_size", "material", "notes", "deadline_reason", "deadline_date"]);
+const MORE_FIELDS = new Set(["street", "town", "approx_size", "material", "notes"]);
 
 const selectCls = "flex h-12 w-full rounded-lg border px-3 text-base";
 // White fields with dark text on both tones; the navy band drops the field border, as the white fill carries it.
@@ -134,7 +134,6 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
               <option>Not sure</option>
             </select>
           </div>
-          <DeadlineFields idPrefix="q" selectClassName={`mt-1.5 ${selectCls} ${tone.field}`} inputClassName={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} />
           <div className="sm:col-span-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea id="notes" name="notes" rows={3} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, or anything else." />
