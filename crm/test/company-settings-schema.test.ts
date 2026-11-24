@@ -35,6 +35,8 @@ it('has exactly the v1 columns', async () => {
     'new_lead_text_template', // and its wording
     'crew_checkin_enabled', // crew-time.server.ts: the build-day crew check-in text to Pat
     'crew_checkin_hour', // and when it goes out
+    'appointment_digest_enabled', // appointment-digest.server.ts: the 6 PM text of tomorrow's appointments
+    'appointment_digest_to', // and who gets it
     // Pine & Gable's Estimate, postcard and appointment columns come back (additive) with those features.
   ])
 })

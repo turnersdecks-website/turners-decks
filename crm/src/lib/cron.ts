@@ -1,3 +1,4 @@
+import { sendAppointmentDigest } from '#/lib/appointment-digest.server'
 import { sendDueCheckins } from '#/lib/crew-time.server'
 import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm'
 import { getDb } from '#/db/client'
@@ -35,6 +36,8 @@ export const CRON_TASKS: Record<string, CronTask[]> = {
     { name: 'outbox', run: (env, deps) => dispatchDueJobs(env, deps) },
     // The 6 PM crew check-in text to Pat on build days (crew-time.server.ts); does nothing until switched on.
     { name: 'crew-checkins', run: async (env, deps) => void (await sendDueCheckins(env, deps.now?.() ?? Date.now())) },
+    // The 6 PM text to Pat listing tomorrow's appointments (appointment-digest.server.ts).
+    { name: 'appointment-digest', run: async (env, deps) => void (await sendAppointmentDigest(env, deps.now?.() ?? Date.now())) },
     { name: 'backlog-alarms', run: (env, deps) => checkBacklog(env.DB, deps.now?.() ?? Date.now()) },
     // Quote files of deleted Leads (plan 009 decision 15): each deleted Lead's R2 prefix, swept three times.
     { name: 'r2-cleanup', run: (env, deps) => sweepDeletedLeadPrefixes(env, { now: deps.now }) },

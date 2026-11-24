@@ -1,3 +1,4 @@
+import { appointmentDigestRecipients } from '#/lib/appointment-digest.server'
 import { and, desc, eq } from 'drizzle-orm'
 import type { getDb } from '#/db/client'
 import { companySettings, consentEvents, quoConnection } from '#/db/schema'
@@ -66,7 +67,14 @@ export async function readTextingSettings(db: Db, env: TextingEnv & { BETTER_AUT
   const [conn, settings, status] = await Promise.all([
     db.select().from(quoConnection).where(eq(quoConnection.id, 1)).get(),
     db
-      .select({ on: companySettings.textingEnabled, ownerMobile: companySettings.ownerMobile, newLeadTextTo: companySettings.newLeadTextTo, newLeadTextTemplate: companySettings.newLeadTextTemplate })
+      .select({
+        on: companySettings.textingEnabled,
+        ownerMobile: companySettings.ownerMobile,
+        newLeadTextTo: companySettings.newLeadTextTo,
+        newLeadTextTemplate: companySettings.newLeadTextTemplate,
+        appointmentDigestEnabled: companySettings.appointmentDigestEnabled,
+        appointmentDigestTo: companySettings.appointmentDigestTo,
+      })
       .from(companySettings)
       .where(eq(companySettings.id, 1))
       .get(),
@@ -79,6 +87,8 @@ export async function readTextingSettings(db: Db, env: TextingEnv & { BETTER_AUT
     ownerMobile: settings?.ownerMobile ?? null,
     newLeadTextTo: settings ? newLeadRecipients(settings) : [],
     newLeadTextTemplate: settings?.newLeadTextTemplate?.trim() ? settings.newLeadTextTemplate : DEFAULT_NEW_LEAD_TEMPLATE,
+    appointmentDigestEnabled: settings ? settings.appointmentDigestEnabled : true,
+    appointmentDigestTo: settings ? appointmentDigestRecipients(settings) : [],
     ready: status.ready,
     webhookUrl: webhookUrl(env.BETTER_AUTH_URL),
   }
@@ -120,6 +130,15 @@ export async function connectQuo(db: Db, env: TextingEnv & { BETTER_AUTH_URL: st
   return { phoneNumberE164: e164 }
 }
 
+/** Typed numbers (commas, semicolons or lines) as comma-separated E.164, at most 10; '' when none. */
+function phoneList(raw: string) {
+  const parts = raw.split(/[,\n;]/).map((p) => p.trim()).filter(Boolean)
+  const bad = parts.find((p) => !toE164(p))
+  if (bad) throw badRequest(`"${bad}" is not a US phone number.`)
+  const list = [...new Set(parts.map((p) => toE164(p)!))].slice(0, 10)
+  return list.length ? list.join(',') : ''
+}
+
 /** Texting switch and Pat's cell. Switching on needs Quo connected and the key set. */
 export async function saveTextingSettings(db: Db, env: TextingEnv, data: Record<string, unknown>) {
   if (typeof data.textingEnabled !== 'boolean') throw badRequest('Texting on or off is required.')
@@ -131,13 +150,9 @@ export async function saveTextingSettings(db: Db, env: TextingEnv, data: Record<
     if (!(await quoConnected(db))) throw badRequest('Connect Quo first.')
   }
   const set: Partial<typeof companySettings.$inferInsert> = { textingEnabled: data.textingEnabled, ownerMobile }
-  if (typeof data.newLeadTextTo === 'string') {
-    const parts = data.newLeadTextTo.split(/[,\n;]/).map((p) => p.trim()).filter(Boolean)
-    const bad = parts.find((p) => !toE164(p))
-    if (bad) throw badRequest(`"${bad}" is not a US phone number.`)
-    const list = [...new Set(parts.map((p) => toE164(p)!))].slice(0, 10)
-    set.newLeadTextTo = list.length ? list.join(',') : ''
-  }
+  if (typeof data.newLeadTextTo === 'string') set.newLeadTextTo = phoneList(data.newLeadTextTo)
+  if (typeof data.appointmentDigestEnabled === 'boolean') set.appointmentDigestEnabled = data.appointmentDigestEnabled
+  if (typeof data.appointmentDigestTo === 'string') set.appointmentDigestTo = phoneList(data.appointmentDigestTo)
   if (typeof data.newLeadTextTemplate === 'string') {
     const t = data.newLeadTextTemplate.trim().slice(0, 600)
     set.newLeadTextTemplate = t && t !== DEFAULT_NEW_LEAD_TEMPLATE ? t : null
