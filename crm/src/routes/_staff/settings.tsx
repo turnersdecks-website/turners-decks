@@ -392,7 +392,7 @@ const QBO_RESULTS: Record<string, [ok: boolean, text: string]> = {
 }
 
 /**
- * QuickBooks (docs/adr/0006-quickbooks-sync.md): connect once; transactions sync every night (and on Sync now) and
+ * QuickBooks (docs/adr/0006-quickbooks-sync.md): connect once; transactions sync every 3 hours (and on Sync now) and
  * are sorted onto Jobs on the Transactions page. Read only: nothing is written to QuickBooks.
  */
 function QuickBooksSection() {
@@ -427,7 +427,7 @@ function QuickBooksSection() {
   }
 
   return (
-    <ContentSection id="quickbooks" title="QuickBooks" description="Transactions copy into the CRM every night, so Jobs show their costs and invoices, and Claude can read them. Nothing is written to QuickBooks.">
+    <ContentSection id="quickbooks" title="QuickBooks" description="Transactions copy into the CRM every 3 hours, so Jobs show their costs and invoices, and Claude can read them. Nothing is written to QuickBooks.">
       {!st ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : (

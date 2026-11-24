@@ -1,6 +1,7 @@
 // Reads Pat's reply to the crew check-in text (crew-time.server.ts). Pure, client-safe, no database.
 //
-// Pat writes one person per comma or line: "Tommy 8, Gary $250, Lenny 6 at $30".
+// Pat writes one person per comma or line: "Tommy 8, Gary $250, Lenny 6 at $30", or just runs them together
+// ("Mike 8 - $400. Lenny 8 -$500"): a name after a number starts the next person (splitPeople).
 // - a plain number is hours ("Tommy 8", "tommy 7.5h", "Gary 8 hrs");
 // - a dollar amount on its own is pay for the day ("Gary $250", "Gary 250 for the day", "Gary $250/day");
 // - a rate is hourly pay ("Lenny 6 at $30", "Lenny 6 @30", "Lenny 6 $30/hr", "6 hrs 30 an hour");
@@ -50,6 +51,32 @@ export function matchCrew(name: string, crew: CrewPick[]): CrewPick | null {
   // "Tom" for Tommy, "Tommy" for Tom: a prefix of at least 3 letters, only when it points at one person.
   const loose = crew.filter((c) => namesOf(c).some((k) => n.length >= 3 && k.length >= 3 && (k.startsWith(n) || n.startsWith(k))))
   return loose.length === 1 ? loose[0] : null
+}
+
+// Words that belong to one person's hours or pay, never a name.
+const PAY_WORDS = new Set(['h', 'hr', 'hrs', 'hour', 'hours', 'at', 'an', 'a', 'per', 'day', 'days', 'for', 'the', 'full', 'all', 'half', 'worked', 'was', 'did', 'and', 'each', 'total'])
+
+/**
+ * Pat doesn't always use commas: "Mike 8 - $400.    Lenny 8 -$500." (Nov 23 2026, read as one person "Mike Lenny").
+ * Within a segment, a word that looks like a name after a number has been seen starts the next person.
+ */
+export function splitPeople(seg: string): string[] {
+  const pieces: string[] = []
+  let cur: string[] = []
+  let sawNumber = false
+  for (const tok of seg.split(/\s+/).filter(Boolean)) {
+    const word = tok.replace(/[^A-Za-z']/g, '').toLowerCase()
+    const isName = /^[A-Za-z][A-Za-z']*[.:,-]*$/.test(tok) && word.length >= 2 && !PAY_WORDS.has(word)
+    if (isName && sawNumber && cur.length) {
+      pieces.push(cur.join(' '))
+      cur = []
+      sawNumber = false
+    }
+    cur.push(tok)
+    if (/\d/.test(tok)) sawNumber = true
+  }
+  if (cur.length) pieces.push(cur.join(' '))
+  return pieces
 }
 
 const money = (v: string) => Math.round(Number(v.replace(/[$,]/g, '')) * 100)
@@ -120,7 +147,10 @@ export function parseCrewReply(text: string, crew: CrewPick[]): ParsedReply {
     .split(/[,\n;]+|\s+and\s+|\s*&\s*|\s+\+\s+/i)
     .map((s) => s.trim())
     .filter(Boolean)
-  const entries = segments.map((s) => parseSegment(s, crew)).filter((e): e is ParsedEntry => e !== null)
+  const entries = segments
+    .flatMap((s) => splitPeople(s))
+    .map((s) => parseSegment(s, crew))
+    .filter((e): e is ParsedEntry => e !== null)
   return entries.length ? { kind: 'entries', entries } : { kind: 'unreadable' }
 }
 

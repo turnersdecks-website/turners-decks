@@ -14,9 +14,9 @@ export const getQboStatus = createServerFn({ method: 'GET' })
   .middleware([requireAdmin])
   .handler(() => qboStatus(getDb(env.DB), env))
 
-/** Admins: "Sync now". */
+/** Any Staff: "Sync now" (Settings and the Transactions page). It only reads from QuickBooks. */
 export const syncQboNow = createServerFn({ method: 'POST' })
-  .middleware([requireAdmin])
+  .middleware([requireStaff])
   .handler(() => syncQuickBooks(getDb(env.DB), env))
 
 /** Any Staff: transactions, filtered (To sort / On a Job / Ignored / All, dates, search). */
