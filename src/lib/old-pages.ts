@@ -1,6 +1,6 @@
 // Copy for the pages carried over from the old WordPress site, kept at their old addresses so
-// search rankings carry over (docs/old-site-copy.md has the original text). Wording is the old
-// site's, with em dashes removed. Photos are referenced by key from PHOTO / PROJECT_PHOTOS.
+// search rankings carry over (docs/old-site-copy.md has the original text). Headings keep the old
+// site's keywords; the body copy was rewritten in plain language (Nov 2026). Photos are referenced by key from PHOTO / PROJECT_PHOTOS.
 import { PHOTO, type Photo } from "./photos";
 
 export type Block = {
@@ -36,51 +36,49 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
     title: "New Decks",
     metaTitle: "New Deck Construction | Custom Deck Builder in Berks County",
     metaDesc:
-      "Professional new deck construction built to last. We design and build custom decks with quality materials, expert craftsmanship, and a clear, stress-free process. Schedule a free consultation today.",
+      "New composite, PVC, and wood decks in Berks, Montgomery, and Chester Counties, built by our carpenters. Permits handled. Get a free on-site quote.",
     eyebrow: "New decks",
-    h1: "New Deck Construction Built for How You Live",
+    h1: "New Deck Construction in Berks, Montgomery, and Chester Counties",
     intro:
-      "We design and build custom decks that feel like a natural extension of your home, crafted with quality materials, expert carpentry, and a process you can trust from start to finish.",
+      "We measure your yard, talk through how you'll use the deck, and give you a price at the visit or the same day. Then we handle the permit, build the deck, and walk it with you after it passes inspection.",
     formValue: "New deck",
     hero: PHOTO.limerick[0],
     blocks: [
       {
         heading: "What’s Included in New Deck Construction",
-        body: ["When you hire us for a new deck, you’re getting more than just boards and railings. You’re getting a fully managed build designed to last."],
+        body: ["Here’s what a new deck from us includes:"],
         lists: [
           {
             items: [
-              "Design and layout guidance tailored to your home",
-              "Help selecting the right materials for durability and style",
-              "Permitting and local code compliance",
-              "Professional installation by experienced carpenters",
-              "Final walkthrough to ensure every detail is right",
+              "A mockup of your deck in your colors, at the visit or the same day",
+              "Help choosing materials for your budget and how much upkeep you want",
+              "Joist protection tape, a picture-frame border, and color-matched or white fascia",
+              "The permit, drawings, and inspections",
+              "The build, by our carpenters",
+              "A final walkthrough after inspection",
             ],
           },
         ],
       },
       {
         heading: "Is a New Deck Right for You?",
-        body: ["New deck construction is ideal for homeowners who want to:"],
+        body: ["A new deck makes sense if you want to:"],
         lists: [
           {
             items: [
-              "Add functional outdoor living space",
-              "Create a place for entertaining, relaxing, or family time",
-              "Replace patios or unused yard space with something usable",
-              "Increase home value with a permanent outdoor feature",
-              "Build a deck that fits their lifestyle, not a one-size-fits-all design",
+              "Add a place to eat, grill, or sit outside",
+              "Replace a patio or a corner of the yard you never use",
+              "Get from the back door to the yard more easily",
             ],
           },
         ],
       },
       {
-        heading: "Our Approach to Building Your Deck",
+        heading: "How We Plan Your Deck",
         level: 2,
         body: [
-          "We believe the best decks start with good conversations.",
-          "Every project begins with a consultation where we listen to your ideas, assess your space, and talk through options honestly. From there, we guide you through material choices, layout considerations, and budget expectations so there are no surprises later.",
-          "We handle the details that matter most: proper structure, code compliance, and craftsmanship that holds up to real use and real weather.",
+          "Every deck starts with a visit. We look at the yard, listen to what you want, and talk through layout, materials, and budget, so the price matches the deck you’re picturing.",
+          "You get your estimate and a mockup of the deck in your colors at the visit or the same day. Once you approve it, we frame it to code and finish it cleanly.",
         ],
       },
       {
@@ -91,8 +89,8 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
             items: [
               "Composite and PVC decking for low maintenance and longevity",
               "Pressure-treated lumber for a budget-friendly option",
-              "Cedar and mahogany for a natural, premium look",
-              "Multiple railing styles to match both safety and design needs",
+              "Cedar and mahogany for a warmer, natural wood look",
+              "Railings in aluminum, composite, cable, or vinyl",
             ],
           },
         ],
@@ -102,7 +100,7 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
     photos: [PHOTO.limerick[2], PHOTO.limerick[3], PHOTO.limerick[13], PHOTO.limerick[1]],
     recent: {
       heading: "Recent Deck Construction Projects",
-      body: "For a recent homeowner, we designed and built a custom deck that created a seamless transition from the home to the backyard. The result was a durable, low-maintenance outdoor space built for everyday use and entertaining.",
+      body: "In Limerick Township, we replaced a concrete patio with a 520 sq ft Trex deck in Pebble Grey, with white vinyl railings, PVC skirting, and two sets of stairs. It cost $55,000 to $60,000.",
       project: "composite-deck-construction-limerick-township-pa",
     },
   },
@@ -111,20 +109,17 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
     title: "Deck Replacement",
     metaTitle: "Deck Replacement | Rebuild & Upgrade Your Existing Deck",
     metaDesc:
-      "Turner’s Decks specializes in deck replacement and rebuilds, upgrading old or unsafe decks with durable composite and wood materials. Free consultation available.",
+      "We replace worn or unsafe decks with new composite or wood decks in Berks, Montgomery, and Chester Counties. Old deck removal and permits included. Free on-site quote.",
     eyebrow: "Replacement decks",
-    h1: "Deck Replacement Done the Right Way",
+    h1: "Deck Replacement for Worn-Out and Unsafe Decks",
     intro:
-      "If your existing deck is worn, unsafe, or no longer meeting your needs, we can rebuild it with stronger structure, better materials, and a design that fits how you actually use your space today.",
+      "If the boards are soft, the railings wobble, or the layout never worked, we tear the old deck out, check what’s underneath, and build a new one to current code.",
     formValue: "Deck replacement",
     hero: PHOTO.woodToTrex[0],
     blocks: [
       {
         heading: "When Is It Time to Replace a Deck?",
-        body: [
-          "Many homeowners contact us when their deck starts showing signs of failure or simply no longer fits their home or lifestyle.",
-          "Deck replacement may be the right option if you’re dealing with:",
-        ],
+        body: ["Most people call us when they notice one of these:"],
         lists: [
           {
             items: [
@@ -133,41 +128,40 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
               "Loose railings or stairs",
               "Code or safety concerns",
               "An outdated layout that limits usability",
-              "A deck that can’t support modern materials",
             ],
           },
         ],
       },
       {
         heading: "What’s Included in Deck Replacement",
-        body: ["Replacing a deck isn’t just surface work. It’s a full structural reset.", "Our deck replacement services typically include:"],
+        body: ["A replacement covers the whole deck, from the footings up. It includes:"],
         lists: [
           {
             items: [
-              "Removal of the existing deck structure",
-              "Evaluation of footings and framing",
-              "Redesign or layout improvements (if desired)",
-              "Material selection guidance",
-              "Permits and code compliance",
-              "Professional reconstruction and finishing",
-              "Final walkthrough and inspection",
+              "Removal and haul-away of the old deck",
+              "A check of the footings and framing",
+              "Layout changes, if you want them",
+              "Help choosing materials",
+              "Joist protection tape, a picture-frame border, and color-matched or white fascia",
+              "The permit, drawings, and inspections",
+              "The rebuild, by our carpenters",
+              "A final walkthrough after inspection",
             ],
           },
         ],
       },
       {
-        heading: "Our Approach to Deck Rebuilds",
+        heading: "How We Decide What to Keep",
         level: 2,
         body: [
-          "Every replacement deck starts with a careful assessment.",
-          "We don’t assume anything about your existing structure. Instead, we evaluate what can be reused safely and what should be rebuilt to current standards. From there, we help you decide whether you want to keep the same footprint or improve the layout for better flow, safety, or functionality.",
-          "Our goal is to rebuild your deck once, and build it to last.",
+          "We check the footings and framing before we price the job. Anything that can be reused safely stays. Anything rotted or below current code gets rebuilt.",
+          "You can keep the same footprint or change the layout while we’re at it.",
         ],
       },
       {
         heading: "Materials Commonly Used for Replacement Decks",
         body: [
-          "Many homeowners choose to upgrade materials during a deck replacement to reduce maintenance and improve longevity.",
+          "A replacement is a good time to switch to composite or PVC and stop staining every year.",
           "Common options include:",
         ],
         lists: [
@@ -175,8 +169,8 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
             items: [
               "Composite and PVC decking for durability and low upkeep",
               "Pressure-treated framing for structural integrity",
-              "Cedar or mahogany for a natural, premium appearance",
-              "Updated railing systems for safety and style",
+              "Cedar or mahogany for a warmer, natural wood look",
+              "New railings in aluminum, composite, cable, or vinyl",
             ],
           },
         ],
@@ -186,7 +180,7 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
     photos: [PHOTO.woodToTrex[1], PHOTO.woodToTrex[3], PHOTO.woodToTrex[6], PHOTO.woodToTrex[5]],
     recent: {
       heading: "Recent Deck Replacement Project",
-      body: "We recently replaced an aging deck that had structural issues and outdated materials. The new build improved safety, expanded usable space, and gave the homeowners a low-maintenance deck they can enjoy without constant repairs.",
+      body: "In Exeter Township, we tore out an aging wood deck and rebuilt it in Trex composite on the same footprint. It cost $40,000 to $50,000.",
       project: "wood-deck-replacement-exeter-township-pa",
     },
   },
@@ -195,45 +189,45 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
     title: "Pool Decks",
     metaTitle: "Pool Deck Builder | Composite & Wood Pool Decks",
     metaDesc:
-      "Turner’s Decks designs and builds custom pool decks using composite, PVC, and wood materials. Slip resistant, low maintenance options. Free consultation available.",
+      "Pool decks for above-ground and in-ground pools in Berks, Montgomery, and Chester Counties, in composite, PVC, and wood. Permits handled. Free on-site quote.",
     eyebrow: "Pool decks",
-    h1: "Pool Deck Construction Designed for Safety and Style",
+    h1: "Pool Decks for Above-Ground and In-Ground Pools",
     intro:
-      "A well-built pool deck should feel secure, comfortable, and easy to maintain. We design and build pool decks using materials and layouts that prioritize safety, durability, and long-term performance.",
+      "Pool decks get wet feet, full sun, and a lot of traffic. We lay them out around how you get in and out of the pool, and help you pick decking that handles water and heat.",
     formValue: "Pool deck",
     hero: PHOTO.grayPool[0],
     blocks: [
       {
-        heading: "Why Pool Decks Require a Specialized Approach",
+        heading: "What’s Different About a Pool Deck",
         body: [
-          "Pool decks are exposed to more moisture, foot traffic, and safety concerns than standard decks. Materials, spacing, and layout all matter more in this environment.",
-          "A properly built pool deck helps:",
+          "A pool deck sees more water, sun, and bare feet than a regular deck, so material, board spacing, and layout matter more.",
+          "A pool deck built right:",
         ],
         lists: [
           {
             items: [
-              "Reduce slipping hazards",
-              "Improve drainage and airflow",
-              "Withstand constant moisture and sun exposure",
-              "Create a safer, more enjoyable pool area",
-              "Meet local safety and building codes",
+              "Drains and dries out between swims",
+              "Holds up to constant water and sun",
+              "Is easier on wet, bare feet",
+              "Meets pool barrier and building codes",
             ],
           },
         ],
       },
       {
         heading: "What’s Included in Pool Deck Construction",
-        body: ["Our pool deck construction services are designed to address both function and appearance."],
+        body: ["Every pool deck we build includes:"],
         lists: [
           {
             items: [
-              "Layout and spacing designed for safe pool access",
-              "Slip-resistant decking recommendations",
-              "Structural framing built to handle moisture exposure",
-              "Proper drainage and ventilation",
+              "A layout planned around safe pool access",
+              "Help choosing decking for wet feet and hot sun, using the manufacturer’s specs",
+              "Framing built for constant moisture",
+              "Board spacing for drainage and airflow",
+              "Joist protection tape, a picture-frame border, and color-matched or white fascia",
               "Code-compliant railings and barriers where required",
-              "Professional installation and finishing",
-              "Final walkthrough and inspection",
+              "The permit, drawings, and inspections",
+              "A final walkthrough after inspection",
             ],
           },
         ],
@@ -242,15 +236,15 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
         heading: "Materials Commonly Used for Pool Decks",
         level: 2,
         body: [
-          "Material choice is especially important around pools. We help homeowners select options that stay cooler, resist moisture, and require less maintenance.",
+          "Around a pool, what matters most is how hot the boards get in July and how they handle water. We’ll show you the manufacturer’s heat and slip specs for each option.",
           "Common pool deck materials include:",
         ],
         lists: [
           {
             items: [
-              "Composite and PVC decking for slip resistance and durability",
+              "Composite and PVC decking, which won’t splinter and holds up to water",
               "Pressure-treated framing for structural integrity",
-              "Select wood options where appropriate",
+              "Pressure-treated wood decking for a lower-cost pool deck",
               "Railing systems designed for pool safety",
             ],
           },
@@ -259,7 +253,7 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
       },
       {
         heading: "Our Approach to Pool Deck Design",
-        body: ["Every pool deck begins with a careful evaluation of how the space is used.", "We consider:"],
+        body: ["We plan every pool deck around how the pool gets used, including:"],
         lists: [
           {
             items: [
@@ -271,13 +265,12 @@ export const SERVICE_PAGES: Record<ServicePageSlug, ServicePage> = {
             ],
           },
         ],
-        after: ["Our goal is to build a pool deck that feels intentional, safe, and easy to live with, not something you have to work around."],
       },
     ],
     photos: [PHOTO.grayPool[1], PHOTO.grayPool[2], PHOTO.grayPool[3], PHOTO.ptPool[0]],
     recent: {
       heading: "Recent Pool Deck Project",
-      body: "We recently completed a pool deck designed to improve safety and circulation while giving the homeowners a clean, modern look that complements their outdoor space.",
+      body: "In Exeter Township, we built a 3-foot pressure-treated walkway around a 12 by 18 foot ground-level pool. It cost $10,000 to $15,000.",
       project: "new-pool-deck-exeter-township-pa",
     },
   },
@@ -313,9 +306,9 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     card: "Pressure-treated pool deck, Exeter Township",
     metaTitle: "New Pool Deck Construction in Exeter Township, PA | Turner’s Decks",
     metaDesc:
-      "See a new pressure-treated pool deck built around a 12×18 ground-level pool in Exeter Township, PA. View project details and request a free consultation.",
+      "See a new pressure-treated pool deck built around a 12×18 ground-level pool in Exeter Township, PA. View project details and request a free on-site quote.",
     eyebrow: "Project spotlight: adding a pool deck",
-    h1: "Budget-Friendly Pressure-Treated Pool Deck",
+    h1: "Pressure-Treated Pool Deck in Exeter Township, PA",
     service: "pool-decks",
     specs: [
       ["Project Type", "New Pool Deck Construction"],
@@ -327,7 +320,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     ],
     glance: { range: "$10,000 to $15,000", size: "12′ × 18′ pool, 3′ walkway", material: "Pressure-treated wood", location: "Exeter Township" },
     intro: [
-      "This project involved building a new, ground-level pool deck to create a safe and functional space around an existing pool. The homeowners wanted a simple, budget-conscious solution that would improve access to the pool while keeping the footprint efficient and easy to maintain.",
+      "The homeowners wanted a simple, affordable way to get around their 12 by 18 foot ground-level pool. We built a 3-foot pressure-treated walkway on all sides, low enough to need no stairs or railings.",
     ],
     blocks: [
       {
@@ -350,7 +343,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     ],
     cost: {
       heading: "Cost Range for This Project",
-      body: ["New pool deck projects of this size typically fall in the low-to-mid $10,000 range, depending on:"],
+      body: ["This one cost $10,000 to $15,000. Your price depends on:"],
       lists: [{ items: ["Total deck square footage", "Site access and ground conditions", "Framing requirements", "Any future upgrades (staining, skirting, lighting)"] }],
       after: ["Every pool deck is custom-built and quoted based on the specific layout and site conditions."],
     },
@@ -377,7 +370,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     ],
     glance: { range: "$55,000 to $60,000", size: "About 520 sq ft", material: "Trex Select, Pebble Grey", location: "Limerick Township" },
     intro: [
-      "This project involved replacing an existing concrete patio with a large, elevated composite deck designed to improve usability, flow, and access to the backyard. The new deck expanded the usable outdoor space while incorporating clean finishing details and long-term, low-maintenance materials.",
+      "The homeowners had a concrete patio and wanted more room and easier access to the yard. We replaced it with a 520 sq ft Trex Select deck in Pebble Grey, a little larger than the patio, with stairs off the back and off the side by the fence gate.",
     ],
     blocks: [
       {
@@ -406,7 +399,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
               "Railing: RDI white vinyl railing with black aluminum balusters",
               "Fascia: White PVC fascia boards",
               "Skirting: Horizontal white PVC skirting (1×8 boards, spaced ~1″ apart)",
-              "Framing: Built to code using engineered plans",
+              "Framing: Built to code",
             ],
           },
         ],
@@ -425,7 +418,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     ],
     cost: {
       heading: "Average Cost Range",
-      body: ["Projects of this size and scope typically fall in the mid-to-high $50,000 range, depending on:"],
+      body: ["This one cost $55,000 to $60,000. Your price depends on:"],
       lists: [
         {
           items: [
@@ -459,7 +452,7 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
     ],
     glance: { range: "$40,000 to $50,000", material: "Trex composite", location: "Exeter Township" },
     intro: [
-      "This project involved replacing an aging wood deck with a low-maintenance composite deck designed for long-term durability, improved safety, and everyday use. The homeowners wanted a clean, modern look with minimal upkeep while maintaining the existing footprint and improving the overall function of their outdoor space.",
+      "The old wood deck needed constant upkeep and was wearing out. The homeowners wanted to keep the same footprint and stop staining, so we tore it out and rebuilt it in Trex composite with new railings.",
     ],
     blocks: [
       {
@@ -478,12 +471,11 @@ export const PROJECT_PAGES: Record<ProjectSlug, ProjectPage> = {
             ],
           },
         ],
-        after: ["This is a common scenario for homeowners considering replacement decks rather than repairs."],
       },
     ],
     cost: {
       heading: "Cost Range for This Project",
-      body: ["Projects like this typically fall in the mid-$40,000 range, depending on:"],
+      body: ["This one cost $40,000 to $50,000. Your price depends on:"],
       lists: [{ items: ["Total deck size", "Railing style and materials", "Stairs and access points", "Optional upgrades such as lighting or fascia details"] }],
       after: ["Every replacement deck is custom-quoted based on site conditions and homeowner goals."],
     },

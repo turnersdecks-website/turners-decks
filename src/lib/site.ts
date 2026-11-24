@@ -34,7 +34,7 @@ export const SERVICES = [
   {
     slug: "pool-decks",
     title: "Pool Decks",
-    short: "Slip-resistant, low-maintenance decks around above-ground and in-ground pools.",
+    short: "Decks around above-ground and in-ground pools, built for water and sun.",
   },
 ] as const;
 
@@ -78,7 +78,7 @@ export const findTown = (slug: string) => TOWNS.find((t) => t.slug === slug);
 export const PROCESS_STEPS = [
   { title: "Free on-site quote", body: "We come out, measure, and talk through what you want and what it'll cost." },
   { title: "Design & permits", body: "We finalize the plan and handle the permit application and township approval." },
-  { title: "The build", body: "Our carpenters build your deck to the plan, with no sales team in the middle." },
+  { title: "The build", body: "Our crew builds your deck to the approved plan." },
   { title: "Inspection & walkthrough", body: "We schedule the final inspection and walk the finished deck with you." },
 ];
 
