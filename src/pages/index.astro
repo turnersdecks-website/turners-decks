@@ -27,21 +27,22 @@ import { PROCESS_STEPS, SITE } from "@/lib/site";
     tall
     photo={HERO}
     eyebrow={`Deck builder · ${SITE.city}, ${SITE.state} · Since ${SITE.since}`}
-    title="Douglassville's Trusted Deck Builder"
-    intro="Decks built right, permits handled. New decks, replacements, and pool decks across Berks, Montgomery, and Chester Counties, built by carpenters."
+    title="A better way to get a deck built"
+    intro="Your estimate and a mockup of your deck at the visit or the same day. We handle the permit, haul the old deck away, and build the new one."
+    note="Estimate and mockup the same day · Permits handled · We text you at every step"
   >
     <Button href="#estimate" variant="light" size="lg">Get a Free Quote</Button>
     <Button href="/estimator" variant="outline-light" size="lg">Try the Price Estimator</Button>
   </PageHero>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="What we build" title="Three things, done well" />
+    <SectionHeading eyebrow="What we build" title="New decks, replacements, and pool decks" />
     <div class="mt-12"><ServiceColumns /></div>
   </section>
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="Recent decks" title="Real decks from real backyards" />
+      <SectionHeading eyebrow="Recent decks" title="Recent decks we've built" />
       <div class="mt-12"><ProjectCards /></div>
     </div>
   </section>
@@ -64,7 +65,7 @@ import { PROCESS_STEPS, SITE } from "@/lib/site";
   </section>
 
   <section class="section container-site">
-    <WhyUsGrid eyebrow="Why us" title="Built by carpenters, not a sales team" cta={{ href: "/about", label: "About Turner's Decks" }} />
+    <WhyUsGrid eyebrow="Why us" title="Why Turner's Decks" cta={{ href: "/about", label: "About Turner's Decks" }} />
   </section>
 
   <section class="section bg-secondary">
@@ -90,7 +91,7 @@ import { PROCESS_STEPS, SITE } from "@/lib/site";
     <div class="container-site split items-start">
       <div>
         <h2 class="display-2">Ready for a new deck?</h2>
-        <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">Get a free on-site quote. No pressure, no sales pitch.</p>
+        <p class="mb-8 mt-4 text-[1.1875rem] leading-normal text-muted-foreground">We come out, measure, and give you a price. It's free.</p>
         <QuoteForm client:load onDark />
       </div>
       <Photo photo={PHOTO.compositeNew} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />

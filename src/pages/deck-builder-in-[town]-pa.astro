@@ -49,15 +49,15 @@ const photos = townPhotos(town.slug);
 
   <section class="section bg-secondary">
     <div class="container-site">
-      <SectionHeading eyebrow="What we build" title="Decks We Build" />
+      <SectionHeading eyebrow="What we build" title={`Decks we build in ${town.name}`} />
       <div class="mt-12"><ServiceCards rotate={TOWNS.findIndex((t) => t.slug === town.slug) + 1} /></div>
     </div>
   </section>
 
   <section class="section container-site">
-    <SectionHeading eyebrow="Local experience" title="Local Experience" intro={`We've been building decks around Douglassville since ${SITE.since}, and ${town.name} is well within our regular service area.`} />
+    <SectionHeading eyebrow="Local experience" title={`Building decks in ${town.name}`} intro={`We've been building decks around Douglassville since ${SITE.since}, and ${town.name} is well within our regular service area.`} />
     {/* [CONTENT] local details, neighborhoods, or notes about building in this town */}
-    <h2 class="mt-16 text-[clamp(1.5rem,2.6vw,2rem)]">Recent Projects</h2>
+    <h2 class="mt-16 text-[clamp(1.5rem,2.6vw,2rem)]">Recent projects</h2>
     <div class="mt-8 grid gap-6 sm:grid-cols-3">
       {photos.recent.map((p) => <Photo photo={p} class="aspect-square w-full rounded-2xl object-cover" />)}
     </div>
