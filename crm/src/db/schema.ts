@@ -423,6 +423,10 @@ export const companySettings = sqliteTable(
     crewCheckinEnabled: integer('crew_checkin_enabled', { mode: 'boolean' }).notNull().default(false),
     /** Hour of the day (company time zone, 0 to 23) the check-in goes out. */
     crewCheckinHour: integer('crew_checkin_hour').notNull().default(18),
+    /** The 6 PM text listing tomorrow's appointments (appointment-digest.server.ts). On unless switched off. */
+    appointmentDigestEnabled: integer('appointment_digest_enabled', { mode: 'boolean' }).notNull().default(true),
+    /** Who gets it (comma-separated E.164); null or empty = Pat's cell (ownerMobile). */
+    appointmentDigestTo: text('appointment_digest_to'),
   },
   // New columns are validated by the server (settings.functions.ts); a CHECK here would force a table rebuild.
   (t) => [check('company_settings_single_row', sql`${t.id} = 1`)],

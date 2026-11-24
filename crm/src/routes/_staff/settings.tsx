@@ -580,6 +580,8 @@ function TextingRulesSection() {
   const [mobile, setMobile] = useState<string | null>(null)
   const [to, setTo] = useState<string | null>(null)
   const [template, setTemplate] = useState<string | null>(null)
+  const [digestTo, setDigestTo] = useState<string | null>(null)
+  const shownDigestTo = digestTo ?? (t ? t.appointmentDigestTo.map(prettyPhone).join(', ') : '')
   const shownMobile = mobile ?? (t?.ownerMobile ? prettyPhone(t.ownerMobile) : '')
   const shownTo = to ?? (t ? t.newLeadTextTo.map(prettyPhone).join(', ') : '')
   const shownTemplate = template ?? t?.newLeadTextTemplate ?? DEFAULT_NEW_LEAD_TEMPLATE
@@ -636,12 +638,37 @@ function TextingRulesSection() {
               </p>
               <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-line">{preview}</div>
             </div>
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4"
+                  checked={t.appointmentDigestEnabled}
+                  disabled={busy}
+                  onChange={(e) => setT({ ...t, appointmentDigestEnabled: e.target.checked })}
+                />
+                <span>Text tomorrow's appointments at 6 PM: one text with each appointment's time, name, address, phone and a link to the Lead. Nothing is sent on days with no appointments.</span>
+              </label>
+              <Label htmlFor="appointmentDigestTo">Text appointments to</Label>
+              <Input id="appointmentDigestTo" value={shownDigestTo} placeholder="(484) 555-0123, (610) 555-0199" onChange={(e) => setDigestTo(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Cell numbers, separated by commas. Left empty, it goes to Pat's cell.</p>
+            </div>
             <Button
               size="sm"
               disabled={busy}
               onClick={() =>
                 run(
-                  () => updateTextingSettings({ data: { textingEnabled: t.textingEnabled, ownerMobile: shownMobile, newLeadTextTo: shownTo, newLeadTextTemplate: shownTemplate } }),
+                  () =>
+                    updateTextingSettings({
+                      data: {
+                        textingEnabled: t.textingEnabled,
+                        ownerMobile: shownMobile,
+                        newLeadTextTo: shownTo,
+                        newLeadTextTemplate: shownTemplate,
+                        appointmentDigestEnabled: t.appointmentDigestEnabled,
+                        appointmentDigestTo: shownDigestTo,
+                      },
+                    }),
                   'Texting saved',
                 )
               }

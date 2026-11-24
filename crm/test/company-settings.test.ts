@@ -63,6 +63,8 @@ describe('changing company settings', () => {
       qbo_rules: null,
       crew_checkin_enabled: 0,
       crew_checkin_hour: 18,
+      appointment_digest_enabled: 1,
+      appointment_digest_to: null,
     })
   })
 
