@@ -87,10 +87,11 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
     );
   }
 
-  const field = (name: string, label: string, props: ComponentProps<"input"> = {}) => (
+  // Required fields get a bolder label and the required attribute; the optional ones sit folded below.
+  const field = (name: string, label: string, props: ComponentProps<"input"> = {}, optional = false) => (
     <div>
-      <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} className={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} aria-invalid={!!errors[name]} aria-describedby={errors[name] ? `${name}-error` : undefined} {...props} />
+      <Label htmlFor={name} className={optional ? "opacity-80" : "font-medium"}>{label}</Label>
+      <Input id={name} name={name} className={`mt-1.5 h-12 rounded-lg text-base shadow-none ${tone.field}`} aria-invalid={!!errors[name]} aria-describedby={errors[name] ? `${name}-error` : undefined} required={!optional} {...props} />
       <FieldError id={`${name}-error`} message={errors[name]} />
     </div>
   );
@@ -105,8 +106,8 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
         {field("phone", "Phone", { type: "tel", autoComplete: "tel", inputMode: "tel" })}
         {field("zip", "Zip code", { inputMode: "numeric", maxLength: 5, autoComplete: "postal-code" })}
         <div>
-          <Label htmlFor="project_type">Project type</Label>
-          <select id="project_type" name="project_type" defaultValue={defaultProject ?? ""} className={`mt-1.5 ${selectCls} ${tone.field}`} aria-invalid={!!errors["project_type"]} aria-describedby={errors["project_type"] ? "project_type-error" : undefined}>
+          <Label htmlFor="project_type" className="font-medium">Project type</Label>
+          <select id="project_type" name="project_type" defaultValue={defaultProject ?? ""} className={`mt-1.5 ${selectCls} ${tone.field}`} required aria-invalid={!!errors["project_type"]} aria-describedby={errors["project_type"] ? "project_type-error" : undefined}>
             <option value="" disabled>Choose one</option>
             <option>New deck</option>
             <option>Deck replacement</option>
@@ -116,17 +117,17 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
         </div>
       </div>
       {/* Optional details stay in the form (and are sent) while folded away. */}
-      <details ref={moreRef} className="group rounded-lg border border-current/25 px-4">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 font-medium [&::-webkit-details-marker]:hidden">
-          Add project details (optional)
+      <details ref={moreRef} className="group rounded-lg border border-dashed border-current/30 px-4">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <span>Add project details <span className="ml-2 inline-block rounded-full border border-current/30 px-2 text-xs leading-5 opacity-80">Optional</span></span>
           <svg className="size-5 shrink-0 transition-transform group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" /></svg>
         </summary>
         <div className="grid gap-4 pb-5 pt-2 sm:grid-cols-2">
-          {field("street", "Project address", { autoComplete: "address-line1", placeholder: "Street address" })}
-          {field("town", "Town", { autoComplete: "address-level2" })}
-          {field("approx_size", "Approximate size", { placeholder: "e.g. 12 x 16 ft" })}
+          {field("street", "Project address", { autoComplete: "address-line1", placeholder: "Street address" }, true)}
+          {field("town", "Town", { autoComplete: "address-level2" }, true)}
+          {field("approx_size", "Approximate size", { placeholder: "e.g. 12 x 16 ft" }, true)}
           <div>
-            <Label htmlFor="material">Preferred material</Label>
+            <Label htmlFor="material" className="opacity-80">Preferred material</Label>
             <select id="material" name="material" defaultValue="Not sure" className={`mt-1.5 ${selectCls} ${tone.field}`}>
               <option>Composite</option>
               <option>PVC</option>
@@ -135,7 +136,7 @@ export default function QuoteForm({ defaultProject, onDark = false }: { defaultP
             </select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes" className="opacity-80">Notes</Label>
             <Textarea id="notes" name="notes" rows={3} maxLength={2000} className={`mt-1.5 rounded-lg text-base shadow-none ${tone.field}`} placeholder="Tell us about your yard, or anything else." />
           </div>
         </div>

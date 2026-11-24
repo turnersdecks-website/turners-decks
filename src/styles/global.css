@@ -238,3 +238,28 @@
 details.faq > summary { list-style: none; }
 details.faq > summary::-webkit-details-marker { display: none; }
 details.faq[open] > summary .faq-chevron { transform: rotate(180deg); }
+
+/* Estimator loading picture: each board drops onto the frame, holds, then fades so the row lays again. */
+@keyframes deck-board-drop {
+  0%, 8% { translate: 0 -26px; opacity: 0; }
+  22% { translate: 0 2px; opacity: 1; }
+  28%, 78% { translate: 0 0; opacity: 1; }
+  92%, 100% { translate: 0 0; opacity: 0; }
+}
+@keyframes deck-board-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.deck-loader-board {
+  transform-box: fill-box;
+  animation: deck-board-drop 2.4s ease-out infinite both;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No falling: the boards stay put and glow slowly, so it still reads as busy. */
+  .deck-loader-board {
+    animation: deck-board-pulse 4s ease-in-out infinite both;
+  }
+}
+@media (forced-colors: active) {
+  .deck-loader { color: CanvasText; }
+}
