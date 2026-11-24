@@ -14,3 +14,16 @@
 /elementor-hf/*              /                       301
 /contact-us                  /contact                301
 /home                        /                       301
+
+# The two old WordPress blog posts (not carried over). Covers the plain, /blog and dated permalink styles.
+/deck-cost-pennsylvania-2026                          /estimator    301
+/blog/deck-cost-pennsylvania-2026                     /estimator    301
+/:year/:month/deck-cost-pennsylvania-2026             /estimator    301
+/:year/:month/:day/deck-cost-pennsylvania-2026        /estimator    301
+/how-to-hire-deck-builder-pennsylvania                /our-process  301
+/blog/how-to-hire-deck-builder-pennsylvania           /our-process  301
+/:year/:month/how-to-hire-deck-builder-pennsylvania   /our-process  301
+/:year/:month/:day/how-to-hire-deck-builder-pennsylvania /our-process 301
+/blog                                                 /             301
+/blog/*                                               /             301
+/category/*                                           /             301
