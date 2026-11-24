@@ -3,7 +3,6 @@ import { useEffect, type ComponentProps, type RefObject } from "react";
 import { buttonVariants, cn, type ButtonSize, type ButtonVariant } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 import { SMS_CONSENT_TEXT } from "@/lib/sms-consent";
-import { DEADLINE_REASONS } from "@/lib/crm-intake";
 
 export function Button({ className, variant, size, type = "button", ...props }: ComponentProps<"button"> & { variant?: ButtonVariant; size?: ButtonSize }) {
   return <button type={type} className={cn(buttonVariants({ variant, size }), className)} {...props} />;
@@ -83,28 +82,6 @@ export function SmsConsent({ id = "sms_consent", className = "", defaultChecked 
         {SMS_CONSENT_TEXT} See our <a href="/privacy-policy" className="underline underline-offset-2">Privacy Policy</a>.
       </span>
     </label>
-  );
-}
-
-/**
- * Optional "need it done by a date?" pair (a reason + a target date), shared by the quote form and the estimator.
- * Sent to the CRM as the Lead's timeframe (crm-intake.ts deadlineText). `idPrefix` keeps ids unique per form.
- */
-export function DeadlineFields({ idPrefix, selectClassName, inputClassName, defaults = {} }: { idPrefix: string; selectClassName: string; inputClassName: string; defaults?: { deadline_reason?: string; deadline_date?: string } }) {
-  return (
-    <>
-      <div>
-        <Label htmlFor={`${idPrefix}-deadline_reason`}>Need it done by a certain date? (optional)</Label>
-        <select id={`${idPrefix}-deadline_reason`} name="deadline_reason" defaultValue={defaults.deadline_reason ?? ""} className={selectClassName}>
-          <option value="">No set date</option>
-          {DEADLINE_REASONS.map((r) => <option key={r}>{r}</option>)}
-        </select>
-      </div>
-      <div>
-        <Label htmlFor={`${idPrefix}-deadline_date`}>Target date (optional)</Label>
-        <Input id={`${idPrefix}-deadline_date`} name="deadline_date" type="date" defaultValue={defaults.deadline_date} className={inputClassName} />
-      </div>
-    </>
   );
 }
 

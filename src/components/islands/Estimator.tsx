@@ -3,7 +3,7 @@
 // back (docs/adr/0003). This file is only the UI; no prices live on the site.
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, Phone, Plus, Trash2 } from "lucide-react";
-import { Button, DeadlineFields, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
+import { Button, FieldError, Honeypot, Input, Label, LinkButton, Progress, SendError, SmsConsent, Textarea, useFocusFirstError } from "@/components/ui/fields";
 import { TurnstileBox, useTurnstile } from "@/components/ui/turnstile";
 import { IntakeError, SubmissionKeys, estimatorPayload, fetchEstimator, submitToCrm, type EstimatorContact } from "@/lib/crm-intake";
 import {
@@ -59,6 +59,20 @@ const NOTES: { after: string; show: (a: Answers) => boolean; copy: keyof Copy["d
   { after: "neighbors", show: (a) => a.neighbors !== undefined && a.neighbors !== "no", copy: "neighbors" },
 ];
 
+/** Loading picture: deck boards drop onto the frame one at a time, then start over (global.css `.deck-loader`). */
+function DeckLoader() {
+  return (
+    <svg className="deck-loader mx-auto h-20 w-40 text-primary" viewBox="0 0 160 80" aria-hidden="true">
+      <rect x="22" y="44" width="8" height="34" rx="1.5" fill="currentColor" opacity="0.35" />
+      <rect x="130" y="44" width="8" height="34" rx="1.5" fill="currentColor" opacity="0.35" />
+      <rect x="12" y="40" width="136" height="6" rx="1.5" fill="currentColor" opacity="0.55" />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect key={i} className="deck-loader-board" style={{ animationDelay: `${i * 0.25}s` }} x={14 + i * 27} y="31" width="24" height="8" rx="2" fill="currentColor" />
+      ))}
+    </svg>
+  );
+}
+
 function Note({ children }: { children: ReactNode }) {
   return <p className="rounded-lg border-l-4 border-accent-blue bg-secondary p-4 text-sm text-muted-foreground">{children}</p>;
 }
@@ -94,7 +108,8 @@ export default function Estimator() {
   }
   return (
     <div className="mt-8 rounded-xl bg-card p-6 text-center text-muted-foreground shadow-card md:p-10" role="status">
-      Loading the estimator…
+      <DeckLoader />
+      <p className="mt-4">Laying the boards for your estimator…</p>
     </div>
   );
 }
@@ -266,9 +281,7 @@ function Wizard({ est }: { est: PublicEstimator }) {
       ...parsed.data,
       website: fd.website ?? "",
       timing: fd.timing ?? "",
-      deadline_reason: fd.deadline_reason,
-      deadline_date: fd.deadline_date,
-      contact_method: fd.contact_method === "text" || fd.contact_method === "email" ? fd.contact_method : "phone",
+      contact_method: fd.contact_method === "text" || fd.contact_method === "email" ? fd.contact_method : "text",
       wants_financing: fd.financing === "on",
       sms_consent: fd.sms_consent === "on",
       notes: [fd.notes?.trim(), sizeNote].filter(Boolean).join("\n\n") || undefined,
@@ -560,40 +573,43 @@ function ContactStep({ draft, errors, sending, serverError, onSubmit }: {
       <div className="grid gap-5 sm:grid-cols-2">
         {([["first_name", "First name", "given-name", "text"], ["last_name", "Last name", "family-name", "text"], ["email", "Email", "email", "email"], ["phone", "Phone", "tel", "tel"]] as const).map(([n, l, ac, t]) => (
           <div key={n}>
-            <Label htmlFor={`e-${n}`}>{l}</Label>
-            <Input id={`e-${n}`} name={n} type={t} autoComplete={ac} defaultValue={d[n]} className="mt-1.5 h-11 text-base" aria-invalid={!!errors[n]} aria-describedby={errors[n] ? `e-${n}-error` : undefined} />
+            <Label htmlFor={`e-${n}`} className="font-medium">{l}</Label>
+            <Input id={`e-${n}`} name={n} type={t} autoComplete={ac} defaultValue={d[n]} className="mt-1.5 h-11 text-base" required aria-invalid={!!errors[n]} aria-describedby={errors[n] ? `e-${n}-error` : undefined} />
             <FieldError id={`e-${n}-error`} message={errors[n]} />
           </div>
         ))}
         <div>
-          <Label htmlFor="e-zip">Project ZIP code</Label>
-          <Input id="e-zip" name="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" defaultValue={d.zip} className="mt-1.5 h-11 text-base" aria-invalid={!!errors.zip} aria-describedby={errors.zip ? "e-zip-error" : undefined} />
+          <Label htmlFor="e-zip" className="font-medium">Project ZIP code</Label>
+          <Input id="e-zip" name="zip" inputMode="numeric" maxLength={5} autoComplete="postal-code" defaultValue={d.zip} className="mt-1.5 h-11 text-base" required aria-invalid={!!errors.zip} aria-describedby={errors.zip ? "e-zip-error" : undefined} />
           <FieldError id="e-zip-error" message={errors.zip} />
         </div>
+      </div>
+      {/* Everything below has a default or can be left blank, so it sits in a quieter panel. */}
+      <fieldset className="grid gap-5 rounded-lg border border-dashed border-input p-4 sm:grid-cols-2 md:p-5">
+        <legend className="px-1.5 text-sm text-muted-foreground">Optional, but helpful</legend>
         <div>
-          <Label htmlFor="e-address">Project address (optional)</Label>
+          <Label htmlFor="e-address" className="text-muted-foreground">Project address</Label>
           <Input id="e-address" name="address" autoComplete="street-address" maxLength={200} defaultValue={d.address} className="mt-1.5 h-11 text-base" />
         </div>
         <div>
-          <Label htmlFor="e-cm">Best way to reach you</Label>
-          <select id="e-cm" name="contact_method" defaultValue={d.contact_method} className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base">
-            <option value="phone">Phone call</option><option value="text">Text</option><option value="email">Email</option>
+          <Label htmlFor="e-cm" className="text-muted-foreground">Best way to reach you</Label>
+          <select id="e-cm" name="contact_method" defaultValue={d.contact_method ?? "text"} className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base">
+            <option value="text">Text</option><option value="phone">Phone call</option><option value="email">Email</option>
           </select>
         </div>
         <div>
-          <Label htmlFor="e-timing">When would you like it built?</Label>
+          <Label htmlFor="e-timing" className="text-muted-foreground">When would you like it built?</Label>
           <select id="e-timing" name="timing" defaultValue={d.timing} className="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base">
             <option>As soon as possible</option><option>Within 3 months</option><option>3–6 months</option><option>Next year</option><option>Just planning</option>
           </select>
         </div>
-        <DeadlineFields idPrefix="e" selectClassName="mt-1.5 h-11 w-full rounded-md border border-input bg-background px-3 text-base" inputClassName="mt-1.5" defaults={{ deadline_reason: d.deadline_reason, deadline_date: d.deadline_date }} />
         <div className="sm:col-span-2">
-          <Label htmlFor="e-notes">Anything else we should know? (optional)</Label>
+          <Label htmlFor="e-notes" className="text-muted-foreground">Anything else we should know?</Label>
           <Textarea id="e-notes" name="notes" maxLength={2000} rows={3} defaultValue={d.notes} className="mt-1.5" />
         </div>
         <label className="flex items-center gap-3 sm:col-span-2"><input type="checkbox" name="financing" defaultChecked={d.financing === "on"} className="size-5" /> Send me financing information</label>
-        <SmsConsent id="e-sms_consent" className="sm:col-span-2" defaultChecked={d.sms_consent === "on"} />
-      </div>
+      </fieldset>
+      <SmsConsent id="e-sms_consent" defaultChecked={d.sms_consent === "on"} />
       <TurnstileBox boxRef={turnstile.ref} />
       <p className="text-xs text-muted-foreground">We only use your information to follow up on this project. We never sell it.</p>
       <SendError message={serverError} />

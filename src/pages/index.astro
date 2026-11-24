@@ -74,7 +74,8 @@ import { PROCESS_STEPS, SITE } from "@/lib/site";
         <SectionHeading eyebrow="How it works" title="Our process, in four steps" />
         <div class="mt-8"><StepList steps={PROCESS_STEPS} /></div>
       </div>
-      <Photo photo={PHOTO.elevated} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
+      {/* Kristin: no photos of the Amity pond deck (the fort) anywhere on the home page. */}
+      <Photo photo={PHOTO.limerick[9]} sizes="(min-width: 900px) 50vw, 100vw" class="aspect-[4/3] w-full rounded-3xl object-cover" />
     </div>
   </section>
 
