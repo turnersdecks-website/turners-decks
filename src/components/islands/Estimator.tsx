@@ -79,13 +79,21 @@ function Note({ children }: { children: ReactNode }) {
 
 const legendCls = "font-heading font-semibold text-primary";
 
+/** Shortest time the loading animation shows; the last board lands at about 1.6s. */
+const LOADER_MIN_MS = 1800;
+
 export default function Estimator() {
   const [est, setEst] = useState<PublicEstimator | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const load = useCallback(() => {
     setLoadFailed(false);
+    // Keep the loading animation up long enough for all five boards to land, even on a fast connection.
+    const minShow = new Promise((r) => setTimeout(r, LOADER_MIN_MS));
     fetchEstimator()
-      .then(setEst)
+      .then(async (e) => {
+        await minShow;
+        setEst(e);
+      })
       .catch((err) => {
         console.error("[estimator]", err);
         setLoadFailed(true);
