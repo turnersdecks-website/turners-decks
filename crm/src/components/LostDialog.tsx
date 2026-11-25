@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { Check, Copy, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
@@ -20,11 +20,13 @@ export function LostDialog({ leadId, leadName, onClose, onDone }: { leadId: stri
   const [doNotContact, setDoNotContact] = useState(true)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!leadId) return
     let live = true
     setPreview(null)
+    setCopied(false)
     setReason('')
     setDoNotContact(true)
     getLostPreview({ data: { leadId } })
@@ -41,6 +43,22 @@ export function LostDialog({ leadId, leadName, onClose, onDone }: { leadId: stri
       live = false
     }
   }, [leadId])
+
+  // Copy the email text to paste as a Gmail reply (keeps it in the Homeowner's thread). Copying unticks sending, so
+  // they don't get it twice.
+  async function copy() {
+    if (!preview) return
+    try {
+      await navigator.clipboard.writeText(preview.body)
+      setCopied(true)
+      if (sendEmail && !preview.cannotSend) {
+        setSendEmail(false)
+        toast.success('Copied. Sending is now unticked so they don’t get it twice.')
+      } else toast.success('Copied')
+    } catch {
+      toast.error('Could not copy. Select the text and copy it instead.')
+    }
+  }
 
   async function confirm() {
     if (!leadId) return
@@ -81,13 +99,19 @@ export function LostDialog({ leadId, leadName, onClose, onDone }: { leadId: stri
               </span>
             </label>
 
-            {sendEmail && !preview.cannotSend && (
-              <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+            <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
                 <p className="font-medium">{preview.subject}</p>
-                <p className="mt-2 whitespace-pre-line text-muted-foreground">{preview.body}</p>
-                <p className="mt-2 text-xs text-muted-foreground">Edit the wording in Settings &gt; Automations &gt; Lost: thank-you.</p>
+                <Button type="button" variant="ghost" size="sm" className="-mt-1 -mr-1 h-7 shrink-0 gap-1.5 px-2" onClick={() => void copy()}>
+                  {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
               </div>
-            )}
+              <p className="mt-2 whitespace-pre-line text-muted-foreground select-text">{preview.body}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                To keep it in their email thread, copy it and send it as a reply from Gmail. Edit the wording in Settings &gt; Automations &gt; Lost: thank-you.
+              </p>
+            </div>
 
             <label className="flex items-start gap-2.5 text-sm">
               <Checkbox className="mt-0.5" checked={doNotContact} disabled={saving} onCheckedChange={(v) => setDoNotContact(v === true)} />
