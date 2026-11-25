@@ -3,7 +3,7 @@
 // of email_templates, with these defaults until someone saves their own. Same format as the calculator email: a
 // first line "Subject: ..." sets the subject and {placeholders} are filled per customer (renderTemplate).
 
-export type TemplateKey = 'appointment_confirmation' | 'appointment_reminder' | 'estimate_followup' | 'review_request'
+export type TemplateKey = 'appointment_confirmation' | 'appointment_reminder' | 'estimate_followup' | 'review_request' | 'lost_thank_you'
 
 export type TemplateDef = {
   key: TemplateKey
@@ -55,6 +55,23 @@ Just checking in on the estimate Pat sent over. Happy to walk through options, m
 
 Call or text {company_phone} anytime.
 
+{company_name}`,
+  },
+  {
+    key: 'lost_thank_you',
+    name: 'Lost: thank-you',
+    when: 'When a Lead is moved to Lost and Staff choose to send it (the Lost window asks each time).',
+    placeholders: ['first_name', 'company_name', 'company_phone'],
+    defaultTemplate: `Subject: Thanks for considering {company_name}
+Hi {first_name},
+
+Thanks for letting us know, and for considering {company_name}. We appreciate it.
+
+If you're open to sharing, it would help us to know what tipped the decision (price, timing, or something else). No pressure at all.
+
+If anything changes with your plans or schedule, just reach out at {company_phone} or reply to this email. We'd be glad to help. Best of luck with your project!
+
+Kristin and Pat
 {company_name}`,
   },
   {

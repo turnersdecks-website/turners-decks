@@ -8,6 +8,7 @@ import { type CompanySettings, parseOwnerAlertEmails, readCompanySettings } from
 import { type NewLeadExtra, newLeadVars, renderNewLeadText } from '#/lib/new-lead-text'
 import { hasTextConsent } from '#/lib/texting.server'
 import { appointmentStillOn } from '#/lib/appointments.server'
+import { stillLost } from '#/lib/lost.server'
 
 // One entry per notification job kind (src/lib/outbox.ts). `render` builds the email at send time from the job's
 // payload (null = nothing to send, reported as `failed`; a throw is retried). `onOutcome`, optional, hears how the
@@ -162,6 +163,17 @@ export const JOB_KINDS: Record<string, JobKind> = {
     onOutcome: (outcome, job, { db }, fence) => appointmentActivity(db, outcome, job, fence, 'text'),
   },
 
+  // The thank-you from the Lost window (src/lib/lost.server.ts). Rendered and frozen when queued; sends only while the
+  // Lead is still Lost.
+  lost_email: {
+    async render(p: Email & { lead_id: string }, { db }) {
+      if (!p?.to || !(await stillLost(db, p))) return null
+      return { to: p.to, subject: p.subject, text: p.text, ...(p.replyTo ? { replyTo: p.replyTo } : {}) }
+    },
+    onOutcome: (outcome, job, { db }, fence) => sentEmailActivity(db, outcome, job, fence, 'Thank-you email'),
+    copyCompany: true,
+  },
+
   form_ack: {
     copyCompany: true,
     async render(payload: LeadJobPayload, { db, env }) {
@@ -241,6 +253,25 @@ function appointmentActivity(db: JobKindContext['db'], outcome: JobOutcome, job:
       .insert(leadActivity)
       .select(
         sql`SELECT ${crypto.randomUUID()}, ${leads.id}, ${kind}, 'outbound', NULL, NULL, ${body.slice(0, 8000)}, NULL, NULL, NULL, ${dedupe},
+          ${Date.now()}, ${state}, ${outcome.type === 'accepted' ? outcome.resendId : null} FROM ${leads} WHERE ${leads.id} = ${p.lead_id} AND ${fence}`,
+      )
+      .onConflictDoNothing(),
+  ]
+}
+
+/** A one-off email to the Homeowner on the Lead's activity, however it ended (as appointmentActivity). */
+function sentEmailActivity(db: JobKindContext['db'], outcome: JobOutcome, job: Job, fence: SQL, label: string) {
+  const p = safeJson(job.payloadJson) as { lead_id?: string; subject?: string; text?: string }
+  if (!p.lead_id) return []
+  const state = outcome.type === 'accepted' ? 'accepted' : outcome.type === 'failed' ? 'failed' : 'unknown'
+  const message = `Subject: ${p.subject ?? ''}\n\n${p.text ?? ''}`
+  const body = outcome.type === 'accepted' ? `${label} sent.\n\n${message}` : `${label} not sent: ${outcome.error}\n\n${message}`
+  const dedupe = outcome.type === 'accepted' && outcome.resendId ? `resend:${outcome.resendId}` : `job:${job.id}`
+  return [
+    db
+      .insert(leadActivity)
+      .select(
+        sql`SELECT ${crypto.randomUUID()}, ${leads.id}, 'email', 'outbound', NULL, NULL, ${body.slice(0, 8000)}, NULL, NULL, NULL, ${dedupe},
           ${Date.now()}, ${state}, ${outcome.type === 'accepted' ? outcome.resendId : null} FROM ${leads} WHERE ${leads.id} = ${p.lead_id} AND ${fence}`,
       )
       .onConflictDoNothing(),

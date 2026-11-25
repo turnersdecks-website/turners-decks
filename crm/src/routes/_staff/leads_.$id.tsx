@@ -11,6 +11,7 @@ import { EmptyState } from '#/components/empty-state'
 import { LeadActivity } from '#/components/LeadActivity'
 import { QuoteFiles } from '#/components/QuoteFiles'
 import { LeadFieldsForm, useLeadDraft } from '#/components/LeadForm'
+import { LostDialog } from '#/components/LostDialog'
 import { PhotosPanel } from '#/components/PhotosPanel'
 import { Badge } from '#/components/ui/badge'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '#/components/ui/breadcrumb'
@@ -187,6 +188,7 @@ function LeadDetail() {
   const router = useRouter()
   const navigate = useNavigate({ from: Route.fullPath })
   const [busy, setBusy] = useState(false)
+  const [losing, setLosing] = useState(false)
 
   if (!found) {
     return (
@@ -245,6 +247,7 @@ function LeadDetail() {
 
   return (
     <div className="space-y-6">
+      <LostDialog leadId={losing ? lead.id : null} leadName={name} onClose={() => setLosing(false)} onDone={refresh} />
       <header className="space-y-4">
         <Breadcrumb>
           <BreadcrumbList>
@@ -337,7 +340,7 @@ function LeadDetail() {
                 timeZone={timeZone}
                 busy={busy}
                 onStage={(stage) =>
-                  run(() => moveLeadStage({ data: { leadId: lead.id, stage } }), stage === 'won' ? 'Won. Added to Contacts as a Customer, with a new Job.' : undefined)
+                  stage === 'lost' ? setLosing(true) : run(() => moveLeadStage({ data: { leadId: lead.id, stage } }), stage === 'won' ? 'Won. Added to Contacts as a Customer, with a new Job.' : undefined)
                 }
                 refresh={refresh}
               />

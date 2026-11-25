@@ -63,11 +63,15 @@ _Avoid_: Segment, property type
 
 **Do not contact**:
 A flag on a Lead: leave it out of marketing and re-engaging cold Leads (for example it went with a competitor or was
-not a good fit). The Lead stays in the CRM.
+not a good fit). The Lead stays in the CRM. The Lost window ticks it by default.
+
+**Lost window**:
+What opens when Staff move a Lead to Lost on the board or the Lead page: send the "Lost: thank-you" email or not, mark
+Do not contact (ticked by default), and an optional reason. Cancel leaves the Lead where it was.
 
 **Customer email template**:
 An email a Homeowner gets from us, edited in Settings: the Website calculator email (sent automatically after the
-website price calculator), appointment confirmation and reminder, estimate follow-up, review request. Only the
+website price calculator), appointment confirmation and reminder, Lost thank-you, estimate follow-up, review request. Only the
 calculator email is sent today; the others go out once Appointments and workflows are built.
 
 **Attribution**:

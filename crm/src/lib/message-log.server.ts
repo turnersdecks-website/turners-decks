@@ -19,6 +19,7 @@ const KIND_LABELS: Record<string, string> = {
   form_ack: 'Form thank-you',
   appointment_email: 'Appointment email',
   appointment_text: 'Appointment text',
+  lost_email: 'Lost thank-you email',
   sms_lead_reply: 'Instant reply text',
   new_lead_text: 'New Lead heads-up text',
   photo_link_text: 'Photo link text',
