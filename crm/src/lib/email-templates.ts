@@ -67,7 +67,7 @@ Hi {first_name},
 
 Thanks for letting us know, and for considering {company_name}. We appreciate it.
 
-If you're open to sharing, it would help us to know what tipped the decision (price, timing, or something else). No pressure at all.
+If you're open to sharing, it always helps us to know what tipped the decision (price, timing, or something else). But no pressure at all.
 
 If anything changes with your plans or schedule, just reach out at {company_phone} or reply to this email. We'd be glad to help. Best of luck with your project!
 
