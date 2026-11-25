@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { ShowTabs, ViewToggle } from '#/components/board-views'
 import { DataTable, DataTableColumnHeader } from '#/components/data-table'
 import { LeadFieldsForm, emptyLead, useLeadFields } from '#/components/LeadForm'
+import { LostDialog } from '#/components/LostDialog'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -63,11 +64,17 @@ function LeadsPage() {
   const router = useRouter()
   const [moved, setMoved] = useState<Record<string, PipelineStage>>({})
   const [adding, setAdding] = useState(false)
+  // Moving to Lost opens the Lost window (thank-you email, Do not contact) instead of moving at once.
+  const [losing, setLosing] = useState<string | null>(null)
   const [fields, setFields] = useLeadFields()
 
   const stageOf = (l: BoardLead) => moved[l.id] ?? l.stage
 
   async function move(id: string, stage: PipelineStage) {
+    if (stage === 'lost') {
+      if (leads.find((l) => l.id === id)?.stage !== 'lost') setLosing(id)
+      return
+    }
     setMoved((m) => ({ ...m, [id]: stage }))
     try {
       await moveLeadStage({ data: { leadId: id, stage } })
@@ -169,6 +176,13 @@ function LeadsPage() {
           />
         </div>
       )}
+
+      <LostDialog
+        leadId={losing}
+        leadName={leadName(leads.find((l) => l.id === losing) ?? { firstName: null, lastName: null })}
+        onClose={() => setLosing(null)}
+        onDone={() => router.invalidate({ sync: true })}
+      />
 
       <Dialog open={adding} onOpenChange={setAdding}>
         <DialogContent className="max-h-[90dvh] max-w-lg overflow-y-auto">
